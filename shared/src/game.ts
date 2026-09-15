@@ -13,7 +13,7 @@ import {
 } from "./types.js";
 
 export const MIN_PLAYERS = 2;
-export const MAX_PLAYERS = 4;
+export const MAX_PLAYERS = 6;
 
 let meldCounter = 0;
 
@@ -46,7 +46,7 @@ function makePlayer(id: string, name: string): Player {
 
 export function addPlayer(state: GameState, player: { id: string; name: string }): GameResult {
   if (state.phase !== "lobby") return fail("La partie a déjà commencé");
-  if (state.players.length >= MAX_PLAYERS) return fail("La table est pleine (4 joueurs max)");
+  if (state.players.length >= MAX_PLAYERS) return fail(`La table est pleine (${MAX_PLAYERS} joueurs max)`);
   if (state.players.some((p) => p.id === player.id)) return fail("Joueur déjà présent");
   return ok({ ...state, players: [...state.players, makePlayer(player.id, player.name)] });
 }

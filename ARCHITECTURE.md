@@ -47,7 +47,7 @@ Trois workspaces npm :
 
 ## Média
 
-- Une `RTCPeerConnection` par autre joueur (maillage, adapté à ≤ 4).
+- Une `RTCPeerConnection` par autre joueur (maillage : jusqu'à 5 connexions par client à 6 joueurs ; au-delà, un SFU s'imposerait).
 - Négociation parfaite : `polite = selfId > peerId` ; chaque côté peut ajouter des pistes à tout moment.
 - Le maillage est démonté de façon synchrone à chaque `connect` socket et sur `rtc:peer-reset` ; un chien de garde par pair reconstruit une connexion qui n'est pas stable et connectée sous 8 s. Quitter la table arrête les pistes locales.
 - Le média est demandé dès que le joueur est assis ; en cas d'échec, repli audio seul, puis réception seule.

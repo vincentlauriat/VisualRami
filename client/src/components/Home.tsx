@@ -112,7 +112,7 @@ export function Home({ connected, initialCode, onCreate, onJoin }: Props) {
       <section className="panel rules">
         <h2>Règles en bref</h2>
         <ul>
-          <li>2 à 4 joueurs, deux jeux de 52 cartes et 4 jokers, 14 cartes chacun.</li>
+          <li>2 à 6 joueurs, deux jeux de 52 cartes et 4 jokers, 14 cartes chacun.</li>
           <li>À son tour : piocher (talon ou défausse), poser, puis défausser une carte.</li>
           <li>Combinaisons : suites de 3+ cartes de même couleur, ou brelans/carrés de même valeur.</li>
           <li>Première pose : au moins 51 points, avec une tierce franche (suite sans joker).</li>

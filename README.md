@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/vincentlauriat/VisualRami/actions/workflows/ci.yml/badge.svg)](https://github.com/vincentlauriat/VisualRami/actions/workflows/ci.yml)
 
-Online French Rummy (**Rami 51**) for 2 to 4 players, with **live video and voice** between everyone at the
+Online French Rummy (**Rami 51**) for 2 to 6 players, with **live video and voice** between everyone at the
 table. The game state is authoritative on the server; audio and video flow peer-to-peer over WebRTC.
 
 Live (Azure sandbox): https://visualrami-vl-09150521.azurewebsites.net
@@ -16,7 +16,7 @@ Live (Azure sandbox): https://visualrami-vl-09150521.azurewebsites.net
 | First laydown ≥ 51 points with a pure run (room options) | ✅ |
 | Extend any meld on the table, swap a joker for the real card | ✅ |
 | Round scoring (hand points, doubled if never laid down), cumulative score | ✅ |
-| Room codes and share links, 2–4 players | ✅ |
+| Room codes and share links, 2–6 players | ✅ |
 | Video + audio mesh (WebRTC, STUN), mic/camera toggles | ✅ |
 | Text chat and game log | ✅ |
 | Reconnect after a page reload, absent-player auto-turn, host handover | ✅ |

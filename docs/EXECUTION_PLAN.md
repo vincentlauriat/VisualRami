@@ -5,7 +5,7 @@ Dates are absolute. Status legend: ✅ done · 🔄 in progress · ⏳ planned �
 
 ## Goal
 
-An online French Rummy (Rami 51) for 2–4 friends who can **see and hear each other** while they play,
+An online French Rummy (Rami 51) for 2–6 friends who can **see and hear each other** while they play,
 reachable from a browser with nothing to install, hosted on the Azure sandbox.
 
 ## Phase 0 — Foundations (2026-09-14) ✅
@@ -58,7 +58,7 @@ URL: https://visualrami-vl-09150521.azurewebsites.net
 
 | Task | Exit criterion | Status |
 |---|---|---|
-| Play a full game from two devices on the Azure URL with camera and microphone | video and audio both ways for 4 players | ⏳ |
+| Play a full game from two devices on the Azure URL with camera and microphone | video and audio both ways for 6 players (5 peer connections each) | ⏳ |
 | Measure WebRTC connectivity from home / mobile / corporate networks | list of networks needing TURN | ⏳ |
 | Provision a TURN relay (coturn on a small VM or a hosted service) and set `VITE_TURN_*` | connection through symmetric NAT | ⏳ |
 | Playtest the rules with real players (51 threshold, pure run, joker swap) | feedback logged in `TODOS.md` | ⏳ |

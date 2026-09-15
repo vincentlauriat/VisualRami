@@ -3,7 +3,7 @@
 ## Material and deal
 
 - Two 52-card decks plus 4 jokers (108 cards).
-- 2 to 4 players, 14 cards each. One card opens the discard pile; the rest is the stock.
+- 2 to 6 players, 14 cards each (6 × 14 + 1 = 85 cards dealt, 23 left in the stock). One card opens the discard pile; the rest is the stock.
 - The first player of round *n* is player *n* (rotating). The first player draws immediately.
 
 ## Turn
