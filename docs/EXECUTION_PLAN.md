@@ -52,7 +52,6 @@ unbounded signalling/chat, discard pile leak, TURN hook, open CORS). See `CHANGE
 | `Scripts/probe-remote.mjs` end-to-end WebSocket probe | OK in < 3 s against Azure | ✅ |
 | `docs/DEPLOYMENT_AZURE.md` with the pitfalls met | written | ✅ |
 
-URL: https://<app>.azurewebsites.net
 
 ## Phase 4b — Resume a game (2026-09-15) ✅
 
