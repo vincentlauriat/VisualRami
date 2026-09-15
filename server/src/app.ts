@@ -30,6 +30,8 @@ export interface AppOptions {
   absentTurnDelayMs?: number;
   /** Allowed CORS origin(s) for the socket. Unset = same origin only. */
   corsOrigin?: string | string[];
+  /** JSON file where rooms are persisted across restarts. Unset = memory only. */
+  persistPath?: string;
 }
 
 /** Sliding-window rate limiter, one bucket per socket and event. */
@@ -75,7 +77,7 @@ export function createApp(options: AppOptions = {}) {
   app.disable("x-powered-by");
 
   app.get("/healthz", (_req, res) => {
-    res.json({ ok: true, rooms: rooms.size });
+    res.json({ ok: true, rooms: rooms.size, games: rooms.activeGames });
   });
 
   const clientDist = options.clientDist ?? path.resolve(__dirname, "../../client/dist");
@@ -97,7 +99,7 @@ export function createApp(options: AppOptions = {}) {
     server,
     options.corsOrigin ? { cors: { origin: options.corsOrigin } } : {},
   );
-  const rooms = new RoomManager();
+  const rooms = new RoomManager({ persistPath: options.persistPath });
   const signalLimiter = new RateLimiter(120, 5000);
   const chatLimiter = new RateLimiter(8, 5000);
 
@@ -195,14 +197,18 @@ export function createApp(options: AppOptions = {}) {
 
     socket.on(
       "room:join",
-      (payload: { roomId?: string; name?: string }, ack: Ack<{ roomId: string; playerId: string; token: string }>) => {
+      (
+        payload: { roomId?: string; name?: string },
+        ack: Ack<{ roomId: string; playerId: string; token: string; resumed: boolean }>,
+      ) => {
         if (typeof ack !== "function") return;
         if (currentRoom(socket)) return ack({ error: "Déjà dans une salle" });
         const roomId = typeof payload?.roomId === "string" ? payload.roomId.trim() : "";
         const result = rooms.join(roomId, sanitizeName(payload?.name), socket.id);
         if (!result.ok) return ack({ error: result.error });
         attach(socket, result.room, result.playerId);
-        ack({ roomId: result.room.id, playerId: result.playerId, token: result.token });
+        ack({ roomId: result.room.id, playerId: result.playerId, token: result.token, resumed: result.resumed });
+        if (result.resumed) socket.to(result.room.id).emit("rtc:peer-reset", { playerId: result.playerId });
         broadcast(result.room);
       },
     );
@@ -291,8 +297,11 @@ export function createApp(options: AppOptions = {}) {
     });
   });
 
-  const sweeper = setInterval(() => rooms.sweep(6 * 60 * 60 * 1000), 10 * 60 * 1000);
+  const sweeper = setInterval(() => rooms.sweep(), 10 * 60 * 1000);
   sweeper.unref();
+  const flush = () => rooms.saveNow();
+  process.once("SIGTERM", flush);
+  process.once("SIGINT", flush);
 
   return { app, server, io, rooms };
 }
