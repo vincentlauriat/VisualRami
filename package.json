@@ -10,12 +10,13 @@
   ],
   "scripts": {
     "build": "npm run build -w shared && npm run build -w server && npm run build -w client",
-    "typecheck": "npm run typecheck -w shared && npm run typecheck -w server && npm run typecheck -w client",
-    "test": "npm run test -w shared && npm run test -w server",
+    "typecheck": "npm run build:shared && npm run typecheck -w server && npm run typecheck -w client",
+    "test": "npm run build:shared && npm run test -w shared && npm run test -w server",
     "dev": "npm run dev -w server & npm run dev -w client & wait",
     "start": "npm run start -w server",
     "package:azure": "Scripts/build-azure.sh",
-    "probe": "node Scripts/probe-remote.mjs"
+    "probe": "node Scripts/probe-remote.mjs",
+    "build:shared": "npm run build -w shared"
   },
   "engines": {
     "node": ">=20"
