@@ -8,7 +8,7 @@ let url = "";
 let close: () => void;
 
 beforeAll(async () => {
-  const { server, io } = createApp({ clientDist: "/nonexistent", absentTurnDelayMs: 150 });
+  const { server, io } = createApp({ clientDist: "/nonexistent", absentTurnDelayMs: 150, persistPath: undefined });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const { port } = server.address() as AddressInfo;
   url = `http://127.0.0.1:${port}`;
@@ -188,6 +188,35 @@ describe("socket server", () => {
     ]);
     expect(res.ok).toBe(true);
     s.disconnect();
+  });
+
+  it("lets a player come back into a started game with the code and their name", async () => {
+    const a = await client();
+    const b = await client();
+    const created = await emit<{ roomId: string; playerId: string }>(a, "room:create", { name: "Alice" });
+    const joined = await emit<{ playerId: string }>(b, "room:join", { roomId: created.roomId, name: "Bob" });
+    const started = stateWhere(a, (s) => s.phase === "draw");
+    await emit(a, "game:action", { type: "start" });
+    await started;
+
+    const gone = stateWhere(a, (s) => s.players.some((p) => !p.connected));
+    b.disconnect();
+    await gone;
+
+    const b2 = await client();
+    const reset = new Promise<{ playerId: string }>((resolve) => a.once("rtc:peer-reset", resolve));
+    const statePromise = stateWhere(b2, (s) => s.you.id === joined.playerId);
+    const back = await emit<{ playerId?: string; resumed?: boolean; error?: string }>(b2, "room:join", {
+      roomId: created.roomId,
+      name: "bob",
+    });
+    expect(back).toMatchObject({ playerId: joined.playerId, resumed: true });
+    expect((await reset).playerId).toBe(joined.playerId);
+    const state = await statePromise;
+    expect(state.you.hand).toHaveLength(14);
+    expect(state.players.every((p) => p.connected)).toBe(true);
+    a.disconnect();
+    b2.disconnect();
   });
 
   it("rejects joining an unknown room", async () => {

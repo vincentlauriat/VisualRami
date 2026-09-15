@@ -159,8 +159,8 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
         </h1>
         <div className="topbar-right">
           <MediaControls rtc={rtc} compact />
-          <button type="button" className="ghost" onClick={onLeave}>
-            Quitter
+          <button type="button" className="ghost" onClick={onLeave} title="Votre place reste réservée : revenez avec le code de la table">
+            Quitter (place gardée)
           </button>
         </div>
       </header>

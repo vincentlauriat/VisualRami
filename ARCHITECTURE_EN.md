@@ -34,7 +34,7 @@ Three npm workspaces:
 | Direction | Event | Payload |
 |---|---|---|
 | C→S | `room:create` | `{ name, options }` → ack `{ roomId, playerId, token }` |
-| C→S | `room:join` | `{ roomId, name }` → same ack |
+| C→S | `room:join` | `{ roomId, name }` → same ack plus `resumed` (true when a disconnected seat of a started game was taken back) |
 | C→S | `room:rejoin` | `{ roomId, playerId, token }` |
 | C→S | `room:leave` | – |
 | C→S | `game:action` | `GameAction` → ack `{ ok }` or `{ error }` |
@@ -63,4 +63,5 @@ Three npm workspaces:
 
 - **Server-authoritative reducer in a shared package**: one implementation of the rules, testable without I/O, reused client-side for UX.
 - **sessionStorage for the session** rather than localStorage: survives reloads, but each tab is its own player, which makes local testing with several tabs possible.
-- **No database**: rooms live in memory and are swept after 6 h of inactivity.
+- **No database, but a JSON snapshot**: rooms live in memory and are written to `DATA_DIR/rooms.json` (debounced 500 ms, atomic rename, flushed on SIGTERM). A restart restores every table with its rejoin tokens and everyone marked disconnected. Sweep: empty lobbies after 6 h, started games after 7 days.
+- **Come back by code + name**: on a started game, `room:join` with the name of a disconnected player takes that seat (new token). Seats are also remembered per browser in `localStorage`, so the home page offers a one-click "Reprendre".

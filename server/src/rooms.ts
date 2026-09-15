@@ -1,4 +1,6 @@
 import { randomBytes } from "node:crypto";
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import {
   addPlayer,
   applyAction,
@@ -24,15 +26,47 @@ export interface Room {
   lastActivity: number;
 }
 
-const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
 export type JoinResult =
-  | { ok: true; room: Room; playerId: string; token: string }
+  | { ok: true; room: Room; playerId: string; token: string; resumed: boolean }
   | { ok: false; error: string };
 export type RejoinResult = { ok: true; room: Room } | { ok: false; error: string };
 
+export interface RoomManagerOptions {
+  /** JSON file where rooms are persisted so a game survives a server restart. */
+  persistPath?: string;
+  /** Idle time after which an empty lobby is dropped. */
+  lobbyTtlMs?: number;
+  /** Idle time after which a started game is dropped. */
+  gameTtlMs?: number;
+}
+
+interface PersistedRoom {
+  id: string;
+  state: GameState;
+  tokens: [string, string][];
+  lastActivity: number;
+}
+
+const ROOM_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const HOUR = 60 * 60 * 1000;
+
+function normalizeName(name: string): string {
+  return name.trim().toLocaleLowerCase("fr");
+}
+
 export class RoomManager {
   private rooms = new Map<string, Room>();
+  private readonly persistPath: string | undefined;
+  private readonly lobbyTtlMs: number;
+  private readonly gameTtlMs: number;
+  private saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(options: RoomManagerOptions = {}) {
+    this.persistPath = options.persistPath;
+    this.lobbyTtlMs = options.lobbyTtlMs ?? 6 * HOUR;
+    this.gameTtlMs = options.gameTtlMs ?? 7 * 24 * HOUR;
+    if (this.persistPath) this.load(this.persistPath);
+  }
 
   private makeCode(): string {
     for (;;) {
@@ -67,12 +101,38 @@ export class RoomManager {
       lastActivity: Date.now(),
     };
     this.rooms.set(id, room);
+    this.scheduleSave();
     return { room, playerId, token };
   }
 
+  /**
+   * Join a lobby as a new player, or — when the game has started — take back the seat of a
+   * disconnected player with the same name. The code plus the name are all a player needs to
+   * come back from another device.
+   */
   join(roomId: string, name: string, socketId: string): JoinResult {
     const room = this.get(roomId);
     if (!room) return { ok: false, error: "Salle introuvable" };
+    if (room.state.phase !== "lobby") {
+      const wanted = normalizeName(name);
+      const seat = room.state.players.find((p) => normalizeName(p.name) === wanted);
+      if (!seat) {
+        return {
+          ok: false,
+          error: `Partie en cours : entrez le prénom d'un joueur de la table (${room.state.players.map((p) => p.name).join(", ")})`,
+        };
+      }
+      if (seat.connected && room.sockets.has(seat.id)) {
+        return { ok: false, error: `${seat.name} est déjà connecté à cette table` };
+      }
+      const token = this.makeToken();
+      room.tokens.set(seat.id, token);
+      room.sockets.set(seat.id, socketId);
+      room.state = setConnected(room.state, seat.id, true);
+      room.lastActivity = Date.now();
+      this.scheduleSave();
+      return { ok: true, room, playerId: seat.id, token, resumed: true };
+    }
     const playerId = this.makeId();
     const result = addPlayer(room.state, { id: playerId, name });
     if (!result.ok) return { ok: false, error: result.error };
@@ -81,7 +141,8 @@ export class RoomManager {
     room.tokens.set(playerId, token);
     room.sockets.set(playerId, socketId);
     room.lastActivity = Date.now();
-    return { ok: true, room, playerId, token };
+    this.scheduleSave();
+    return { ok: true, room, playerId, token, resumed: false };
   }
 
   rejoin(roomId: string, playerId: string, token: string, socketId: string): RejoinResult {
@@ -94,6 +155,7 @@ export class RoomManager {
     room.sockets.set(playerId, socketId);
     room.state = setConnected(room.state, playerId, true);
     room.lastActivity = Date.now();
+    this.scheduleSave();
     return { ok: true, room };
   }
 
@@ -103,9 +165,10 @@ export class RoomManager {
     room.state = removePlayer(room.state, playerId);
     if (room.state.phase === "lobby") room.tokens.delete(playerId);
     room.lastActivity = Date.now();
-    if (room.state.players.length === 0 || room.sockets.size === 0 && room.state.phase === "lobby") {
+    if (room.state.players.length === 0 || (room.sockets.size === 0 && room.state.phase === "lobby")) {
       this.rooms.delete(room.id);
     }
+    this.scheduleSave();
     return true;
   }
 
@@ -118,6 +181,7 @@ export class RoomManager {
     if (!result.ok) return false;
     room.state = result.state;
     room.lastActivity = Date.now();
+    this.scheduleSave();
     return true;
   }
 
@@ -126,6 +190,7 @@ export class RoomManager {
     if (result.ok) {
       room.state = result.state;
       room.lastActivity = Date.now();
+      this.scheduleSave();
     }
     return result;
   }
@@ -134,20 +199,89 @@ export class RoomManager {
     return toPublicState(room.state, playerId);
   }
 
-  /** Remove rooms idle for longer than `maxIdleMs`. */
-  sweep(maxIdleMs: number): number {
-    const now = Date.now();
+  /** Remove idle rooms: empty lobbies after `lobbyTtlMs`, started games after `gameTtlMs`. */
+  sweep(now = Date.now()): number {
     let removed = 0;
     for (const [id, room] of this.rooms) {
-      if (now - room.lastActivity > maxIdleMs && room.sockets.size === 0) {
+      if (room.sockets.size > 0) continue;
+      const ttl = room.state.phase === "lobby" ? this.lobbyTtlMs : this.gameTtlMs;
+      if (now - room.lastActivity > ttl) {
         this.rooms.delete(id);
         removed++;
       }
     }
+    if (removed > 0) this.scheduleSave();
     return removed;
   }
 
   get size(): number {
     return this.rooms.size;
+  }
+
+  /** Rooms whose game is in progress, for diagnostics. */
+  get activeGames(): number {
+    let n = 0;
+    for (const room of this.rooms.values()) if (room.state.phase !== "lobby") n++;
+    return n;
+  }
+
+  // ---- persistence -------------------------------------------------------------------------
+
+  private scheduleSave() {
+    if (!this.persistPath || this.saveTimer) return;
+    this.saveTimer = setTimeout(() => {
+      this.saveTimer = null;
+      this.saveNow();
+    }, 500);
+    this.saveTimer.unref();
+  }
+
+  /** Write every room (started games and lobbies alike) to disk atomically. */
+  saveNow(): void {
+    if (!this.persistPath) return;
+    const rooms: PersistedRoom[] = [];
+    for (const room of this.rooms.values()) {
+      rooms.push({
+        id: room.id,
+        state: room.state,
+        tokens: Array.from(room.tokens.entries()),
+        lastActivity: room.lastActivity,
+      });
+    }
+    try {
+      mkdirSync(path.dirname(this.persistPath), { recursive: true });
+      const tmp = `${this.persistPath}.tmp`;
+      writeFileSync(tmp, JSON.stringify({ version: 1, savedAt: Date.now(), rooms }));
+      renameSync(tmp, this.persistPath);
+    } catch (err) {
+      console.error("room persistence failed", err);
+    }
+  }
+
+  private load(file: string): void {
+    let raw: string;
+    try {
+      raw = readFileSync(file, "utf8");
+    } catch {
+      return; // first start: nothing to restore
+    }
+    try {
+      const data = JSON.parse(raw) as { version: number; rooms: PersistedRoom[] };
+      for (const saved of data.rooms) {
+        // Nobody is attached after a restart; players come back by token or by code + name.
+        let state = saved.state;
+        for (const p of state.players) state = setConnected(state, p.id, false);
+        this.rooms.set(saved.id, {
+          id: saved.id,
+          state,
+          tokens: new Map(saved.tokens),
+          sockets: new Map(),
+          lastActivity: saved.lastActivity,
+        });
+      }
+      console.log(`restored ${this.rooms.size} room(s) from ${file}`);
+    } catch (err) {
+      console.error("could not restore rooms, starting empty", err);
+    }
   }
 }

@@ -34,7 +34,7 @@ Trois workspaces npm :
 | Sens | Événement | Charge utile |
 |---|---|---|
 | C→S | `room:create` | `{ name, options }` → ack `{ roomId, playerId, token }` |
-| C→S | `room:join` | `{ roomId, name }` → même ack |
+| C→S | `room:join` | `{ roomId, name }` → même ack plus `resumed` (vrai quand un siège déconnecté d'une partie commencée a été repris) |
 | C→S | `room:rejoin` | `{ roomId, playerId, token }` |
 | C→S | `room:leave` | – |
 | C→S | `game:action` | `GameAction` → ack `{ ok }` ou `{ error }` |
@@ -63,4 +63,5 @@ Trois workspaces npm :
 
 - **Réducteur autoritaire dans un paquet partagé** : une seule implémentation des règles, testable sans E/S, réutilisée côté client pour l'UX.
 - **sessionStorage pour la session** plutôt que localStorage : survit au rechargement, mais chaque onglet est un joueur distinct, ce qui permet de tester en local avec plusieurs onglets.
-- **Pas de base de données** : les salles vivent en mémoire et sont purgées après 6 h d'inactivité.
+- **Pas de base de données, mais un instantané JSON** : les salles vivent en mémoire et sont écrites dans `DATA_DIR/rooms.json` (différé 500 ms, renommage atomique, vidage sur SIGTERM). Un redémarrage restaure chaque table avec ses jetons de reprise, tout le monde marqué déconnecté. Purge : salons vides après 6 h, parties commencées après 7 jours.
+- **Retour par code + prénom** : sur une partie commencée, `room:join` avec le prénom d'un joueur déconnecté reprend ce siège (nouveau jeton). Les sièges sont aussi mémorisés par navigateur dans `localStorage`, d'où le bouton « Reprendre » de l'accueil.
