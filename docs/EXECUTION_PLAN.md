@@ -84,7 +84,7 @@ URL: https://visualrami-vl-09150521.azurewebsites.net
 
 - Drag-and-drop hand reordering, keyboard shortcuts.
 - Spectator mode, per-round history, end-of-game screen (target score).
-- Sound cues (your turn, card drawn), mobile layout pass, accessibility audit.
+- Sound cues (your turn, card drawn), accessibility audit. (Phone layout pass done 2026-09-15.)
 - Persistent rooms (Redis or Azure Cache) if the server must scale beyond one instance
   (Socket.IO sticky sessions or adapter).
 
