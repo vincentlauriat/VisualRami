@@ -2,6 +2,11 @@
 
 All notable changes to VisualRami. Format inspired by Keep a Changelog; versions follow SemVer.
 
+## [Unreleased]
+
+### Changed
+- Tables seat 2 to 6 players (was 4). Opponent tiles shrink to fit five of them.
+
 ## [0.1.0] — 2026-09-15
 
 ### Added

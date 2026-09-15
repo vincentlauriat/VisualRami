@@ -129,7 +129,7 @@ h2 { font-size: 17px; }
 .game-body { flex: 1; display: grid; grid-template-columns: 1fr 260px; gap: 12px; min-height: 0; }
 .table-area { display: grid; grid-template-rows: auto 1fr auto; gap: 10px; min-height: 0; }
 .opponents { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.opponent { width: 210px; display: grid; gap: 4px; }
+.opponent { width: clamp(150px, 18vw, 210px); display: grid; gap: 4px; }
 .opponent-info { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
 .mini-hand { display: inline-flex; gap: 1px; }
 .mini-hand i { width: 6px; height: 10px; background: #3b5a95; border: 1px solid #1e3060; border-radius: 1px; }

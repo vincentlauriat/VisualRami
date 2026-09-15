@@ -225,3 +225,21 @@ describe("absent players", () => {
     expect(next.hostId).toBe("b");
   });
 });
+
+describe("table size", () => {
+  it("seats up to six players and deals them all, refusing a seventh", () => {
+    let state = createGame("R", { id: "p1", name: "P1" });
+    for (let i = 2; i <= 6; i++) {
+      const r = addPlayer(state, { id: `p${i}`, name: `P${i}` });
+      expect(r.ok).toBe(true);
+      state = (r as { ok: true; state: GameState }).state;
+    }
+    expect(addPlayer(state, { id: "p7", name: "P7" })).toMatchObject({ ok: false });
+    const started = applyAction(state, "p1", { type: "start" }, rng);
+    expect(started.ok).toBe(true);
+    const dealt = (started as { ok: true; state: GameState }).state;
+    expect(dealt.players).toHaveLength(6);
+    expect(dealt.players.every((p) => p.hand.length === 14)).toBe(true);
+    expect(dealt.stock).toHaveLength(108 - 6 * 14 - 1);
+  });
+});
