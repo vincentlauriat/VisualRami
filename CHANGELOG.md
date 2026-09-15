@@ -4,6 +4,9 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 
 ## [Unreleased]
 
+### Added
+- Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
+
 ### Changed
 - Tables seat 2 to 6 players (was 4). Opponent tiles shrink to fit five of them.
 

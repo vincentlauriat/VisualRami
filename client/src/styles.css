@@ -83,6 +83,10 @@ h2 { font-size: 17px; }
 .field.check { grid-template-columns: auto 1fr; align-items: center; }
 .code-input { text-transform: uppercase; letter-spacing: 4px; font-size: 20px; font-family: monospace; }
 .rules ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.seat-list { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 8px; }
+.seat-list li { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.seat-meta { color: var(--muted); font-size: 14px; flex: 1; }
+.room-code.small { font-size: 20px; letter-spacing: 3px; }
 .reconnecting, .toast.global {
   position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
   background: var(--panel-2); padding: 10px 18px; border-radius: 999px; border: 1px solid #2f4a3b;

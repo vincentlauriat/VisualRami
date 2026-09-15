@@ -20,6 +20,7 @@ Live (Azure sandbox): https://visualrami-vl-09150521.azurewebsites.net
 | Video + audio mesh (WebRTC, STUN), mic/camera toggles | ✅ |
 | Text chat and game log | ✅ |
 | Reconnect after a page reload, absent-player auto-turn, host handover | ✅ |
+| Games survive a server restart; come back with the table code and your name (7 days) | ✅ |
 | Azure App Service packaging + remote probe | ✅ |
 | TURN relay for restrictive networks | ⚙️ configurable, bring your own server |
 | Drag-and-drop hand, spectator mode, game history | ⏳ roadmap |
@@ -61,6 +62,7 @@ npm run probe -- https://<host>           # end-to-end WebSocket check against a
 |---|---|---|
 | `PORT`, `HOST` | server | Listen address (default `0.0.0.0:3000`) |
 | `HTTPS_KEY`, `HTTPS_CERT` | server | Serve HTTPS directly (camera/mic need HTTPS outside localhost) |
+| `DATA_DIR` | server | Directory of `rooms.json`, the persisted tables (default `data/`; empty string = memory only; on App Service use `/home/data`) |
 | `CORS_ORIGIN` | server | Comma-separated origins allowed to open the socket when the client is served elsewhere (default: same origin only) |
 | `VITE_TURN_URL` | client build | Comma-separated TURN URLs (`turn:turn.example.com:3478`) |
 | `VITE_TURN_USERNAME`, `VITE_TURN_CREDENTIAL` | client build | TURN credentials |

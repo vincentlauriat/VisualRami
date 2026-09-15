@@ -20,7 +20,13 @@ export function App() {
   if (!game.session || !game.state) {
     return (
       <>
-        <Home connected={game.connected} initialCode={initialCode} onCreate={game.create} onJoin={game.join} />
+        <Home
+          connected={game.connected}
+          initialCode={initialCode}
+          onCreate={game.create}
+          onJoin={game.join}
+          onResume={game.resume}
+        />
         {game.session && !game.state && <div className="reconnecting">Reconnexion à la table {game.session.roomId}…</div>}
         {game.error && <div className="toast global" onClick={game.clearError}>{game.error}</div>}
       </>

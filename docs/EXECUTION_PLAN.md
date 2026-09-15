@@ -54,6 +54,15 @@ unbounded signalling/chat, discard pile leak, TURN hook, open CORS). See `CHANGE
 
 URL: https://visualrami-vl-09150521.azurewebsites.net
 
+## Phase 4b — Resume a game (2026-09-15) ✅
+
+| Deliverable | Exit criterion | Status |
+|---|---|---|
+| Rooms persisted to `DATA_DIR/rooms.json` (debounced, atomic rename, flush on SIGTERM) | restart keeps started games and tokens | ✅ |
+| Come back by code + same name into a disconnected seat (`room:join` on a started game) | server + socket tests | ✅ |
+| Remembered seats in `localStorage`, "Reprendre une partie" on the home page, "Quitter (place gardée)" | browser check | ✅ |
+| TTL: empty lobbies 6 h, started games 7 days | sweep test | ✅ |
+
 ## Phase 5 — Real-world validation ⏳
 
 | Task | Exit criterion | Status |
