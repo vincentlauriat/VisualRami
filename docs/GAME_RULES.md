@@ -42,6 +42,12 @@ The round ends when a player discards their last card. Each other player adds th
 joker 20, ace 11, faces 10, others face value, **doubled** if they never laid down. The winner scores 0.
 Scores accumulate across rounds; the lowest total wins.
 
+## Leaving and coming back
+
+A started game stays open for 7 days of inactivity and survives a server restart. A player who closed the
+browser comes back from the home page ("Reprendre une partie"), or from any device by entering the table
+code and the **same first name**. Only a disconnected seat can be taken back this way.
+
 ## Absent players
 
 If the player whose turn it is stays disconnected for 45 seconds, the server draws from the stock and

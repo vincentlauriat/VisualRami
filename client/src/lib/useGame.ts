@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GameAction, GameOptions, PublicGameState } from "@visualrami/shared";
-import { loadSession, request, saveSession, socket, type Session } from "./socket";
+import { forgetSeat, loadSeat, loadSession, request, saveSession, socket, type Session } from "./socket";
 
 export interface ChatMessage {
   from: string;
@@ -20,6 +20,9 @@ export interface GameConnection {
   clearError: () => void;
   create: (name: string, options: Partial<GameOptions>) => Promise<void>;
   join: (roomId: string, name: string) => Promise<void>;
+  /** Take a remembered seat back (token first, then code + name as a fallback). */
+  resume: (roomId: string, name: string) => Promise<void>;
+  /** Leave the table. A started game keeps the seat, so the player can come back with the code. */
   leave: () => Promise<void>;
   act: (action: GameAction) => Promise<boolean>;
   sendChat: (text: string) => void;
@@ -45,6 +48,7 @@ export function useGame(): GameConnection {
         setEpoch((e) => e + 1);
       } catch (err) {
         saveSession(null);
+        forgetSeat(s.roomId);
         setSession(null);
         setState(null);
         setError((err as Error).message);
@@ -84,24 +88,48 @@ export function useGame(): GameConnection {
       roomId,
       name,
     });
-    const s = { ...res, name };
+    const s = { roomId: res.roomId, playerId: res.playerId, token: res.token, name };
     saveSession(s);
     setSession(s);
     setChat([]);
     setEpoch((e) => e + 1);
   }, []);
 
+  const resume = useCallback(
+    async (roomId: string, name: string) => {
+      const seat = loadSeat(roomId);
+      if (seat) {
+        try {
+          await request("room:rejoin", { roomId: seat.roomId, playerId: seat.playerId, token: seat.token });
+          const s = { roomId: seat.roomId, playerId: seat.playerId, token: seat.token, name: seat.name };
+          saveSession(s);
+          setSession(s);
+          setChat([]);
+          setEpoch((e) => e + 1);
+          return;
+        } catch {
+          forgetSeat(roomId); // stale token or vanished table: fall back to code + name
+        }
+      }
+      await join(roomId, name || seat?.name || "");
+    },
+    [join],
+  );
+
   const leave = useCallback(async () => {
+    const roomId = sessionRef.current?.roomId;
+    const inProgress = !!state && state.phase !== "lobby";
     try {
       await request("room:leave");
     } catch {
       // leaving is best-effort
     }
     saveSession(null);
+    if (roomId && !inProgress) forgetSeat(roomId);
     setSession(null);
     setState(null);
     setChat([]);
-  }, []);
+  }, [state]);
 
   const act = useCallback(async (action: GameAction) => {
     try {
@@ -120,5 +148,5 @@ export function useGame(): GameConnection {
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { connected, session, state, error, chat, epoch, clearError, create, join, leave, act, sendChat };
+  return { connected, session, state, error, chat, epoch, clearError, create, join, resume, leave, act, sendChat };
 }

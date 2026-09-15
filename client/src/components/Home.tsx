@@ -1,17 +1,28 @@
 import { useState, type FormEvent } from "react";
 import { DEFAULT_OPTIONS, type GameOptions } from "@visualrami/shared";
-import { loadName, saveName } from "../lib/socket";
+import { forgetSeat, loadName, loadSeats, saveName } from "../lib/socket";
 
 interface Props {
   connected: boolean;
   initialCode?: string;
   onCreate: (name: string, options: Partial<GameOptions>) => Promise<void>;
   onJoin: (roomId: string, name: string) => Promise<void>;
+  onResume: (roomId: string, name: string) => Promise<void>;
 }
 
-export function Home({ connected, initialCode, onCreate, onJoin }: Props) {
+function formatAge(ts: number): string {
+  const minutes = Math.round((Date.now() - ts) / 60000);
+  if (minutes < 1) return "à l'instant";
+  if (minutes < 60) return `il y a ${minutes} min`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 48) return `il y a ${hours} h`;
+  return `il y a ${Math.round(hours / 24)} j`;
+}
+
+export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Props) {
   const [name, setName] = useState(loadName());
   const [code, setCode] = useState(initialCode ?? "");
+  const [seats, setSeats] = useState(() => loadSeats());
   const [minPoints, setMinPoints] = useState(DEFAULT_OPTIONS.firstMeldMinPoints);
   const [pureRun, setPureRun] = useState(DEFAULT_OPTIONS.requirePureRun);
   const [busy, setBusy] = useState(false);
@@ -38,6 +49,11 @@ export function Home({ connected, initialCode, onCreate, onJoin }: Props) {
     void run(() => onJoin(code.trim().toUpperCase(), name.trim()));
   }
 
+  function forget(roomId: string) {
+    forgetSeat(roomId);
+    setSeats(loadSeats());
+  }
+
   return (
     <main className="home">
       <header className="home-hero">
@@ -46,6 +62,34 @@ export function Home({ connected, initialCode, onCreate, onJoin }: Props) {
         </h1>
         <p>Le Rami 51 entre amis, avec la visio et le son de chaque joueur autour de la table.</p>
       </header>
+
+      {seats.length > 0 && (
+        <section className="panel seats">
+          <h2>Reprendre une partie</h2>
+          <ul className="seat-list">
+            {seats.map((seat) => (
+              <li key={seat.roomId}>
+                <span className="room-code small">{seat.roomId}</span>
+                <span className="seat-meta">
+                  {seat.name} · {formatAge(seat.savedAt)}
+                </span>
+                <button
+                  type="button"
+                  className="primary"
+                  disabled={!connected || busy}
+                  onClick={() => run(() => onResume(seat.roomId, seat.name))}
+                >
+                  Reprendre
+                </button>
+                <button type="button" className="ghost tiny" onClick={() => forget(seat.roomId)} aria-label="Oublier">
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="hint">Les parties commencées restent ouvertes 7 jours. Depuis un autre appareil, entrez le code et le même prénom.</p>
+        </section>
+      )}
 
       <section className="panel">
         <label className="field">
@@ -118,6 +162,7 @@ export function Home({ connected, initialCode, onCreate, onJoin }: Props) {
           <li>Première pose : au moins 51 points, avec une tierce franche (suite sans joker).</li>
           <li>Une fois posé, on complète les combinaisons de tous et on récupère les jokers.</li>
           <li>Gagne la manche qui défausse sa dernière carte. Les autres marquent leurs cartes en main (×2 sans pose).</li>
+          <li>Une partie commencée reste ouverte 7 jours : revenez avec le code de la table et votre prénom.</li>
         </ul>
       </section>
     </main>
