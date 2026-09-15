@@ -1,11 +1,11 @@
 # VisualRami
 
-[![CI](https://github.com/vincentlauriat/VisualRami/actions/workflows/ci.yml/badge.svg)](https://github.com/vincentlauriat/VisualRami/actions/workflows/ci.yml)
+[![CI](https://github.com/vincentlauriat/VisualRami/actions/workflows/ci.yml/badge.svg)](https://github.com/vincentlauriat/VisualRami/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Online French Rummy (**Rami 51**) for 2 to 6 players, with **live video and voice** between everyone at the
 table. The game state is authoritative on the server; audio and video flow peer-to-peer over WebRTC.
 
-Live (Azure sandbox): https://visualrami-vl-09150521.azurewebsites.net
+Play: https://visualrami-vl-09150521.azurewebsites.net · Landing page: https://lauriat.fr/outils/visualrami/ · More apps: https://vincentlauriat.github.io
 
 ## Features
 
@@ -92,6 +92,14 @@ client/    React + Vite: lobby, table, hand interactions, WebRTC mesh hook
 Scripts/   build-azure.sh (App Service package), probe-remote.mjs (end-to-end probe)
 docs/      execution plan, game rules, Azure deployment guide
 ```
+
+## Contributing
+
+Issues and pull requests are welcome. Run `npm test` and `npm run typecheck` before opening a PR; CI runs both plus the build.
+
+## License
+
+[MIT](LICENSE) © 2026 Vincent Lauriat
 
 ## Rules in brief
 
