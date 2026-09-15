@@ -5,9 +5,11 @@ interface Props {
   messages: ChatMessage[];
   log: string[];
   onSend: (text: string) => void;
+  /** Closes the panel when it is shown as a bottom sheet (phones). */
+  onClose?: () => void;
 }
 
-export function Chat({ messages, log, onSend }: Props) {
+export function Chat({ messages, log, onSend, onClose }: Props) {
   const [text, setText] = useState("");
   const [tab, setTab] = useState<"log" | "chat">("log");
   const bottom = useRef<HTMLDivElement>(null);
@@ -33,6 +35,11 @@ export function Chat({ messages, log, onSend }: Props) {
         <button type="button" className={tab === "chat" ? "on" : ""} onClick={() => setTab("chat")}>
           Chat {messages.length > 0 && <span className="tag">{messages.length}</span>}
         </button>
+        {onClose && (
+          <button type="button" className="side-close" onClick={onClose} aria-label="Fermer">
+            ✕
+          </button>
+        )}
       </div>
       <div className="side-body">
         {tab === "log"

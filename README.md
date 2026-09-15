@@ -21,6 +21,7 @@ Live (Azure sandbox): https://<app>.azurewebsites.net
 | Text chat and game log | ✅ |
 | Reconnect after a page reload, absent-player auto-turn, host handover | ✅ |
 | Games survive a server restart; come back with the table code and your name (7 days) | ✅ |
+| Phone-friendly table layout (tested at 390 px) | ✅ |
 | Azure App Service packaging + remote probe | ✅ |
 | TURN relay for restrictive networks | ⚙️ configurable, bring your own server |
 | Drag-and-drop hand, spectator mode, game history | ⏳ roadmap |
