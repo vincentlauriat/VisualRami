@@ -5,7 +5,7 @@
 Online French Rummy (**Rami 51**) for 2 to 6 players, with **live video and voice** between everyone at the
 table. The game state is authoritative on the server; audio and video flow peer-to-peer over WebRTC.
 
-Play: https://visualrami-vl-09150521.azurewebsites.net · Landing page: https://lauriat.fr/outils/visualrami/ · More apps: https://vincentlauriat.github.io
+Landing page: https://lauriat.fr/outils/visualrami/ · More apps: https://vincentlauriat.github.io
 
 ## Features
 

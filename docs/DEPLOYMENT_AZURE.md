@@ -1,7 +1,6 @@
 # Deploying VisualRami on Azure App Service
 
-Validated on 2026-09-15 in the Azure DevTest sandbox. This guide is generic; the sandbox-specific
-values are in the last section.
+Validated on 2026-09-15 on a Basic B1 Linux plan in West Europe. The procedure below is generic.
 
 ## Requirements
 
@@ -65,14 +64,3 @@ build-time `VITE_TURN_URL` / `VITE_TURN_USERNAME` / `VITE_TURN_CREDENTIAL` for a
 | `/healthz` 200 right after deploy, then old behaviour | the previous container answers until the recycle (~40 s) | wait for the new deployment's `end_time`, then probe |
 | 503 with "site is being blocked" | repeated cold-start failures | read `LogFiles/StartupLogs/*_failure.log` after `az webapp log download` |
 | Quota `Current Limit (B1 VMs): 0` | regional App Service quota | deploy the plan in another region (the RG can be elsewhere) |
-
-## Sandbox values (2026-09-15)
-
-| Item | Value |
-|---|---|
-| Subscription | Azure DevTest subscription 1 |
-| Resource group | `rg-dev-vincent-sandbox` (North Europe) |
-| Plan | `asp-urban-09121356`, B1, **West Europe** (shared with UrbanExplorer, no extra cost) |
-| Web App | `visualrami-vl-09150521` |
-| URL | https://visualrami-vl-09150521.azurewebsites.net |
-| Remove | `az webapp delete -g rg-dev-vincent-sandbox -n visualrami-vl-09150521` |
