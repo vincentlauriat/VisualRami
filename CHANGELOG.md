@@ -5,6 +5,7 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 ## [Unreleased]
 
 ### Added
+- Public repository under the MIT license; landing page on lauriat.fr, listed on vincentlauriat.github.io and the GitHub profile.
 - Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
 
 ### Changed
