@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.env
+.omc/
+certs/
+COMMANDS.md
+MEMORY.md
+CHANGES.md
+TODOS.md
+PLAN.md
+release/
