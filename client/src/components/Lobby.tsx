@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { PublicGameState } from "@visualrami/shared";
+import { MAX_PLAYERS, type PublicGameState } from "@visualrami/shared";
 import type { WebRTCState } from "../lib/useWebRTC";
 import { VideoTile } from "./VideoTile";
 import { MediaControls } from "./MediaControls";
@@ -67,7 +67,7 @@ export function Lobby({ state, rtc, onStart, onLeave }: Props) {
       <MediaControls rtc={rtc} />
 
       <section className="panel">
-        <h2>Joueurs ({state.players.length}/4)</h2>
+        <h2>Joueurs ({state.players.length}/{MAX_PLAYERS})</h2>
         <ul className="player-list">
           {state.players.map((p) => (
             <li key={p.id}>

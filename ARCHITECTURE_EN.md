@@ -47,7 +47,7 @@ Three npm workspaces:
 
 ## Media
 
-- One `RTCPeerConnection` per other player (mesh, fine for ≤ 4).
+- One `RTCPeerConnection` per other player (mesh: up to 5 connections per client with 6 players; beyond that an SFU would be needed).
 - Perfect negotiation: `polite = selfId > peerId`; both sides may add tracks at any time.
 - The mesh is torn down synchronously on every socket `connect` and on `rtc:peer-reset`; a per-peer watchdog rebuilds a connection that is not stable and connected within 8 s. Leaving the table stops local tracks.
 - Media is requested when the player is seated; failure falls back to audio-only, then to receive-only.
