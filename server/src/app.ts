@@ -299,9 +299,16 @@ export function createApp(options: AppOptions = {}) {
 
   const sweeper = setInterval(() => rooms.sweep(), 10 * 60 * 1000);
   sweeper.unref();
-  const flush = () => rooms.saveNow();
-  process.once("SIGTERM", flush);
-  process.once("SIGINT", flush);
+  // Graceful stop: persist the rooms, close the listener, then exit. Installing a signal
+  // handler replaces Node's default exit, so the handler MUST terminate the process itself.
+  const shutdown = () => {
+    rooms.saveNow();
+    io.close();
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 2000).unref();
+  };
+  process.once("SIGTERM", shutdown);
+  process.once("SIGINT", shutdown);
 
   return { app, server, io, rooms };
 }
