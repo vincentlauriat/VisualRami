@@ -48,6 +48,8 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
   const [selected, setSelected] = useState<string[]>([]);
   const [staged, setStaged] = useState<Staged[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
+  // Log/chat panel: always visible on wide screens, a bottom sheet toggled from the top bar on phones.
+  const [sideOpen, setSideOpen] = useState(false);
 
   // Keep local hand order stable while syncing with the server's hand content.
   useEffect(() => {
@@ -151,16 +153,26 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
   const canPlay = isMyTurn && state.phase === "play";
 
   return (
-    <div className="game">
+    <div className={`game${sideOpen ? " side-open" : ""}`}>
       <header className="topbar">
         <h1>
-          <span className="logo">🃏</span> VisualRami <span className="tag">table {state.roomId}</span>
+          <span className="logo">🃏</span> <span className="brand">VisualRami</span>
+          <span className="tag">table {state.roomId}</span>
           <span className="tag">manche {state.round}</span>
         </h1>
         <div className="topbar-right">
           <MediaControls rtc={rtc} compact />
+          <button
+            type="button"
+            className={`ghost side-toggle${sideOpen ? " on" : ""}`}
+            onClick={() => setSideOpen((v) => !v)}
+            aria-expanded={sideOpen}
+            aria-label="Journal et chat"
+          >
+            💬{chat.length > 0 && <span className="tag">{chat.length}</span>}
+          </button>
           <button type="button" className="ghost" onClick={onLeave} title="Votre place reste réservée : revenez avec le code de la table">
-            Quitter (place gardée)
+            Quitter
           </button>
         </div>
       </header>
@@ -321,7 +333,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
           </section>
         </main>
 
-        <Chat messages={chat} log={state.log} onSend={onSendChat} />
+        <Chat messages={chat} log={state.log} onSend={onSendChat} onClose={() => setSideOpen(false)} />
       </div>
 
       {state.phase === "finished" && (
