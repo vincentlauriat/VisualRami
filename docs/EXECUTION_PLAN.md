@@ -83,7 +83,12 @@ unbounded signalling/chat, discard pile leak, TURN hook, open CORS). See `CHANGE
 
 - Drag-and-drop hand reordering, keyboard shortcuts.
 - Spectator mode, per-round history, end-of-game screen (target score).
-- Sound cues (your turn, card drawn), accessibility audit. (Phone layout pass done 2026-09-15.)
+- Sound cues (your turn, card drawn). (Phone layout pass done 2026-09-15; device-adaptation pass
+  — tablet portrait, landscape, coarse pointer — done 2026-09-18.)
+- Accessibility: audit done 2026-09-18 (`docs/AUDIT_UI.md`, 12/20). Responsive findings fixed in the
+  same pass; the P1 accessibility findings remain open — melds are keyboard-inoperable, the
+  round-result overlay lacks dialog semantics and focus management, and the closed log/chat sheet
+  stays in the tab order.
 - Persistent rooms (Redis or Azure Cache) if the server must scale beyond one instance
   (Socket.IO sticky sessions or adapter).
 

@@ -5,8 +5,16 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 ## [Unreleased]
 
 ### Added
+- Device-aware layout beyond the phone: a tablet-portrait tier (real card and opponent sizes instead of phone sizing), a landscape tier that moves opponents to a left rail and pins the game to the viewport so the hand never falls below the fold, and touch-sized controls on any coarse pointer regardless of viewport width.
+- Product record (`PRODUCT.md`) and a UI technical audit (`docs/AUDIT_UI.md`).
 - Public repository under the MIT license; landing page on lauriat.fr, listed on vincentlauriat.github.io and the GitHub profile.
 - Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
+
+### Fixed
+- The camera/microphone error was hidden on phones: the rule that hid it matched nothing else, so "Accès caméra/micro refusé" never appeared on the device where it happens most.
+- Safe-area insets were inert without `viewport-fit=cover`, so the sticky action bar sat under the iPhone home indicator.
+- The round-result overlay could be covered by the log/chat panel on phones.
+- Native checkboxes, number inputs and scrollbars rendered in light mode on the dark table (`color-scheme`).
 
 ### Changed
 - Phone layout (≤ 900 px): stacked sections, opponents in a scrollable strip, smaller cards, sticky action bar with 44 px targets, log/chat as a bottom sheet behind a 💬 button, iOS safe areas and no zoom on input focus.
