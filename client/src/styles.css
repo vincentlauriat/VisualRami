@@ -13,6 +13,7 @@
   --radius: 12px;
   --card-w: 58px;
   --card-h: 82px;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -34,10 +35,13 @@ button {
   cursor: pointer;
   transition: background 0.15s, transform 0.1s;
 }
-button:hover:not(:disabled) { background: #2b4334; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 button.primary { background: var(--gold); color: #1a1500; border-color: var(--gold-dark); font-weight: 600; }
-button.primary:hover:not(:disabled) { background: #f0c866; }
+@media (hover: hover) {
+  button:hover:not(:disabled) { background: #2b4334; }
+  button.primary:hover:not(:disabled) { background: #f0c866; }
+}
+button:active:not(:disabled) { transform: translateY(1px); }
 button.ghost { background: transparent; }
 button.tiny { padding: 2px 6px; font-size: 12px; }
 button.off { border-color: var(--danger); color: #ffc1bd; }
@@ -131,7 +135,7 @@ h2 { font-size: 17px; }
 .media-controls.compact button { padding: 6px 10px; font-size: 13px; }
 
 /* Game layout */
-.game { height: 100%; display: flex; flex-direction: column; padding: 10px 14px; gap: 8px; }
+.game { --gutter: 14px; height: 100%; display: flex; flex-direction: column; padding: 10px var(--gutter); gap: 8px; }
 .game-body { flex: 1; display: grid; grid-template-columns: 1fr 260px; gap: 12px; min-height: 0; }
 .table-area { display: grid; grid-template-rows: auto 1fr auto; gap: 10px; min-height: 0; }
 .opponents { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
@@ -158,7 +162,10 @@ h2 { font-size: 17px; }
 }
 .meld .card + .card { margin-left: -14px; }
 .meld.target { border-color: var(--gold); cursor: pointer; }
-.meld.target:hover { background: rgba(230, 184, 79, 0.15); }
+@media (hover: hover) {
+  .meld.target:hover { background: rgba(230, 184, 79, 0.15); }
+}
+.meld.target:active { background: rgba(230, 184, 79, 0.22); }
 .meld-owner { position: absolute; right: 8px; bottom: 2px; font-size: 10px; color: #cfe3d5; }
 .meld.staged { background: rgba(230, 184, 79, 0.12); align-items: center; gap: 6px; padding-bottom: 8px; }
 .meld.staged .tiny { margin-left: 8px; }
@@ -184,7 +191,11 @@ h2 { font-size: 17px; }
 .card.joker { background: linear-gradient(135deg, #fff6d5, #ffe0e0 60%, #d7e8ff); color: #6b2fb3; }
 .card.joker .corner i { font-size: 9px; letter-spacing: 0; }
 .card.clickable { cursor: pointer; }
-.card.clickable:hover { transform: translateY(-4px); }
+@media (hover: hover) {
+  .card.clickable:hover { transform: translateY(-4px); }
+}
+/* Touch has no hover: the lift has to come from the press itself. */
+.card.clickable:active { transform: translateY(-4px); }
 .card.selected { transform: translateY(-14px); box-shadow: 0 0 0 3px var(--gold), 0 6px 10px rgba(0, 0, 0, 0.4); }
 .card.dimmed { opacity: 0.35; }
 .card .order {
@@ -233,8 +244,8 @@ h2 { font-size: 17px; }
 .chat-form input { flex: 1; min-width: 0; }
 
 /* Round result */
-.overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); display: grid; place-items: center; z-index: 10; }
-.result { width: min(360px, 92vw); display: grid; gap: 14px; text-align: center; }
+.overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); display: grid; place-items: center; z-index: 30; padding: 16px; }
+.result { width: min(360px, 92vw); max-height: 90dvh; overflow: auto; display: grid; gap: 14px; text-align: center; }
 .result table { width: 100%; border-collapse: collapse; }
 .result td, .result th { padding: 6px 8px; border-bottom: 1px solid #27392f; }
 .result tr.winner td { color: var(--gold); font-weight: 600; }
@@ -246,15 +257,20 @@ h2 { font-size: 17px; }
   .video-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 
   /* Game: one column, natural document flow, sticky action bar. */
-  .game { height: auto; min-height: 100dvh; padding: 8px 12px calc(12px + env(safe-area-inset-bottom)); gap: 8px; }
+  .game {
+    --gutter: max(12px, env(safe-area-inset-left), env(safe-area-inset-right));
+    height: auto; min-height: 100dvh;
+    padding: 8px var(--gutter) max(12px, env(safe-area-inset-bottom)); gap: 8px;
+  }
   .topbar h1 { font-size: 16px; gap: 6px; }
   .topbar .brand { display: none; }
   .topbar .logo { font-size: 22px; }
   .topbar .tag { margin-left: 2px; }
   .topbar-right { gap: 6px; }
-  .topbar-right button { padding: 8px 10px; min-height: 40px; }
+  .topbar-right button { padding: 8px 10px; min-height: 44px; }
   .media-controls.compact button { padding: 8px 10px; }
-  .media-controls .hint { display: none; }
+  /* This hint is only ever the camera/mic error. Give it its own line rather than hiding it. */
+  .media-controls .hint { flex-basis: 100%; margin: 2px 0 0; font-size: 12px; }
   .side-toggle { display: inline-flex; align-items: center; }
   .side-toggle.on { color: var(--gold); }
   .game-body { display: block; }
@@ -285,11 +301,13 @@ h2 { font-size: 17px; }
   .card.selected { transform: translateY(-10px); }
 
   .actions {
-    position: sticky; bottom: 0; z-index: 5; margin: 0 -12px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    position: sticky; bottom: 0; z-index: 5;
+    margin-inline: calc(-1 * var(--gutter));
+    padding: 8px var(--gutter) max(8px, env(safe-area-inset-bottom));
     background: var(--bg); border-top: 1px solid #27392f; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
   }
   .actions .sort { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-  .actions .sort button { padding: 8px 4px; min-height: 40px; font-size: 13px; }
+  .actions .sort button { padding: 8px 4px; min-height: 44px; font-size: 13px; }
   .actions .play { display: contents; }
   .actions .play button { min-height: 48px; font-size: 15px; }
   .staging { padding: 8px; }
@@ -297,14 +315,159 @@ h2 { font-size: 17px; }
 
   /* Log + chat as a bottom sheet. */
   .side {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; max-height: 70vh; height: 70vh;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; max-height: 70dvh; height: 70dvh;
     border-radius: 16px 16px 0 0; transform: translateY(105%); transition: transform 0.2s ease;
     box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
   }
   .game.side-open .side { transform: translateY(0); }
   .side-close { display: block; flex: none; width: 44px; border-radius: 0; border: none; border-bottom: 1px solid #27392f; background: transparent; }
-  .chat-form { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+  .chat-form { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
   .chat-form button { min-height: 44px; }
   .chat-form input { font-size: 16px; } /* prevents iOS zoom on focus */
   .home input, .lobby input { font-size: 16px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Tablet held in portrait (iPad 768–834, iPad mini 744). The 900px split already
+   puts it in the one-column table layout, which is right — what it does not need
+   is phone sizing on twice the glass. The min-height guard keeps landscape
+   phones (≤430 tall) out of this block.
+   --------------------------------------------------------------------------- */
+@media (min-width: 600px) and (max-width: 900px) and (min-height: 700px) {
+  .home-columns { grid-template-columns: 1fr 1fr; }
+
+  .topbar h1 { font-size: 19px; }
+  .topbar .brand { display: inline; }
+
+  .opponents { gap: 12px; }
+  .opponent { width: 190px; }
+  .opponent .video-tile .video-name { font-size: 12px; padding: 2px 7px; }
+  .opponent-info { font-size: 12px; }
+  .opponent-info > span { white-space: nowrap; }
+  .mini-hand { display: inline-flex; flex: none; }
+
+  .felt { min-height: min(300px, 34dvh); padding: 14px 16px; border-radius: 24px; border-width: 5px; }
+  .piles { gap: 20px; }
+  .turn-banner { font-size: 17px; }
+  .melds { gap: 10px; }
+  .meld .card + .card { margin-left: -14px; }
+
+  .video-tile.small { width: 110px; }
+  .video-tile.small .video-name { display: flex; }
+  .hand { gap: 7px; }
+  .hand .card { --card-w: 56px; --card-h: 79px; min-width: 52px; }
+  .hand .card .corner b { font-size: 15px; }
+  .hand .card .center { font-size: 29px; }
+  .card.selected { transform: translateY(-14px); }
+
+  /* Width is no longer scarce: sort and play sit side by side again. */
+  .actions { grid-template-columns: auto auto; justify-content: space-between; align-items: center; }
+  .actions .sort { grid-column: auto; display: flex; }
+  .actions .sort button { padding: 8px 14px; font-size: 14px; }
+  .actions .play { display: flex; }
+  .actions .play button { padding: 8px 16px; }
+
+  .side { height: 62dvh; max-height: 62dvh; }
+}
+
+/* ---------------------------------------------------------------------------
+   Any coarse pointer, at any width — a tablet in landscape is 1024px wide and
+   still played with a thumb, so viewport width cannot be what decides this.
+   Playing cards are already 68–82px tall and are excluded.
+   --------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  button:not(.card) { min-height: 44px; }
+  button.tiny {
+    min-width: 44px; min-height: 44px; padding: 0;
+    display: inline-grid; place-items: center;
+  }
+  input:not([type="checkbox"]) { min-height: 44px; }
+  input[type="checkbox"] { width: 22px; height: 22px; }
+  .tabs button { min-height: 48px; }
+  .seat-list li { gap: 10px; }
+  /* Nothing on the table should depend on a pointer resting on it. */
+  .meld.target { border-width: 2px; padding: 7px 9px 15px 7px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Phone rotated: ~390px of height and plenty of width. A bottom sheet is the
+   wrong shape here — it would eat three quarters of the table — so the log and
+   chat come in from the side instead, and every vertical rhythm tightens.
+   --------------------------------------------------------------------------- */
+@media (max-width: 900px) and (max-height: 520px) and (orientation: landscape) {
+  .game {
+    height: 100dvh; min-height: 0; overflow: hidden;
+    padding-top: max(4px, env(safe-area-inset-top)); padding-bottom: 4px; gap: 4px;
+  }
+  .game-body { min-height: 0; height: 100%; }
+  .table-area {
+    display: grid; grid-template-columns: 92px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto;
+    gap: 6px 10px; min-height: 0; height: 100%;
+  }
+  .topbar h1 { font-size: 15px; }
+  .topbar-right button { min-height: 38px; padding: 6px 9px; }
+
+  .opponents {
+    grid-column: 1; grid-row: 1 / -1;
+    flex-direction: column; flex-wrap: nowrap;
+    gap: 6px; padding: 0 2px 0 0; overflow-x: visible; overflow-y: auto;
+  }
+  .opponent { width: 86px; }
+  .opponent-info { font-size: 10px; }
+
+  .felt {
+    grid-column: 2; grid-row: 1;
+    min-height: 0; padding: 8px 10px; border-width: 3px; border-radius: 14px; gap: 8px;
+    overflow: auto;
+  }
+  .pile .card { --card-w: 40px; --card-h: 56px; }
+  .pile-caption { font-size: 11px; }
+  .me { grid-column: 2; grid-row: 2; min-height: 0; }
+  .hand-area { min-height: 0; }
+  .hand { max-height: 96px; overflow-y: auto; }
+  .piles { gap: 10px; }
+  .turn-banner { font-size: 14px; }
+
+  .me-side { gap: 8px; }
+  .video-tile.small { width: 56px; }
+  .hand { gap: 4px; padding-top: 10px; }
+  .hand .card { --card-w: 44px; --card-h: 62px; min-width: 40px; }
+  .hand .card .corner b { font-size: 12px; }
+  .hand .card .center { font-size: 21px; }
+  .card.selected { transform: translateY(-8px); }
+
+  /* One row of five: vertical space is the scarce axis now. */
+  .actions {
+    position: static; margin-inline: 0; border-top: none; background: none;
+    grid-template-columns: auto auto; justify-content: space-between;
+    padding: 0 0 max(2px, env(safe-area-inset-bottom));
+  }
+  .actions .sort { grid-column: auto; display: flex; }
+  .actions .sort button { min-height: 38px; padding: 6px 10px; font-size: 12px; }
+  .actions .play { display: flex; gap: 8px; }
+  .actions .play button { min-height: 38px; font-size: 13px; }
+
+  .side {
+    top: 0; left: auto; right: 0; bottom: 0;
+    width: min(380px, 62vw); height: auto; max-height: none;
+    border-radius: 16px 0 0 16px;
+    transform: translateX(105%);
+    box-shadow: -8px 0 30px rgba(0, 0, 0, 0.5);
+    padding-right: env(safe-area-inset-right);
+  }
+  .game.side-open .side { transform: translateX(0); }
+  .side-close { width: 48px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Narrow phone: with thumb-sized targets the resume row no longer fits on one
+   line, and the wrapped flex version broke "Vincent · il y a 6 min" across
+   three. Give it an explicit two-row grid instead of letting flex guess.
+   --------------------------------------------------------------------------- */
+@media (max-width: 560px) {
+  .seat-list li { display: grid; grid-template-columns: 1fr auto auto; gap: 6px 10px; align-items: center; }
+  .seat-list li .room-code { grid-area: 1 / 1; }
+  .seat-list li .seat-meta { grid-area: 2 / 1 / 3 / -1; flex: none; }
+  .seat-list li button.primary { grid-area: 1 / 2; }
+  .seat-list li button.ghost { grid-area: 1 / 3; }
 }
