@@ -60,7 +60,7 @@ export function Lobby({ state, rtc, onStart, onLeave }: Props) {
         {state.players
           .filter((p) => p.id !== state.you.id)
           .map((p) => (
-            <VideoTile key={p.id} stream={rtc.remoteStreams[p.id] ?? null} name={p.name} offline={!p.connected} />
+            <VideoTile key={p.id} stream={rtc.remoteStreams[p.id] ?? null} videoOff={rtc.remoteCamOff[p.id]} name={p.name} offline={!p.connected} />
           ))}
       </section>
 

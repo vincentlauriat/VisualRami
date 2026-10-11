@@ -10,9 +10,11 @@ interface Props {
   badge?: string;
   active?: boolean;
   offline?: boolean;
+  /** The peer said its camera is off; its track keeps sending black frames. */
+  videoOff?: boolean;
 }
 
-export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, active, offline }: Props) {
+export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, active, offline, videoOff }: Props) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -20,7 +22,7 @@ export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, a
     el.srcObject = stream;
     if (stream) el.play().catch(() => undefined);
   }, [stream]);
-  const hasVideo = stream?.getVideoTracks().some((t) => t.enabled && t.readyState === "live");
+  const hasVideo = !videoOff && stream?.getVideoTracks().some((t) => t.enabled && t.readyState === "live");
   return (
     <div className={`video-tile${small ? " small" : ""}${active ? " active" : ""}${offline ? " offline" : ""}`}>
       <video ref={ref} autoPlay playsInline muted={muted} className={mirror ? "mirror" : ""} />

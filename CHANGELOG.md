@@ -15,6 +15,7 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Contrast: the "À vous" turn banner and text on the felt use felt-calibrated colours (≥ 5:1), and error text is lifted to 5.7:1.
 - The desktop page was 32 px wider than the window (the chat input's intrinsic width widened the side column) and auto-scrolled sideways when the log updated.
 - A hovered card turned panel-green on desktop.
+- A player who turned their camera off showed as a black tile to the others instead of their initials: a disabled track keeps sending black frames, so camera on/off is now sent to peers over the signalling relay (also on every new or rebuilt connection).
 - The camera/microphone error was hidden on phones: the rule that hid it matched nothing else, so "Accès caméra/micro refusé" never appeared on the device where it happens most.
 - Safe-area insets were inert without `viewport-fit=cover`, so the sticky action bar sat under the iPhone home indicator.
 - The round-result overlay could be covered by the log/chat panel on phones.

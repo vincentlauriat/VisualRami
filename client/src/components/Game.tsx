@@ -212,6 +212,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
               <div key={p.id} className={`opponent${state.currentPlayerId === p.id ? " active" : ""}`}>
                 <VideoTile
                   stream={rtc.remoteStreams[p.id] ?? null}
+                  videoOff={rtc.remoteCamOff[p.id]}
                   name={p.name}
                   active={state.currentPlayerId === p.id}
                   offline={!p.connected}

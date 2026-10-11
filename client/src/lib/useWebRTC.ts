@@ -31,6 +31,8 @@ export type MediaStatus = "idle" | "requesting" | "ready" | "audio-only" | "deni
 export interface WebRTCState {
   localStream: MediaStream | null;
   remoteStreams: Record<string, MediaStream>;
+  /** Peers that turned their camera off: their stream still carries (black) video frames. */
+  remoteCamOff: Record<string, boolean>;
   mediaStatus: MediaStatus;
   mediaError: string | null;
   micOn: boolean;
@@ -47,6 +49,7 @@ export interface WebRTCState {
 export function useWebRTC(selfId: string | null, peerIds: string[], epoch: number): WebRTCState {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<Record<string, MediaStream>>({});
+  const [remoteCamOff, setRemoteCamOff] = useState<Record<string, boolean>>({});
   const [mediaStatus, setMediaStatus] = useState<MediaStatus>("idle");
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [micOn, setMicOn] = useState(true);
@@ -54,6 +57,7 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
   const peers = useRef(new Map<string, PeerEntry>());
   const wanted = useRef(new Set<string>());
   const localRef = useRef<MediaStream | null>(null);
+  const camOnRef = useRef(true);
   const selfRef = useRef(selfId);
   selfRef.current = selfId;
 
@@ -100,6 +104,7 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
     setMediaError(null);
     setMicOn(true);
     setCamOn(true);
+    camOnRef.current = true;
   }, []);
 
   const send = useCallback((to: string, data: unknown) => {
@@ -119,6 +124,12 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
     setRemoteStreams((streams) => {
       if (!(peerId in streams)) return streams;
       const next = { ...streams };
+      delete next[peerId];
+      return next;
+    });
+    setRemoteCamOff((off) => {
+      if (!(peerId in off)) return off;
+      const next = { ...off };
       delete next[peerId];
       return next;
     });
@@ -179,9 +190,13 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
         setRemoteStreams((streams) => ({ ...streams, [peerId]: stream }));
       };
       pc.onconnectionstatechange = () => {
-        if (pc.connectionState === "connected" && entry.watchdog) {
-          clearTimeout(entry.watchdog);
-          entry.watchdog = null;
+        if (pc.connectionState === "connected") {
+          if (entry.watchdog) {
+            clearTimeout(entry.watchdog);
+            entry.watchdog = null;
+          }
+          // A new or rebuilt connection does not know our camera is off.
+          if (!camOnRef.current) send(peerId, { media: { cam: false } });
         } else if (pc.connectionState === "disconnected") {
           pc.restartIce();
           armWatchdog();
@@ -202,6 +217,11 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
   useEffect(() => {
     const onSignal = async ({ from, data }: { from: string; data: Record<string, unknown> }) => {
       if (!selfRef.current || !data || !wanted.current.has(from)) return;
+      if (data.media) {
+        const cam = (data.media as { cam?: unknown }).cam;
+        if (typeof cam === "boolean") setRemoteCamOff((off) => ({ ...off, [from]: !cam }));
+        return;
+      }
       const entry = getOrCreatePeer(from);
       const { pc } = entry;
       try {
@@ -312,7 +332,9 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
     const next = !camOn;
     stream.getVideoTracks().forEach((t) => (t.enabled = next));
     setCamOn(next);
-  }, [camOn]);
+    camOnRef.current = next;
+    for (const peerId of peers.current.keys()) send(peerId, { media: { cam: next } });
+  }, [camOn, send]);
 
-  return { localStream, remoteStreams, mediaStatus, mediaError, micOn, camOn, toggleMic, toggleCam, startMedia };
+  return { localStream, remoteStreams, remoteCamOff, mediaStatus, mediaError, micOn, camOn, toggleMic, toggleCam, startMedia };
 }
