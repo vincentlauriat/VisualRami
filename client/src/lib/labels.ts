@@ -27,6 +27,8 @@ export const labels = {
   hintPlay: "Préparez une combinaison, ou défaussez une carte.",
   hintTargets: "Touchez une combinaison dorée pour y ajouter la sélection.",
   hintKeepDiscard: "Carte prise dans la défausse : gardez-la ce tour-ci.",
+  hintAfterLaydown: "Cette carte ira sur la table après votre première pose.",
+  hintDiscardStaged: "Défausser maintenant abandonne la préparation.",
   laydownProgress: (points: number, min: number) =>
     points >= min ? `${points} pts : seuil de ${min} atteint` : `${points} / ${min} pts · encore ${min - points}`,
   pureRunDone: "Tierce franche ✓",

@@ -179,10 +179,14 @@ h2 { font-size: 17px; }
   font-size: 32px; font-weight: 700; color: var(--muted);
 }
 .video-name {
-  position: absolute; left: 6px; bottom: 6px; display: flex; gap: 6px; align-items: center;
+  position: absolute; left: 6px; bottom: 6px; display: flex; gap: 6px; align-items: center; max-width: calc(100% - 12px);
   background: rgba(0, 0, 0, 0.55); padding: 2px 8px; border-radius: 999px; font-size: 13px;
 }
-.video-badge { background: var(--gold); color: #1a1500; border-radius: 999px; padding: 0 6px; font-size: 11px; font-weight: 600; }
+/* A long name stays on one line instead of wrapping over the face. */
+.video-name > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The "(vous)" suffix never goes into the ellipsis: only the name gives way. */
+.video-suffix { flex: none; margin-left: -2px; }
+.video-badge { flex: none; background: var(--gold); color: #1a1500; border-radius: 999px; padding: 0 6px; font-size: 11px; font-weight: 600; }
 /* Another player's "posé": information, not yours, so it does not take the lamp's gold. */
 .video-badge.muted { background: var(--control-face); color: var(--felt-text-strong); }
 .media-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -192,11 +196,16 @@ h2 { font-size: 17px; }
 .game { --gutter: 14px; height: 100%; display: flex; flex-direction: column; padding: 10px var(--gutter); gap: 8px; }
 .game-body { flex: 1; display: grid; grid-template-columns: 1fr 260px; gap: 12px; min-height: 0; }
 .table-area { display: grid; grid-template-rows: auto 1fr auto; gap: 10px; min-height: 0; }
-.opponents { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.opponent { width: clamp(150px, 18vw, 210px); display: grid; gap: 4px; }
+/* One row of seats, always: tiles share the width by player count (--seats includes you) instead of
+   wrapping to a second row, which on a 13" laptop with five opponents crushed the felt to 44px. */
+.opponents { display: flex; gap: 12px; justify-content: center; flex-wrap: nowrap; }
+.opponent {
+  width: min(clamp(150px, 18vw, 210px), calc((100% - (var(--seats, 2) - 2) * 12px) / (var(--seats, 2) - 1)));
+  display: grid; gap: 4px; min-width: 0;
+}
 /* Your own seat lives beside your hand on wide screens; it joins the strip only on phones. */
 .self-seat { display: none; }
-.opponent-info { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.opponent-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 2px 6px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .mini-hand { display: inline-flex; gap: 1px; }
 .mini-hand i { width: 6px; height: 10px; background: #3b5a95; border: 1px solid #1e3060; border-radius: 1px; }
 
@@ -204,7 +213,7 @@ h2 { font-size: 17px; }
   background: radial-gradient(ellipse at center, var(--felt), var(--felt-dark));
   border: 6px solid #3a2a16; border-radius: 40px; padding: 16px 20px; min-height: 0; overflow: auto;
   box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4);
-  display: flex; flex-direction: column; gap: 14px;
+  display: flex; flex-direction: column; gap: 14px; min-height: 200px;
 }
 .piles { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
 .pile { display: grid; justify-items: center; gap: 4px; }
@@ -260,6 +269,7 @@ button.meld { color: inherit; text-align: left; }
 /* Gold already means "selected" on a card, so keyboard focus takes the text colour instead. */
 .card:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
 .card.dimmed { opacity: 0.35; }
+.hand .card.selected { z-index: 1; }
 .card .order {
   position: absolute; top: -8px; right: -6px; width: 18px; height: 18px; border-radius: 50%;
   background: var(--gold); color: #1a1500; font-size: 11px; font-weight: 700; display: grid; place-items: center;
@@ -443,6 +453,18 @@ button.meld { color: inherit; text-align: left; }
   .actions.staging-on .sort button:not(:last-child) { display: none; }
   .actions .lay-now { display: inline-flex; align-items: center; justify-content: center; }
   .staging-head > button { display: none; }
+
+  /* The tray leads the felt, so drawing a 15th card can never push it out of view. */
+  .staging { order: -1; }
+  /* Once drawn from, the piles are only a reference: they shrink to give the melds the room. */
+  .felt.playing .pile .card { --card-w: 34px; --card-h: 48px; }
+  .felt.playing .pile .card .corner b { font-size: 10px; }
+  .felt.playing .pile .card .center { font-size: 17px; }
+  .felt.playing .pile .card .count { font-size: 13px; }
+  .felt.playing .pile-caption { display: none; }
+  /* Fifteen cards fan into two rows of eight instead of leaving one alone on a third row. */
+  .hand.dense { gap: 5px 0; }
+  .hand.dense .card { flex: 0 0 46px; min-width: 0; margin-right: -4px; }
 }
 
 /* ---------------------------------------------------------------------------
@@ -495,6 +517,7 @@ button.meld { color: inherit; text-align: left; }
    --------------------------------------------------------------------------- */
 @media (pointer: coarse) {
   button:not(.card) { min-height: 44px; }
+  button:where(:has(> .icon)) { min-width: 44px; }
   button.tiny {
     min-width: 44px; min-height: 44px; padding: 0;
     display: inline-grid; place-items: center;

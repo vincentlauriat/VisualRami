@@ -34,7 +34,8 @@ export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, a
         </div>
       )}
       <div className="video-name">
-        <span>{name}{suffix ? ` ${suffix}` : ""}</span>
+        <span>{name}</span>
+        {suffix && <span className="video-suffix">{suffix}</span>}
         {badge && <span className={`video-badge${badgeMuted ? " muted" : ""}`}>{badge}</span>}
       </div>
     </div>
