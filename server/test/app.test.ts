@@ -117,6 +117,11 @@ describe("socket server", () => {
     expect(signal.from).toBe(created.playerId);
     expect(signal.data).toEqual({ candidate: { candidate: "candidate:1 1 udp 1 1.2.3.4 5 typ host" } });
 
+    const media = new Promise<{ from: string; data: unknown }>((resolve) => b.once("rtc:signal", resolve));
+    a.emit("rtc:signal", { to: joined.playerId, data: { media: { cam: "off" } } }); // dropped: cam not boolean
+    a.emit("rtc:signal", { to: joined.playerId, data: { media: { cam: false } } });
+    expect((await media).data).toEqual({ media: { cam: false } });
+
     // Rejoin after a reload with the same token
     const peerReset = new Promise<{ playerId: string }>((resolve) => a.once("rtc:peer-reset", resolve));
     b.disconnect();

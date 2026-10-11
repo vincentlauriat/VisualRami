@@ -69,6 +69,11 @@ function isValidSignal(data: unknown): boolean {
     const c = d.candidate as Record<string, unknown> | null;
     return !!c && typeof c === "object" && typeof c.candidate === "string";
   }
+  if (keys[0] === "media") {
+    // Camera on/off. A disabled track still sends black frames, so the receiver cannot tell on its own.
+    const m = d.media as Record<string, unknown> | null;
+    return !!m && typeof m === "object" && Object.keys(m).length === 1 && typeof m.cam === "boolean";
+  }
   return false;
 }
 
