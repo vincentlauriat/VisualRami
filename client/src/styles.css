@@ -56,7 +56,7 @@ button {
 }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 /* :where keeps this at element specificity, so tabs, ghost and the variants below still win. */
-button:where(:not(.card, .meld, .ghost, .side-close, .tabs > *)) {
+button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)) {
   background: var(--control-face);
   border-color: var(--control-side);
   border-top-color: var(--control-rim);
@@ -65,8 +65,8 @@ button:where(:not(.card, .meld, .ghost, .side-close, .tabs > *)) {
 }
 /* Pressed, and unavailable, controls lie flush with the table: the edge collapses and the face
    drops by the same 2px, so the margin box (and every neighbour) stays put. */
-button:where(:not(.card, .meld, .ghost, .side-close, .tabs > *)):active:not(:disabled),
-button:where(:not(.card, .meld, .ghost, .side-close, .tabs > *)):disabled {
+button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)):active:not(:disabled),
+button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)):disabled {
   margin-top: 2px;
   border-bottom-width: 1px;
   transform: none;
@@ -86,7 +86,7 @@ button.primary {
 @media (hover: hover) {
   /* Cards keep their face (a hovered card turning panel-green read as a different card), and a
      target meld keeps its own gold hover. */
-  button:where(:not(.card, .meld, .ghost, .side-close, .tabs > *)):hover:not(:disabled) { background: var(--control-face-hover); }
+  button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)):hover:not(:disabled) { background: var(--control-face-hover); }
   button:where(.ghost, .side-close, .tabs > *):hover:not(:disabled) { background: var(--control-face); }
   button.primary:hover:not(:disabled) { background: #f0c866; }
 }
@@ -222,9 +222,8 @@ h2 { font-size: 17px; }
 .turn-hint { font-size: 13px; color: var(--felt-text); }
 .turn-banner .mine { color: var(--felt-accent); }
 .felt .hint { color: var(--felt-text); }
-.melds { display: flex; flex-wrap: wrap; gap: 12px; align-content: flex-start; }
 .meld {
-  position: relative; display: flex; padding: 8px 10px 16px 8px; border-radius: 10px;
+  position: relative; display: flex; padding: 6px 8px 6px 6px; border-radius: 10px;
   background: rgba(0, 0, 0, 0.18); border: 1px solid transparent;
 }
 button.meld { color: inherit; text-align: left; }
@@ -234,11 +233,102 @@ button.meld { color: inherit; text-align: left; }
   .meld.target:hover { background: rgba(230, 184, 79, 0.15); }
 }
 .meld.target:active { background: rgba(230, 184, 79, 0.22); }
-.meld-owner { position: absolute; right: 8px; bottom: 2px; font-size: 10px; color: var(--felt-text); }
+
+/* Each player's melds lie in their own zone. Below the laptop width the zones are rows on the felt,
+   each led by its owner's name; the laptop layout moves them in front of the seats (see below). */
+.felt-center, .zones-top { display: contents; }
+.zone {
+  order: 1; position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 4px; border-radius: 12px; transition: background-color 0.3s ease-out;
+}
+.zone.empty { display: none; }
+/* A meld on the table fans like a hand held closed: every card but the last shows only its index
+   strip. A strip is a real narrower card, not an overlap, so a long run sizes honestly in the layout. */
+.zone .meld .card:not(:last-child) { width: 21px; overflow: hidden; }
+.zone .meld .card + .card { margin-left: 0; }
+.zone .meld .card:not(:last-child) .corner { left: 3px; }
+.zone .meld .card:not(:last-child) .center { display: none; }
+.zone-owner {
+  flex: 0 0 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12px; font-weight: 600; color: var(--felt-text-strong);
+}
+.zone.active .zone-owner::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: var(--felt-accent); vertical-align: 1px; }
+/* The seat whose turn it is: the face has the gold frame, its melds a quiet lit edge. */
+.zone.active { background: rgba(253, 253, 248, 0.05); box-shadow: inset 0 0 0 1px rgba(223, 238, 228, 0.18); }
+/* A first laydown lights the zone for the whole table, then fades back to the felt. */
+.zone.fresh { animation: zone-open 3.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes zone-open {
+  0% { background-color: rgba(253, 253, 248, 0.26); }
+  100% { background-color: rgba(253, 253, 248, 0.04); }
+}
+.zone-event {
+  flex: none; padding: 2px 9px; border-radius: 999px; font-size: 13px; font-weight: 700;
+  background: rgba(10, 17, 12, 0.6); color: var(--felt-text-strong); font-variant-numeric: tabular-nums;
+}
+.zone.pinged { background: rgba(253, 253, 248, 0.12); }
+.seat-jump { display: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .meld.staged { background: rgba(230, 184, 79, 0.12); align-items: center; gap: 6px; padding-bottom: 8px; }
 /* While it is your turn to draw, the two piles carry the lamp: that is where your hand goes next. */
 .pile .card.clickable { box-shadow: 0 0 0 3px var(--gold), 0 2px 4px rgba(0, 0, 0, 0.35); }
 .meld.staged .tiny { margin-left: 8px; }
+
+/* ---------------------------------------------------------------------------
+   Laptop and wider: the players sit around the felt. Opponents take the left, top
+   and right edges clockwise from your left, in turn order, and each one's melds lie
+   on the felt in front of their face. You are at the bottom: your melds sit right
+   above your hand. Side seats appear from three opponents on, which keeps six
+   players to one top row of three and the felt tall on a 13" screen.
+   --------------------------------------------------------------------------- */
+@media (min-width: 901px) {
+  .table-area {
+    --lw: 0px;
+    grid-template-columns: var(--lw) repeat(var(--top, 1), minmax(0, 1fr)) var(--lw);
+    grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 0;
+  }
+  .table-area.sided { --lw: clamp(140px, 13vw, 184px); }
+  .opponents { display: contents; }
+  .opponent { width: 100%; }
+  .seat-top { grid-row: 1; justify-self: center; width: min(210px, calc(100% - 12px)); }
+  .table-area.sided .seat-top { width: min(176px, calc(100% - 12px)); }
+  .seat-left { grid-row: 2; grid-column: 1; align-self: center; padding-right: 12px; }
+  .seat-right { grid-row: 2; grid-column: -2; align-self: center; padding-left: 12px; }
+  .felt { grid-row: 2; grid-column: 2 / -2; }
+  .me { grid-row: 3; grid-column: 1 / -1; }
+
+  .felt {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto 1fr auto;
+    grid-template-areas: "top top top" "left center right" "me me me"; gap: 8px 12px; padding: 12px 14px;
+  }
+  .felt-center { grid-area: center; display: flex; flex-direction: column; justify-content: center; gap: 10px; min-width: 0; }
+  /* A column never squeezes a zone narrower than its longest meld; spare width is shared out, so a
+     zone stays under its seat and in seat order even when one player has laid much more. */
+  .zones-top {
+    grid-area: top; display: grid; grid-template-columns: repeat(var(--top, 1), minmax(min-content, 1fr)); gap: 12px;
+    align-items: start;
+  }
+  /* Cards on the table are read by their index, at the size of a hand held across the table. */
+  .zone .card.small { --card-w: 38px; --card-h: 53px; }
+  .zone .card.small .corner b { font-size: 12px; }
+  .zone .card.small .corner i { font-size: 10px; }
+  .zone .card.small .center { font-size: 19px; }
+  .zone .meld { padding: 4px 5px; }
+  .zone .meld .card:not(:last-child) { width: 18px; }
+  /* With side seats the centre narrows: the piles shrink and the turn line goes under them. */
+  .table-area.sided .pile .card { --card-w: 46px; --card-h: 64px; }
+  .table-area.sided .pile .card .center { font-size: 23px; }
+  .table-area.sided .pile-caption { display: none; }
+  .table-area.sided .piles { gap: 12px; justify-content: center; }
+  .table-area.sided .turn-banner { flex: 1 1 150px; max-width: 260px; margin-left: 4px; justify-items: start; text-align: left; font-size: 15px; }
+  .zone { align-content: flex-start; justify-content: center; min-height: 0; }
+  .zone.empty { display: flex; padding: 0; }
+  .zone-owner { display: none; }
+  .zone-left { grid-area: left; }
+  .zone-right { grid-area: right; }
+  /* A side zone takes what its melds need, up to a fifth of the screen, never less than the seat. */
+  .zone-left, .zone-right { width: max-content; min-width: var(--lw); max-width: clamp(var(--lw), 20vw, 260px); align-self: center; }
+  .zone-me { grid-area: me; }
+}
 
 /* Cards */
 .card {
@@ -332,6 +422,21 @@ button.meld { color: inherit; text-align: left; }
 .chat-form { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--border); }
 .chat-form input { flex: 1; min-width: 0; }
 
+/* Small laptop (up to the common 1366px screen): the log and chat leave the row and come in as a drawer from the right, so the
+   seats and the felt get the whole width. */
+@media (min-width: 901px) and (max-width: 1365px) {
+  .game-body { grid-template-columns: minmax(0, 1fr); }
+  .side-toggle { display: inline-flex; align-items: center; }
+  .side-toggle.on { color: var(--gold); }
+  .side {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 20; width: 360px;
+    border-radius: 16px 0 0 16px; transform: translateX(105%); box-shadow: -8px 0 30px rgba(0, 0, 0, 0.5);
+    visibility: hidden; transition: transform 0.2s ease, visibility 0s linear 0.2s;
+  }
+  .game.side-open .side { transform: translateX(0); visibility: visible; transition: transform 0.2s ease; }
+  .side-close { display: block; flex: none; width: 44px; border-radius: 0; border: none; border-bottom: 1px solid var(--border); background: transparent; }
+}
+
 /* Round result */
 .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); display: grid; place-items: center; z-index: 30; padding: 16px; }
 .result { width: min(360px, 92vw); max-height: 90dvh; overflow: auto; display: grid; gap: 14px; text-align: center; }
@@ -375,9 +480,13 @@ button.meld { color: inherit; text-align: left; }
   .felt { border-width: 4px; border-radius: 18px; padding: 10px; min-height: 200px; overflow: visible; }
   .piles { gap: 14px; }
   .turn-banner { flex-basis: 100%; margin-left: 0; order: -1; font-size: 15px; text-align: center; }
-  .melds { gap: 8px; }
-  .meld { padding: 6px 8px 14px 6px; }
-  .meld .card + .card { margin-left: -16px; }
+  .meld { padding: 5px 6px 5px 5px; }
+  /* The face in the strip is a way to the player's melds on the felt. */
+  .opponent { position: relative; }
+  .seat-jump {
+    display: block; position: absolute; inset: 0; z-index: 1; padding: 0; border: 0; border-radius: 8px;
+    background: transparent; cursor: pointer;
+  }
 
   .me { grid-template-columns: 1fr; gap: 6px; }
   .me-side { display: flex; align-items: center; gap: 10px; justify-items: start; }
@@ -489,8 +598,6 @@ button.meld { color: inherit; text-align: left; }
   .felt { min-height: min(300px, 34dvh); padding: 14px 16px; border-radius: 24px; border-width: 5px; }
   .piles { gap: 20px; }
   .turn-banner { font-size: 17px; }
-  .melds { gap: 10px; }
-  .meld .card + .card { margin-left: -14px; }
 
   .video-tile.small { width: 110px; }
   .video-tile.small .video-name { display: flex; }
@@ -623,4 +730,7 @@ button.meld { color: inherit; text-align: left; }
   .card.clickable:hover, .card.clickable:active, .card.selected { transform: none; }
   .card.selected { filter: brightness(1.04); }
   .side, .game.side-open .side { transition: none; }
+  /* The first laydown still shows, as a steady highlight for its few seconds instead of a fade. */
+  .zone.fresh { animation: none; background-color: rgba(253, 253, 248, 0.14); }
+  .zone { transition: none; }
 }

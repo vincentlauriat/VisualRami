@@ -153,7 +153,19 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
     if (ok) setStaged([]);
   }
 
-  const opponents = state.players.filter((p) => p.id !== state.you.id);
+  // Seats run clockwise from your left, in turn order: the next player sits on your left.
+  const myIndex = state.players.findIndex((p) => p.id === state.you.id);
+  const opponents = [...state.players.slice(myIndex + 1), ...state.players.slice(0, Math.max(0, myIndex))];
+  const sided = opponents.length >= 3;
+  const leftSeat = sided ? opponents[0] : undefined;
+  const rightSeat = sided ? opponents[opponents.length - 1] : undefined;
+  const topSeats = sided ? opponents.slice(1, -1) : opponents;
+  const seatOf = (id: string) => (id === leftSeat?.id ? "left" : id === rightSeat?.id ? "right" : "top");
+  const meldsBy = useMemo(() => {
+    const map = new Map<string, Meld[]>();
+    for (const meld of state.melds) map.set(meld.ownerId, [...(map.get(meld.ownerId) ?? []), meld]);
+    return map;
+  }, [state.melds]);
   const topDiscard = state.discardTop;
   const canDraw = isMyTurn && state.phase === "draw";
   const canPlay = isMyTurn && state.phase === "play";
@@ -190,6 +202,37 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
             : fitsLater
               ? labels.hintAfterLaydown
               : labels.hintPlay;
+
+  // A first laydown is a table event: the player's zone lights up with the points they opened with.
+  const [fresh, setFresh] = useState<{ id: string; points: number } | null>(null);
+  const [spoken, setSpoken] = useState("");
+  const laidBefore = useRef(new Map(state.players.map((p) => [p.id, p.hasLaidDown])));
+  useEffect(() => {
+    const before = laidBefore.current;
+    const opener = state.players.find((p) => p.hasLaidDown && before.get(p.id) === false);
+    laidBefore.current = new Map(state.players.map((p) => [p.id, p.hasLaidDown]));
+    if (!opener) return;
+    const points = (meldsBy.get(opener.id) ?? []).reduce((sum, m) => sum + (analyzeMeld(m.cards)?.points ?? 0), 0);
+    setFresh({ id: opener.id, points });
+    setSpoken(labels.firstLaydownSpoken(opener.name, points, opener.id === state.you.id));
+    const t = setTimeout(() => setFresh(null), 4000);
+    return () => clearTimeout(t);
+  }, [state.players, meldsBy, state.you.id]);
+
+  // On a phone the faces stay in the strip: touching one brings that player's melds into view.
+  const [pinged, setPinged] = useState<string | null>(null);
+  function jumpTo(id: string) {
+    const zone = document.getElementById(`zone-${id}`);
+    if (!zone) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    zone.scrollIntoView({ block: "nearest", inline: "nearest", behavior: reduce ? "auto" : "smooth" });
+    setPinged(id);
+  }
+  useEffect(() => {
+    if (!pinged) return;
+    const t = setTimeout(() => setPinged(null), 1200);
+    return () => clearTimeout(t);
+  }, [pinged]);
 
   // Any change to what would be discarded or abandoned disarms the confirmation.
   useEffect(() => setDiscardArmed(false), [selected, staged, state.phase]);
@@ -238,6 +281,49 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
     if (await onAct({ type: "discard", cardId: selectedCards[0]!.id })) setSelected([]);
   }
 
+  function renderMeld(meld: Meld, ownerName: string) {
+    const clickable = fits.has(meld.id);
+    const cards = meld.cards.map((c) => <CardView key={c.id} card={c} size="small" />);
+    // Cards on the table are pictures, so a target meld can be a real button.
+    return clickable ? (
+      <button
+        key={meld.id}
+        type="button"
+        className="meld target"
+        onClick={() => onMeldClick(meld)}
+        title="Ajouter les cartes sélectionnées ici"
+        aria-label={labels.meldTarget(ownerName, meld.cards)}
+      >
+        {cards}
+      </button>
+    ) : (
+      <div key={meld.id} className="meld" role="group" aria-label={labels.meld(ownerName)}>
+        {cards}
+      </div>
+    );
+  }
+
+  function renderZone(player: { id: string; name: string }, place: "left" | "top" | "right" | "me") {
+    const melds = meldsBy.get(player.id) ?? [];
+    const mine = player.id === state.you.id;
+    const event = fresh?.id === player.id ? fresh : null;
+    const cls = [
+      "zone",
+      `zone-${place}`,
+      melds.length === 0 && "empty",
+      state.currentPlayerId === player.id && !finished && "active",
+      event && "fresh",
+      pinged === player.id && "pinged",
+    ].filter(Boolean).join(" ");
+    return (
+      <div key={player.id} id={`zone-${player.id}`} className={cls} role="group" aria-label={mine ? labels.myZone : labels.zone(player.name)}>
+        <span className="zone-owner" aria-hidden>{mine ? "Vous" : player.name}</span>
+        {event && <span className="zone-event" aria-hidden>{labels.firstLaydownBadge(event.points)}</span>}
+        {melds.map((m) => renderMeld(m, player.name))}
+      </div>
+    );
+  }
+
   return (
     <div className={`game${sideOpen ? " side-open" : ""}`}>
       <header className="topbar" inert={finished}>
@@ -273,7 +359,10 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
       </header>
 
       <div className="game-body" inert={finished}>
-        <main className="table-area">
+        <main
+          className={`table-area${sided ? " sided" : ""}`}
+          style={{ "--top": Math.max(1, topSeats.length) } as CSSProperties}
+        >
           <section className="opponents" ref={strip} style={{ "--seats": state.players.length } as CSSProperties}>
             {/* On a phone your own seat joins the strip, so the hand gets the row it used to take. */}
             <div className={`opponent self-seat${isMyTurn ? " active" : ""}`}>
@@ -283,7 +372,11 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
               </div>
             </div>
             {opponents.map((p) => (
-              <div key={p.id} className={`opponent${state.currentPlayerId === p.id ? " active" : ""}`}>
+              <div
+                key={p.id}
+                className={`opponent seat-${seatOf(p.id)}${state.currentPlayerId === p.id ? " active" : ""}`}
+                style={seatOf(p.id) === "top" ? { gridColumn: String(topSeats.indexOf(p) + 2) } : undefined}
+              >
                 <VideoTile
                   stream={rtc.remoteStreams[p.id] ?? null}
                   videoOff={rtc.remoteCamOff[p.id]}
@@ -301,106 +394,91 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                   </span>
                   <span>{p.handCount} cartes · {p.score} pts</span>
                 </div>
+                {meldsBy.has(p.id) && (
+                  <button type="button" className="seat-jump" onClick={() => jumpTo(p.id)} aria-label={labels.seatJump(p.name)} />
+                )}
               </div>
             ))}
           </section>
 
           <section className={`felt${canPlay ? " playing" : ""}`}>
-            <div className="piles">
-              <div className="pile">
-                <CardBack count={state.stockCount} onClick={canDraw ? () => onAct({ type: "draw", source: "stock" }) : undefined} />
-                <span className="pile-caption" aria-hidden>Talon</span>
-              </div>
-              <div className="pile">
-                {topDiscard ? (
-                  <CardView
-                    card={topDiscard}
-                    onClick={canDraw ? () => onAct({ type: "draw", source: "discard" }) : undefined}
-                    spokenName={labels.discard(topDiscard, canDraw)}
-                  />
-                ) : (
-                  <span className="card empty" role="img" aria-label={labels.emptyDiscard} />
-                )}
-                <span className="pile-caption" aria-hidden>Défausse</span>
-              </div>
-              <div className="turn-banner" aria-live="polite">
-                {state.phase === "finished" ? (
-                  <strong>Manche terminée</strong>
-                ) : isMyTurn ? (
-                  <strong className="mine">{state.phase === "draw" ? "À vous : piochez une carte" : "À vous : posez ou défaussez"}</strong>
-                ) : (
-                  <span>{labels.turnOf(state.players.find((p) => p.id === state.currentPlayerId)?.name ?? "…")}</span>
-                )}
-                {hint && <span className="turn-hint">{hint}</span>}
-              </div>
-            </div>
-
-            {/* Staged melds wait on the felt, where they are about to be laid. */}
-            {staged.length > 0 && (
-              <div className="staging">
-                <div className="staging-head">
-                  {firstLaydown ? (
-                    <div className="laydown-progress">
-                      <span className={`gauge${firstCheck?.ok ? " full" : ""}`} aria-hidden>
-                        <span style={{ width: `${Math.min(100, (stagedTotal / minPoints) * 100)}%` }} />
-                      </span>
-                      <span className="laydown-points">{labels.laydownProgress(stagedTotal, minPoints)}</span>
-                      {state.options.requirePureRun && (
-                        <span className={`pip${firstCheck?.hasPureRun ? " on" : ""}`}>
-                          {firstCheck?.hasPureRun ? labels.pureRunDone : labels.pureRunMissing}
-                        </span>
-                      )}
-                    </div>
+            <div className="felt-center">
+              <div className="piles">
+                <div className="pile">
+                  <CardBack count={state.stockCount} onClick={canDraw ? () => onAct({ type: "draw", source: "stock" }) : undefined} />
+                  <span className="pile-caption" aria-hidden>Talon</span>
+                </div>
+                <div className="pile">
+                  {topDiscard ? (
+                    <CardView
+                      card={topDiscard}
+                      onClick={canDraw ? () => onAct({ type: "draw", source: "discard" }) : undefined}
+                      spokenName={labels.discard(topDiscard, canDraw)}
+                    />
                   ) : (
-                    <span className="laydown-points">{labels.laydownPoints(stagedTotal)}</span>
+                    <span className="card empty" role="img" aria-label={labels.emptyDiscard} />
                   )}
-                  <button type="button" className={canLay ? "primary" : undefined} disabled={!canLay} onClick={layDown}>
-                    Poser sur la table
-                  </button>
+                  <span className="pile-caption" aria-hidden>Défausse</span>
                 </div>
-                <div className="staging-melds">
-                  {staged.map((m, i) => (
-                    <div key={m.cards.map((c) => c.id).join("|")} className="meld staged">
-                      {m.cards.map((c) => (
-                        <CardView key={c.id} card={c} size="small" />
-                      ))}
-                      <button type="button" className="ghost tiny" onClick={() => unstage(i)} aria-label={labels.unstage(m.cards)}>
-                        <Icon name="close" />
-                      </button>
-                    </div>
-                  ))}
+                <div className="turn-banner" aria-live="polite">
+                  {state.phase === "finished" ? (
+                    <strong>Manche terminée</strong>
+                  ) : isMyTurn ? (
+                    <strong className="mine">{state.phase === "draw" ? "À vous : piochez une carte" : "À vous : posez ou défaussez"}</strong>
+                  ) : (
+                    <span>{labels.turnOf(state.players.find((p) => p.id === state.currentPlayerId)?.name ?? "…")}</span>
+                  )}
+                  {hint && <span className="turn-hint">{hint}</span>}
                 </div>
               </div>
-            )}
 
-            <div className="melds">
-              {state.melds.length === 0 && <p className="hint">Aucune combinaison posée pour l'instant.</p>}
-              {state.melds.map((meld) => {
-                const owner = state.players.find((p) => p.id === meld.ownerId);
-                const clickable = fits.has(meld.id);
-                const cards = meld.cards.map((c) => <CardView key={c.id} card={c} size="small" />);
-                const ownerTag = <span className="meld-owner" aria-hidden>{owner?.name}</span>;
-                // Cards on the table are pictures, so a target meld can be a real button.
-                return clickable ? (
-                  <button
-                    key={meld.id}
-                    type="button"
-                    className="meld target"
-                    onClick={() => onMeldClick(meld)}
-                    title="Ajouter les cartes sélectionnées ici"
-                    aria-label={labels.meldTarget(owner?.name ?? "?", meld.cards)}
-                  >
-                    {cards}
-                    {ownerTag}
-                  </button>
-                ) : (
-                  <div key={meld.id} className="meld" role="group" aria-label={labels.meld(owner?.name ?? "?")}>
-                    {cards}
-                    {ownerTag}
+              {/* Staged melds wait on the felt, where they are about to be laid. */}
+              {staged.length > 0 && (
+                <div className="staging">
+                  <div className="staging-head">
+                    {firstLaydown ? (
+                      <div className="laydown-progress">
+                        <span className={`gauge${firstCheck?.ok ? " full" : ""}`} aria-hidden>
+                          <span style={{ width: `${Math.min(100, (stagedTotal / minPoints) * 100)}%` }} />
+                        </span>
+                        <span className="laydown-points">{labels.laydownProgress(stagedTotal, minPoints)}</span>
+                        {state.options.requirePureRun && (
+                          <span className={`pip${firstCheck?.hasPureRun ? " on" : ""}`}>
+                            {firstCheck?.hasPureRun ? labels.pureRunDone : labels.pureRunMissing}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="laydown-points">{labels.laydownPoints(stagedTotal)}</span>
+                    )}
+                    <button type="button" className={canLay ? "primary" : undefined} disabled={!canLay} onClick={layDown}>
+                      Poser sur la table
+                    </button>
                   </div>
-                );
-              })}
+                  <div className="staging-melds">
+                    {staged.map((m, i) => (
+                      <div key={m.cards.map((c) => c.id).join("|")} className="meld staged">
+                        {m.cards.map((c) => (
+                          <CardView key={c.id} card={c} size="small" />
+                        ))}
+                        <button type="button" className="ghost tiny" onClick={() => unstage(i)} aria-label={labels.unstage(m.cards)}>
+                          <Icon name="close" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {state.melds.length === 0 && <p className="hint">Aucune combinaison posée pour l'instant.</p>}
             </div>
+
+            {/* Each player's melds lie in front of their seat, clockwise from your left; yours sit above your hand. */}
+            {leftSeat && renderZone(leftSeat, "left")}
+            <div className="zones-top">{topSeats.map((p) => renderZone(p, "top"))}</div>
+            {rightSeat && renderZone(rightSeat, "right")}
+            {renderZone(me, "me")}
+            <p className="sr-only" aria-live="polite">{spoken}</p>
           </section>
 
           <section className="me">
