@@ -12,6 +12,11 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
 
 ### Fixed
+- Laptop with five opponents: the seat row wrapped to two lines and crushed the felt to 44px at 1280×720; seats now stay on one row sized by player count and the felt keeps at least 200px.
+- Phone with 15 cards: the staging tray slid out of the felt. The tray now leads the felt, the piles shrink once you have drawn, and a 15-card hand fans into two rows of eight.
+- Discarding while melds were staged silently threw the staging away with Défausser lit gold; it now stays neutral and asks for a second press ("Défausser quand même").
+- Phone: the strip scrolls to the seat whose turn it is; names stay on one line with an ellipsis and your "(vous)" stays visible; icon buttons are 44px wide on touch screens; keyboard focus returns to the hand after adding to a meld.
+- Before the first laydown, selecting a card that would fit a meld on the table now says so.
 - A run was only accepted when its cards were tapped in sequence; the selection is now put in order (jokers filling the gaps) before it is checked, and an invalid one says what is wrong ("Il manque le 6 de cœur pour faire la suite.", "Une suite se fait dans une seule couleur.") instead of blaming the order.
 - The rule that a card taken from the discard pile cannot be thrown back was only a mouse tooltip; it is now said on the table.
 - Accessibility pass on the table: melds you can add to are real buttons; the round result is a modal dialog that takes focus and makes the page behind it inert; the closed log/chat sheet leaves the tab order; cards, the stock and the discard are announced in French ("Dame de cœur", "Piocher dans le talon, 78 cartes"); the turn banner is a live region; designed focus rings, distinct from the gold selection ring on cards; a targeted `prefers-reduced-motion` mode.

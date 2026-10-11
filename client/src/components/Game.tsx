@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   analyzeMeld,
   arrangeMeld,
@@ -56,6 +56,10 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
   const [sideOpen, setSideOpen] = useState(false);
   const sideToggle = useRef<HTMLButtonElement>(null);
   const resultFocus = useRef<HTMLElement>(null);
+  const strip = useRef<HTMLElement>(null);
+  const handRef = useRef<HTMLDivElement>(null);
+  // Discarding while melds are staged throws the staging away, so it takes a second press.
+  const [discardArmed, setDiscardArmed] = useState(false);
   const finished = state.phase === "finished";
 
   // Keep local hand order stable while syncing with the server's hand content.
@@ -163,6 +167,11 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
     }
     return map;
   }, [canPlay, me.hasLaidDown, state.melds, selectedCards]);
+  // Before the first laydown nothing can join the table yet; say so when it would.
+  const fitsLater = useMemo(
+    () => canPlay && !me.hasLaidDown && selectedCards.length > 0 && state.melds.some((m) => meldFit(m, selectedCards)),
+    [canPlay, me.hasLaidDown, state.melds, selectedCards],
+  );
   const keepDiscard =
     selectedCards.length === 1 && hand.length > 1 && selectedCards[0]!.id === state.drewFromDiscardCardId;
   const canDiscard = canPlay && selectedCards.length === 1 && !keepDiscard;
@@ -174,9 +183,27 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
       ? labels.hintDraw
       : keepDiscard
         ? labels.hintKeepDiscard
-        : fits.size > 0
-          ? labels.hintTargets
-          : labels.hintPlay;
+        : discardArmed
+          ? labels.hintDiscardStaged
+          : fits.size > 0
+            ? labels.hintTargets
+            : fitsLater
+              ? labels.hintAfterLaydown
+              : labels.hintPlay;
+
+  // Any change to what would be discarded or abandoned disarms the confirmation.
+  useEffect(() => setDiscardArmed(false), [selected, staged, state.phase]);
+
+  // On a phone the strip scrolls sideways: bring the seat whose turn it is into view, within the
+  // strip only (scrollIntoView would also scroll the page).
+  useEffect(() => {
+    const el = strip.current;
+    const seat = el?.querySelector<HTMLElement>(".opponent.active:not(.self-seat)");
+    if (!el || !seat || el.scrollWidth <= el.clientWidth) return;
+    const left = seat.offsetLeft - el.offsetLeft - (el.clientWidth - seat.clientWidth) / 2;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollTo({ left: Math.max(0, left), behavior: reduce ? "auto" : "smooth" });
+  }, [state.currentPlayerId]);
 
   async function onMeldClick(meld: Meld) {
     if (!canPlay || selectedCards.length === 0) return;
@@ -193,11 +220,21 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
       fit.type === "extend"
         ? { type: "extend", meldId: meld.id, cardIds: fit.cardIds, position: fit.position }
         : { type: "swapJoker", meldId: meld.id, cardId: fit.cardId };
-    if (await onAct(action)) setSelected([]);
+    if (await onAct(action)) {
+      setSelected([]);
+      // The meld stops being a button once it no longer fits, which would drop keyboard focus.
+      requestAnimationFrame(() => {
+        if (document.activeElement === document.body) handRef.current?.querySelector<HTMLElement>("button")?.focus();
+      });
+    }
   }
 
   async function discard() {
     if (!canDiscard) return;
+    if (staged.length > 0 && !discardArmed) {
+      setDiscardArmed(true);
+      return;
+    }
     if (await onAct({ type: "discard", cardId: selectedCards[0]!.id })) setSelected([]);
   }
 
@@ -237,10 +274,10 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
 
       <div className="game-body" inert={finished}>
         <main className="table-area">
-          <section className="opponents">
+          <section className="opponents" ref={strip} style={{ "--seats": state.players.length } as CSSProperties}>
             {/* On a phone your own seat joins the strip, so the hand gets the row it used to take. */}
             <div className={`opponent self-seat${isMyTurn ? " active" : ""}`}>
-              <VideoTile stream={rtc.localStream} name={me.name} muted mirror active={isMyTurn} badge={me.hasLaidDown ? "posé" : undefined} />
+              <VideoTile stream={rtc.localStream} name={me.name} suffix="(vous)" muted mirror active={isMyTurn} badge={me.hasLaidDown ? "posé" : undefined} />
               <div className="opponent-info">
                 <span>{me.score} pts</span>
               </div>
@@ -268,7 +305,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
             ))}
           </section>
 
-          <section className="felt">
+          <section className={`felt${canPlay ? " playing" : ""}`}>
             <div className="piles">
               <div className="pile">
                 <CardBack count={state.stockCount} onClick={canDraw ? () => onAct({ type: "draw", source: "stock" }) : undefined} />
@@ -382,7 +419,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                 </div>
               )}
 
-              <div className="hand">
+              <div className={`hand${hand.length > 14 ? " dense" : ""}`} ref={handRef}>
                 {hand.map((card) => {
                   const idx = selected.indexOf(card.id);
                   return (
@@ -423,8 +460,13 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                     </button>
                   )}
                   {/* Gold only once discarding is actually possible: the Lamp Rule. */}
-                  <button type="button" className={canDiscard ? "primary" : undefined} disabled={!canDiscard} onClick={discard}>
-                    Défausser
+                  <button
+                    type="button"
+                    className={canDiscard && (staged.length === 0 || discardArmed) ? "primary" : undefined}
+                    disabled={!canDiscard}
+                    onClick={discard}
+                  >
+                    {discardArmed ? "Défausser quand même" : "Défausser"}
                   </button>
                 </div>
               </div>

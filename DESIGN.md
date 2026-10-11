@@ -235,12 +235,15 @@ tabular figures, so columns do not shift as values update.
 
 The table is the layout. On desktop (> 900px) the page is a two-column grid: the table area
 (opponents above, felt in the middle, your hand below) and a 260px log/chat column. Opponents sit
-in a centred, wrapping row of tiles, `clamp(150px, 18vw, 210px)` wide.
+in a centred row of tiles, `clamp(150px, 18vw, 210px)` wide, that never wraps: with many players
+the tiles share the width by seat count, so the felt keeps at least 200px on a 13" laptop.
 
 **Phone portrait** (< 600px wide): the whole table fits one screen and nothing outside the felt
 scrolls. The top bar keeps one row (icons only, the table code without its "table" prefix), your
 own seat joins the opponents' strip, and sort, clear, prepare and discard share a single action
-row; while melds are staged, "Poser" takes the sort buttons' place.
+row; while melds are staged, "Poser" takes the sort buttons' place. The staging tray leads the
+felt, the piles shrink once you have drawn, a 15-card hand fans into two rows of eight, and the
+strip scrolls itself to the seat whose turn it is.
 
 At ≤ 900px the game becomes a single column in natural document flow: opponents in a horizontal
 scroll strip, the felt, then your hand, with sort and play actions in a sticky bar at the bottom.
@@ -328,7 +331,7 @@ because gold already means "selected". In melds, cards overlap by 14–16px.
 
 ### Video Tile (signature)
 A 4:3 dark well with the live video, mirrored for yourself, the player's name in a translucent
-pill at the bottom left and an optional gold "posé" badge. When the camera is off, or the peer
+one-line pill at the bottom left (a long name ends in an ellipsis; your own "(vous)" never does) and an optional gold "posé" badge. When the camera is off, or the peer
 reports it off, the player's initials replace the video. The tile of the player whose turn it
 is takes a gold border and glow; an offline player's tile drops to 50% opacity.
 
@@ -336,6 +339,11 @@ is takes a gold border and glow; an offline player's tile drops to 50% opacity.
 A row of overlapping cards on a 18% black wash with the owner's name in small felt-text. When
 your selection can extend it, or swap out its joker, it becomes a button with a gold border and a
 gold wash on hover and press; melds the selection cannot join stay plain.
+
+### Discard while staging
+Discarding ends the turn and abandons staged melds, so while the tray holds anything Défausser
+is not gold and takes two presses: the first turns it into "Défausser quand même" and says why
+on the turn banner; changing the selection disarms it.
 
 ### Staging Tray
 Melds prepared for a laydown wait on the felt, above the table's melds, inside a dashed
