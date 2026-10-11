@@ -9,13 +9,18 @@ interface Props {
   onClose?: () => void;
 }
 
+/** One DOM node per game event: a seven-day table would otherwise grow the log without bound. */
+const LOG_LINES = 200;
+
 export function Chat({ messages, log, onSend, onClose }: Props) {
   const [text, setText] = useState("");
   const [tab, setTab] = useState<"log" | "chat">("log");
-  const bottom = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
 
+  // Scroll the panel itself. scrollIntoView would also scroll every ancestor, the window included.
   useEffect(() => {
-    bottom.current?.scrollIntoView({ block: "end" });
+    const el = body.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages, log, tab]);
 
   function submit(e: FormEvent) {
@@ -27,23 +32,23 @@ export function Chat({ messages, log, onSend, onClose }: Props) {
   }
 
   return (
-    <aside className="side">
+    <aside className="side" id="side-panel" aria-label="Journal et chat">
       <div className="tabs">
-        <button type="button" className={tab === "log" ? "on" : ""} onClick={() => setTab("log")}>
+        <button type="button" className={tab === "log" ? "on" : ""} aria-pressed={tab === "log"} onClick={() => setTab("log")}>
           Journal
         </button>
-        <button type="button" className={tab === "chat" ? "on" : ""} onClick={() => setTab("chat")}>
+        <button type="button" className={tab === "chat" ? "on" : ""} aria-pressed={tab === "chat"} onClick={() => setTab("chat")}>
           Chat {messages.length > 0 && <span className="tag">{messages.length}</span>}
         </button>
         {onClose && (
-          <button type="button" className="side-close" onClick={onClose} aria-label="Fermer">
+          <button type="button" className="side-close" onClick={onClose} aria-label="Fermer le journal et le chat">
             ✕
           </button>
         )}
       </div>
-      <div className="side-body">
+      <div className="side-body" ref={body}>
         {tab === "log"
-          ? log.map((line, i) => (
+          ? log.slice(-LOG_LINES).map((line, i) => (
               <p key={i} className="log-line">
                 {line}
               </p>
@@ -53,10 +58,9 @@ export function Chat({ messages, log, onSend, onClose }: Props) {
                 <b>{m.name}</b> {m.text}
               </p>
             ))}
-        <div ref={bottom} />
       </div>
       <form className="chat-form" onSubmit={submit}>
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message…" maxLength={300} />
+        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message…" aria-label="Message" maxLength={300} />
         <button type="submit">Envoyer</button>
       </form>
     </aside>
