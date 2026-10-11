@@ -11,6 +11,10 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
 
 ### Fixed
+- Accessibility pass on the table: melds you can add to are real buttons; the round result is a modal dialog that takes focus and makes the page behind it inert; the closed log/chat sheet leaves the tab order; cards, the stock and the discard are announced in French ("Dame de cœur", "Piocher dans le talon, 78 cartes"); the turn banner is a live region; designed focus rings, distinct from the gold selection ring on cards; a targeted `prefers-reduced-motion` mode.
+- Contrast: the "À vous" turn banner and text on the felt use felt-calibrated colours (≥ 5:1), and error text is lifted to 5.7:1.
+- The desktop page was 32 px wider than the window (the chat input's intrinsic width widened the side column) and auto-scrolled sideways when the log updated.
+- A hovered card turned panel-green on desktop.
 - The camera/microphone error was hidden on phones: the rule that hid it matched nothing else, so "Accès caméra/micro refusé" never appeared on the device where it happens most.
 - Safe-area insets were inert without `viewport-fit=cover`, so the sticky action bar sat under the iPhone home indicator.
 - The round-result overlay could be covered by the log/chat panel on phones.

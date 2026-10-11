@@ -28,7 +28,7 @@ export function App() {
           onResume={game.resume}
         />
         {game.session && !game.state && <div className="reconnecting">Reconnexion à la table {game.session.roomId}…</div>}
-        {game.error && <div className="toast global" onClick={game.clearError}>{game.error}</div>}
+        {game.error && <div className="toast global" role="alert" onClick={game.clearError}>{game.error}</div>}
       </>
     );
   }
@@ -37,7 +37,7 @@ export function App() {
     return (
       <>
         <Lobby state={game.state} rtc={rtc} onStart={() => game.act({ type: "start" })} onLeave={game.leave} />
-        {game.error && <div className="toast global" onClick={game.clearError}>{game.error}</div>}
+        {game.error && <div className="toast global" role="alert" onClick={game.clearError}>{game.error}</div>}
       </>
     );
   }

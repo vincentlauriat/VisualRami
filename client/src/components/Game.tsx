@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   analyzeMeld,
   checkFirstLaydown,
@@ -15,6 +15,7 @@ import { CardBack, CardView } from "./CardView";
 import { VideoTile } from "./VideoTile";
 import { MediaControls } from "./MediaControls";
 import { Chat } from "./Chat";
+import { labels } from "../lib/labels";
 
 interface Props {
   state: PublicGameState;
@@ -50,6 +51,9 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
   const [notice, setNotice] = useState<string | null>(null);
   // Log/chat panel: always visible on wide screens, a bottom sheet toggled from the top bar on phones.
   const [sideOpen, setSideOpen] = useState(false);
+  const sideToggle = useRef<HTMLButtonElement>(null);
+  const resultFocus = useRef<HTMLElement>(null);
+  const finished = state.phase === "finished";
 
   // Keep local hand order stable while syncing with the server's hand content.
   useEffect(() => {
@@ -77,6 +81,28 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
     const t = setTimeout(onClearError, 4000);
     return () => clearTimeout(t);
   }, [error, onClearError]);
+
+  // Local notices clear the same way as server errors, so neither needs a pointer to go away.
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 6000);
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  // The round result is modal: move focus into it, and the rest of the page goes inert meanwhile.
+  useEffect(() => {
+    if (finished) resultFocus.current?.focus();
+  }, [finished]);
+
+  function closeSide() {
+    setSideOpen(false);
+    sideToggle.current?.focus();
+  }
+
+  function dismissToast() {
+    onClearError();
+    setNotice(null);
+  }
 
   const stagedIds = useMemo(() => new Set(staged.flatMap((m) => m.cards.map((c) => c.id))), [staged]);
   const selectedCards = useMemo(
@@ -154,7 +180,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
 
   return (
     <div className={`game${sideOpen ? " side-open" : ""}`}>
-      <header className="topbar">
+      <header className="topbar" inert={finished}>
         <h1>
           <span className="logo">🃏</span> <span className="brand">VisualRami</span>
           <span className="tag">table {state.roomId}</span>
@@ -163,13 +189,15 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
         <div className="topbar-right">
           <MediaControls rtc={rtc} compact />
           <button
+            ref={sideToggle}
             type="button"
             className={`ghost side-toggle${sideOpen ? " on" : ""}`}
             onClick={() => setSideOpen((v) => !v)}
             aria-expanded={sideOpen}
-            aria-label="Journal et chat"
+            aria-controls="side-panel"
+            aria-label={labels.sideToggle(chat.length)}
           >
-            💬{chat.length > 0 && <span className="tag">{chat.length}</span>}
+            💬{chat.length > 0 && <span className="tag" aria-hidden>{chat.length}</span>}
           </button>
           <button type="button" className="ghost" onClick={onLeave} title="Votre place reste réservée : revenez avec le code de la table">
             Quitter
@@ -177,7 +205,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
         </div>
       </header>
 
-      <div className="game-body">
+      <div className="game-body" inert={finished}>
         <main className="table-area">
           <section className="opponents">
             {opponents.map((p) => (
@@ -190,7 +218,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                   badge={p.hasLaidDown ? "posé" : undefined}
                 />
                 <div className="opponent-info">
-                  <span className="mini-hand" aria-label={`${p.handCount} cartes`}>
+                  <span className="mini-hand" aria-hidden>
                     {Array.from({ length: Math.min(p.handCount, 14) }).map((_, i) => (
                       <i key={i} />
                     ))}
@@ -205,23 +233,27 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
             <div className="piles">
               <div className="pile">
                 <CardBack count={state.stockCount} onClick={canDraw ? () => onAct({ type: "draw", source: "stock" }) : undefined} />
-                <span className="pile-caption">Talon</span>
+                <span className="pile-caption" aria-hidden>Talon</span>
               </div>
               <div className="pile">
                 {topDiscard ? (
-                  <CardView card={topDiscard} onClick={canDraw ? () => onAct({ type: "draw", source: "discard" }) : undefined} />
+                  <CardView
+                    card={topDiscard}
+                    onClick={canDraw ? () => onAct({ type: "draw", source: "discard" }) : undefined}
+                    spokenName={labels.discard(topDiscard, canDraw)}
+                  />
                 ) : (
-                  <div className="card empty" />
+                  <span className="card empty" role="img" aria-label={labels.emptyDiscard} />
                 )}
-                <span className="pile-caption">Défausse</span>
+                <span className="pile-caption" aria-hidden>Défausse</span>
               </div>
-              <div className="turn-banner">
+              <div className="turn-banner" aria-live="polite">
                 {state.phase === "finished" ? (
                   <strong>Manche terminée</strong>
                 ) : isMyTurn ? (
                   <strong className="mine">{state.phase === "draw" ? "À vous : piochez une carte" : "À vous : posez ou défaussez"}</strong>
                 ) : (
-                  <span>Tour de {state.players.find((p) => p.id === state.currentPlayerId)?.name ?? "…"}</span>
+                  <span>{labels.turnOf(state.players.find((p) => p.id === state.currentPlayerId)?.name ?? "…")}</span>
                 )}
               </div>
             </div>
@@ -231,18 +263,25 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
               {state.melds.map((meld) => {
                 const owner = state.players.find((p) => p.id === meld.ownerId);
                 const clickable = canPlay && selectedCards.length > 0 && me.hasLaidDown;
-                return (
-                  <div
+                const cards = meld.cards.map((c) => <CardView key={c.id} card={c} size="small" />);
+                const ownerTag = <span className="meld-owner" aria-hidden>{owner?.name}</span>;
+                // Cards on the table are pictures, so a target meld can be a real button.
+                return clickable ? (
+                  <button
                     key={meld.id}
-                    className={`meld${clickable ? " target" : ""}`}
+                    type="button"
+                    className="meld target"
                     onClick={() => onMeldClick(meld)}
-                    role={clickable ? "button" : undefined}
-                    title={clickable ? "Ajouter les cartes sélectionnées ici" : undefined}
+                    title="Ajouter les cartes sélectionnées ici"
+                    aria-label={labels.meldTarget(owner?.name ?? "?", meld.cards)}
                   >
-                    {meld.cards.map((c) => (
-                      <CardView key={c.id} card={c} size="small" />
-                    ))}
-                    <span className="meld-owner">{owner?.name}</span>
+                    {cards}
+                    {ownerTag}
+                  </button>
+                ) : (
+                  <div key={meld.id} className="meld" role="group" aria-label={labels.meld(owner?.name ?? "?")}>
+                    {cards}
+                    {ownerTag}
                   </div>
                 );
               })}
@@ -257,8 +296,11 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
 
             <div className="hand-area">
               {(error || notice) && (
-                <div className="toast" role="alert" onClick={() => { onClearError(); setNotice(null); }}>
-                  {error ?? notice}
+                <div className="toast" role="alert" onClick={dismissToast}>
+                  <span>{error ?? notice}</span>
+                  <button type="button" className="ghost tiny" onClick={dismissToast} aria-label={labels.dismissMessage}>
+                    ✕
+                  </button>
                 </div>
               )}
 
@@ -280,7 +322,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                         {m.cards.map((c) => (
                           <CardView key={c.id} card={c} size="small" />
                         ))}
-                        <button type="button" className="ghost tiny" onClick={() => unstage(i)} aria-label="Retirer">
+                        <button type="button" className="ghost tiny" onClick={() => unstage(i)} aria-label={labels.unstage(m.cards)}>
                           ✕
                         </button>
                       </div>
@@ -327,19 +369,19 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                 </div>
               </div>
               {canPlay && me.hasLaidDown && selectedCards.length > 0 && (
-                <p className="hint">Cliquez une combinaison sur la table pour y ajouter la sélection (ou échanger un joker).</p>
+                <p className="hint">Choisissez une combinaison sur la table pour y ajouter la sélection (ou échanger un joker).</p>
               )}
             </div>
           </section>
         </main>
 
-        <Chat messages={chat} log={state.log} onSend={onSendChat} onClose={() => setSideOpen(false)} />
+        <Chat messages={chat} log={state.log} onSend={onSendChat} onClose={closeSide} />
       </div>
 
-      {state.phase === "finished" && (
+      {finished && (
         <div className="overlay">
-          <div className="panel result">
-            <h2>{state.winnerId === state.you.id ? "🏆 Vous remportez la manche !" : `${state.players.find((p) => p.id === state.winnerId)?.name} remporte la manche`}</h2>
+          <div className="panel result" role="dialog" aria-modal="true" aria-labelledby="result-title">
+            <h2 id="result-title" tabIndex={-1} ref={state.hostId === state.you.id ? undefined : (el) => { resultFocus.current = el; }}>{state.winnerId === state.you.id ? "🏆 Vous remportez la manche !" : `${state.players.find((p) => p.id === state.winnerId)?.name} remporte la manche`}</h2>
             <table>
               <thead>
                 <tr>
@@ -359,7 +401,12 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
               </tbody>
             </table>
             {state.hostId === state.you.id ? (
-              <button type="button" className="primary" onClick={() => onAct({ type: "newRound" })}>
+              <button
+                type="button"
+                className="primary"
+                ref={(el) => { resultFocus.current = el; }}
+                onClick={() => onAct({ type: "newRound" })}
+              >
                 Nouvelle manche
               </button>
             ) : (
