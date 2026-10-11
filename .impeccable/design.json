@@ -1,0 +1,651 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-11T11:14:16+00:00",
+  "title": "Design System: VisualRami",
+  "extensions": {
+    "colorMeta": {
+      "felt": {
+        "role": "primary",
+        "displayName": "Vert de feutre",
+        "canonical": "#1f5d3a",
+        "tonalRamp": [
+          "oklch(15% 0.086 155.2)",
+          "oklch(25% 0.086 155.2)",
+          "oklch(35% 0.086 155.2)",
+          "oklch(48% 0.086 155.2)",
+          "oklch(60% 0.086 155.2)",
+          "oklch(72% 0.086 155.2)",
+          "oklch(84% 0.086 155.2)",
+          "oklch(95% 0.086 155.2)"
+        ]
+      },
+      "felt-dark": {
+        "role": "primary",
+        "displayName": "Vert de feutre, bord",
+        "canonical": "#143f27",
+        "tonalRamp": [
+          "oklch(15% 0.064 155.8)",
+          "oklch(25% 0.064 155.8)",
+          "oklch(35% 0.064 155.8)",
+          "oklch(48% 0.064 155.8)",
+          "oklch(60% 0.064 155.8)",
+          "oklch(72% 0.064 155.8)",
+          "oklch(84% 0.064 155.8)",
+          "oklch(95% 0.064 155.8)"
+        ]
+      },
+      "table-rim": {
+        "role": "primary",
+        "displayName": "Bois de bordure",
+        "canonical": "#3a2a16",
+        "tonalRamp": [
+          "oklch(15% 0.040 71.5)",
+          "oklch(25% 0.040 71.5)",
+          "oklch(35% 0.040 71.5)",
+          "oklch(48% 0.040 71.5)",
+          "oklch(60% 0.040 71.5)",
+          "oklch(72% 0.040 71.5)",
+          "oklch(84% 0.040 71.5)",
+          "oklch(95% 0.040 71.5)"
+        ]
+      },
+      "gold": {
+        "role": "secondary",
+        "displayName": "Laiton chaud",
+        "canonical": "#e6b84f",
+        "tonalRamp": [
+          "oklch(15% 0.132 85.1)",
+          "oklch(25% 0.132 85.1)",
+          "oklch(35% 0.132 85.1)",
+          "oklch(48% 0.132 85.1)",
+          "oklch(60% 0.132 85.1)",
+          "oklch(72% 0.132 85.1)",
+          "oklch(84% 0.132 85.1)",
+          "oklch(95% 0.132 85.1)"
+        ]
+      },
+      "gold-dark": {
+        "role": "secondary",
+        "displayName": "Laiton sombre",
+        "canonical": "#b98b23",
+        "tonalRamp": [
+          "oklch(15% 0.126 82.6)",
+          "oklch(25% 0.126 82.6)",
+          "oklch(35% 0.126 82.6)",
+          "oklch(48% 0.126 82.6)",
+          "oklch(60% 0.126 82.6)",
+          "oklch(72% 0.126 82.6)",
+          "oklch(84% 0.126 82.6)",
+          "oklch(95% 0.126 82.6)"
+        ]
+      },
+      "gold-ink": {
+        "role": "secondary",
+        "displayName": "Encre sur laiton",
+        "canonical": "#1a1500",
+        "tonalRamp": [
+          "oklch(15% 0.040 98.0)",
+          "oklch(25% 0.040 98.0)",
+          "oklch(35% 0.040 98.0)",
+          "oklch(48% 0.040 98.0)",
+          "oklch(60% 0.040 98.0)",
+          "oklch(72% 0.040 98.0)",
+          "oklch(84% 0.040 98.0)",
+          "oklch(95% 0.040 98.0)"
+        ]
+      },
+      "card-face": {
+        "role": "tertiary",
+        "displayName": "Ivoire de carte",
+        "canonical": "#fdfdf8",
+        "tonalRamp": [
+          "oklch(15% 0.007 106.5)",
+          "oklch(25% 0.007 106.5)",
+          "oklch(35% 0.007 106.5)",
+          "oklch(48% 0.007 106.5)",
+          "oklch(60% 0.007 106.5)",
+          "oklch(72% 0.007 106.5)",
+          "oklch(84% 0.007 106.5)",
+          "oklch(95% 0.007 106.5)"
+        ]
+      },
+      "card-edge": {
+        "role": "tertiary",
+        "displayName": "Tranche de carte",
+        "canonical": "#c9c9c0",
+        "tonalRamp": [
+          "oklch(15% 0.012 106.7)",
+          "oklch(25% 0.012 106.7)",
+          "oklch(35% 0.012 106.7)",
+          "oklch(48% 0.012 106.7)",
+          "oklch(60% 0.012 106.7)",
+          "oklch(72% 0.012 106.7)",
+          "oklch(84% 0.012 106.7)",
+          "oklch(95% 0.012 106.7)"
+        ]
+      },
+      "card-red": {
+        "role": "tertiary",
+        "displayName": "Rouge de carte",
+        "canonical": "#c8322b",
+        "tonalRamp": [
+          "oklch(15% 0.188 27.9)",
+          "oklch(25% 0.188 27.9)",
+          "oklch(35% 0.188 27.9)",
+          "oklch(48% 0.188 27.9)",
+          "oklch(60% 0.188 27.9)",
+          "oklch(72% 0.188 27.9)",
+          "oklch(84% 0.188 27.9)",
+          "oklch(95% 0.188 27.9)"
+        ]
+      },
+      "card-black": {
+        "role": "tertiary",
+        "displayName": "Noir de carte",
+        "canonical": "#14161c",
+        "tonalRamp": [
+          "oklch(15% 0.012 270.7)",
+          "oklch(25% 0.012 270.7)",
+          "oklch(35% 0.012 270.7)",
+          "oklch(48% 0.012 270.7)",
+          "oklch(60% 0.012 270.7)",
+          "oklch(72% 0.012 270.7)",
+          "oklch(84% 0.012 270.7)",
+          "oklch(95% 0.012 270.7)"
+        ]
+      },
+      "card-back": {
+        "role": "tertiary",
+        "displayName": "Dos de carte",
+        "canonical": "#2c4a8a",
+        "tonalRamp": [
+          "oklch(15% 0.112 263.4)",
+          "oklch(25% 0.112 263.4)",
+          "oklch(35% 0.112 263.4)",
+          "oklch(48% 0.112 263.4)",
+          "oklch(60% 0.112 263.4)",
+          "oklch(72% 0.112 263.4)",
+          "oklch(84% 0.112 263.4)",
+          "oklch(95% 0.112 263.4)"
+        ]
+      },
+      "card-back-light": {
+        "role": "tertiary",
+        "displayName": "Dos de carte, rayure",
+        "canonical": "#3b5fa8",
+        "tonalRamp": [
+          "oklch(15% 0.124 262.9)",
+          "oklch(25% 0.124 262.9)",
+          "oklch(35% 0.124 262.9)",
+          "oklch(48% 0.124 262.9)",
+          "oklch(60% 0.124 262.9)",
+          "oklch(72% 0.124 262.9)",
+          "oklch(84% 0.124 262.9)",
+          "oklch(95% 0.124 262.9)"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Nuit",
+        "canonical": "#0f1a14",
+        "tonalRamp": [
+          "oklch(15% 0.020 160.1)",
+          "oklch(25% 0.020 160.1)",
+          "oklch(35% 0.020 160.1)",
+          "oklch(48% 0.020 160.1)",
+          "oklch(60% 0.020 160.1)",
+          "oklch(72% 0.020 160.1)",
+          "oklch(84% 0.020 160.1)",
+          "oklch(95% 0.020 160.1)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Salle sombre",
+        "canonical": "#182620",
+        "tonalRamp": [
+          "oklch(15% 0.022 166.2)",
+          "oklch(25% 0.022 166.2)",
+          "oklch(35% 0.022 166.2)",
+          "oklch(48% 0.022 166.2)",
+          "oklch(60% 0.022 166.2)",
+          "oklch(72% 0.022 166.2)",
+          "oklch(84% 0.022 166.2)",
+          "oklch(95% 0.022 166.2)"
+        ]
+      },
+      "panel-2": {
+        "role": "neutral",
+        "displayName": "Salle sombre, relevée",
+        "canonical": "#213328",
+        "tonalRamp": [
+          "oklch(15% 0.031 157.1)",
+          "oklch(25% 0.031 157.1)",
+          "oklch(35% 0.031 157.1)",
+          "oklch(48% 0.031 157.1)",
+          "oklch(60% 0.031 157.1)",
+          "oklch(72% 0.031 157.1)",
+          "oklch(84% 0.031 157.1)",
+          "oklch(95% 0.031 157.1)"
+        ]
+      },
+      "panel-hover": {
+        "role": "neutral",
+        "displayName": "Salle sombre, survol",
+        "canonical": "#2b4334",
+        "tonalRamp": [
+          "oklch(15% 0.040 156.3)",
+          "oklch(25% 0.040 156.3)",
+          "oklch(35% 0.040 156.3)",
+          "oklch(48% 0.040 156.3)",
+          "oklch(60% 0.040 156.3)",
+          "oklch(72% 0.040 156.3)",
+          "oklch(84% 0.040 156.3)",
+          "oklch(95% 0.040 156.3)"
+        ]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Puits de champ",
+        "canonical": "#0e1712",
+        "tonalRamp": [
+          "oklch(15% 0.017 160.0)",
+          "oklch(25% 0.017 160.0)",
+          "oklch(35% 0.017 160.0)",
+          "oklch(48% 0.017 160.0)",
+          "oklch(60% 0.017 160.0)",
+          "oklch(72% 0.017 160.0)",
+          "oklch(84% 0.017 160.0)",
+          "oklch(95% 0.017 160.0)"
+        ]
+      },
+      "video-well": {
+        "role": "neutral",
+        "displayName": "Puits vidéo",
+        "canonical": "#0b110d",
+        "tonalRamp": [
+          "oklch(15% 0.013 155.7)",
+          "oklch(25% 0.013 155.7)",
+          "oklch(35% 0.013 155.7)",
+          "oklch(48% 0.013 155.7)",
+          "oklch(60% 0.013 155.7)",
+          "oklch(72% 0.013 155.7)",
+          "oklch(84% 0.013 155.7)",
+          "oklch(95% 0.013 155.7)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Filet",
+        "canonical": "#27392f",
+        "tonalRamp": [
+          "oklch(15% 0.029 159.9)",
+          "oklch(25% 0.029 159.9)",
+          "oklch(35% 0.029 159.9)",
+          "oklch(48% 0.029 159.9)",
+          "oklch(60% 0.029 159.9)",
+          "oklch(72% 0.029 159.9)",
+          "oklch(84% 0.029 159.9)",
+          "oklch(95% 0.029 159.9)"
+        ]
+      },
+      "border-strong": {
+        "role": "neutral",
+        "displayName": "Filet appuyé",
+        "canonical": "#2f4a3b",
+        "tonalRamp": [
+          "oklch(15% 0.042 159.3)",
+          "oklch(25% 0.042 159.3)",
+          "oklch(35% 0.042 159.3)",
+          "oklch(48% 0.042 159.3)",
+          "oklch(60% 0.042 159.3)",
+          "oklch(72% 0.042 159.3)",
+          "oklch(84% 0.042 159.3)",
+          "oklch(95% 0.042 159.3)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Texte",
+        "canonical": "#f1f5f2",
+        "tonalRamp": [
+          "oklch(15% 0.006 153.8)",
+          "oklch(25% 0.006 153.8)",
+          "oklch(35% 0.006 153.8)",
+          "oklch(48% 0.006 153.8)",
+          "oklch(60% 0.006 153.8)",
+          "oklch(72% 0.006 153.8)",
+          "oklch(84% 0.006 153.8)",
+          "oklch(95% 0.006 153.8)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Texte secondaire",
+        "canonical": "#a9b8ae",
+        "tonalRamp": [
+          "oklch(15% 0.022 156.7)",
+          "oklch(25% 0.022 156.7)",
+          "oklch(35% 0.022 156.7)",
+          "oklch(48% 0.022 156.7)",
+          "oklch(60% 0.022 156.7)",
+          "oklch(72% 0.022 156.7)",
+          "oklch(84% 0.022 156.7)",
+          "oklch(95% 0.022 156.7)"
+        ]
+      },
+      "felt-text": {
+        "role": "neutral",
+        "displayName": "Texte sur feutre",
+        "canonical": "#cfe3d5",
+        "tonalRamp": [
+          "oklch(15% 0.028 155.3)",
+          "oklch(25% 0.028 155.3)",
+          "oklch(35% 0.028 155.3)",
+          "oklch(48% 0.028 155.3)",
+          "oklch(60% 0.028 155.3)",
+          "oklch(72% 0.028 155.3)",
+          "oklch(84% 0.028 155.3)",
+          "oklch(95% 0.028 155.3)"
+        ]
+      },
+      "felt-text-strong": {
+        "role": "neutral",
+        "displayName": "Texte sur feutre, appuyé",
+        "canonical": "#dfeee4",
+        "tonalRamp": [
+          "oklch(15% 0.021 156.8)",
+          "oklch(25% 0.021 156.8)",
+          "oklch(35% 0.021 156.8)",
+          "oklch(48% 0.021 156.8)",
+          "oklch(60% 0.021 156.8)",
+          "oklch(72% 0.021 156.8)",
+          "oklch(84% 0.021 156.8)",
+          "oklch(95% 0.021 156.8)"
+        ]
+      },
+      "felt-accent": {
+        "role": "secondary",
+        "displayName": "Laiton sur feutre",
+        "canonical": "#f2cd72",
+        "tonalRamp": [
+          "oklch(15% 0.118 87.7)",
+          "oklch(25% 0.118 87.7)",
+          "oklch(35% 0.118 87.7)",
+          "oklch(48% 0.118 87.7)",
+          "oklch(60% 0.118 87.7)",
+          "oklch(72% 0.118 87.7)",
+          "oklch(84% 0.118 87.7)",
+          "oklch(95% 0.118 87.7)"
+        ]
+      },
+      "danger": {
+        "role": "neutral",
+        "displayName": "Alerte",
+        "canonical": "#f0796f",
+        "tonalRamp": [
+          "oklch(15% 0.148 26.4)",
+          "oklch(25% 0.148 26.4)",
+          "oklch(35% 0.148 26.4)",
+          "oklch(48% 0.148 26.4)",
+          "oklch(60% 0.148 26.4)",
+          "oklch(72% 0.148 26.4)",
+          "oklch(84% 0.148 26.4)",
+          "oklch(95% 0.148 26.4)"
+        ]
+      },
+      "danger-surface": {
+        "role": "neutral",
+        "displayName": "Fond d'alerte",
+        "canonical": "#3a1f1d",
+        "tonalRamp": [
+          "oklch(15% 0.043 24.7)",
+          "oklch(25% 0.043 24.7)",
+          "oklch(35% 0.043 24.7)",
+          "oklch(48% 0.043 24.7)",
+          "oklch(60% 0.043 24.7)",
+          "oklch(72% 0.043 24.7)",
+          "oklch(84% 0.043 24.7)",
+          "oklch(95% 0.043 24.7)"
+        ]
+      },
+      "presence": {
+        "role": "neutral",
+        "displayName": "Présence",
+        "canonical": "#4cd07d",
+        "tonalRamp": [
+          "oklch(15% 0.166 152.4)",
+          "oklch(25% 0.166 152.4)",
+          "oklch(35% 0.166 152.4)",
+          "oklch(48% 0.166 152.4)",
+          "oklch(60% 0.166 152.4)",
+          "oklch(72% 0.166 152.4)",
+          "oklch(84% 0.166 152.4)",
+          "oklch(95% 0.166 152.4)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Product name on the home screen."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Top bar title."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Panel and dialog headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Forms, rules, chat."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Hints, captions, scores, counts; tabular figures."
+      },
+      "room-code": {
+        "displayName": "Room code",
+        "purpose": "The five-letter table code."
+      },
+      "card-rank": {
+        "displayName": "Card rank",
+        "purpose": "Card corner."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-resting",
+        "value": "0 2px 4px rgba(0,0,0,0.35)",
+        "purpose": "Every card."
+      },
+      {
+        "name": "card-lifted",
+        "value": "0 0 0 3px #e6b84f, 0 6px 10px rgba(0,0,0,0.4)",
+        "purpose": "Selected card, with a 14px lift."
+      },
+      {
+        "name": "felt-well",
+        "value": "inset 0 0 40px rgba(0,0,0,0.4)",
+        "purpose": "The felt sits below the rim."
+      },
+      {
+        "name": "active-seat",
+        "value": "0 0 0 3px rgba(230,184,79,0.25)",
+        "purpose": "Video tile of the current player."
+      },
+      {
+        "name": "sheet",
+        "value": "0 -8px 30px rgba(0,0,0,0.5)",
+        "purpose": "Log/chat sheet on phones."
+      }
+    ],
+    "motion": [
+      {
+        "name": "control",
+        "value": "background 0.15s, transform 0.1s",
+        "purpose": "Button hover and press."
+      },
+      {
+        "name": "card-lift",
+        "value": "transform 0.12s, box-shadow 0.12s",
+        "purpose": "Card hover, press and selection."
+      },
+      {
+        "name": "sheet-slide",
+        "value": "transform 0.2s ease",
+        "purpose": "Log/chat sheet; visibility flips after the slide."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "none",
+        "purpose": "prefers-reduced-motion removes lifts and slides; selection stays visible."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "max-width: 900px"
+      },
+      {
+        "name": "tablet-portrait",
+        "value": "600–900px wide, min-height 700px"
+      },
+      {
+        "name": "phone-landscape",
+        "value": "max-width 900px, max-height 520px, landscape"
+      },
+      {
+        "name": "narrow",
+        "value": "max-width: 560px"
+      },
+      {
+        "name": "coarse-pointer",
+        "value": "pointer: coarse (44px targets)"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Default control: dark fill, quiet, flat.",
+      "html": "<button class=\"ds-btn\">Trier par couleur</button>",
+      "css": ".ds-btn{font:inherit;color:var(--text,#f1f5f2);background:var(--panel-2,#213328);border:1px solid var(--border-strong,#2f4a3b);border-radius:8px;padding:8px 14px;cursor:pointer;transition:background .15s,transform .1s}.ds-btn:hover{background:#2b4334}.ds-btn:focus-visible{outline:2px solid var(--gold,#e6b84f);outline-offset:2px}.ds-btn:active{transform:translateY(1px)}"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one action that moves the game forward.",
+      "html": "<button class=\"ds-btn-primary\">Défausser</button>",
+      "css": ".ds-btn-primary{font:inherit;font-weight:600;color:#1a1500;background:var(--gold,#e6b84f);border:1px solid var(--gold-dark,#b98b23);border-radius:8px;padding:8px 14px;cursor:pointer;transition:background .15s,transform .1s}.ds-btn-primary:hover{background:#f0c866}.ds-btn-primary:focus-visible{outline:2px solid var(--gold,#e6b84f);outline-offset:2px}.ds-btn-primary:active{transform:translateY(1px)}"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Dark well with a gold caret and gold focus outline.",
+      "html": "<input class=\"ds-input\" placeholder=\"Votre prénom\">",
+      "css": ".ds-input{font:inherit;color:var(--text,#f1f5f2);background:#0e1712;border:1px solid var(--border-strong,#2f4a3b);border-radius:8px;padding:9px 12px;caret-color:var(--gold,#e6b84f)}.ds-input:focus{outline:2px solid var(--gold,#e6b84f);outline-offset:1px}"
+    },
+    {
+      "name": "Tag",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Pill label; gold for your own seat.",
+      "html": "<span class=\"ds-tag\">hôte</span> <span class=\"ds-tag ds-tag-you\">vous</span>",
+      "css": ".ds-tag{font-size:11px;font-weight:500;padding:2px 7px;border-radius:999px;background:#2b4334;color:var(--muted,#a9b8ae)}.ds-tag-you{background:var(--gold,#e6b84f);color:#1a1500}"
+    },
+    {
+      "name": "Playing Card",
+      "kind": "custom",
+      "refersTo": "playing-card",
+      "description": "Ivory face; selected cards lift with a gold ring and order badge; focus is white.",
+      "html": "<button class=\"ds-card ds-red\"><span class=\"ds-corner\"><b>Q</b><i>♥</i></span><span class=\"ds-center\">♥</span></button><button class=\"ds-card ds-black ds-selected\"><span class=\"ds-corner\"><b>7</b><i>♠</i></span><span class=\"ds-center\">♠</span><span class=\"ds-order\">1</span></button>",
+      "css": ".ds-card{position:relative;width:58px;height:82px;margin:16px 4px 0;border-radius:7px;background:#fdfdf8;border:1px solid #c9c9c0;padding:0;box-shadow:0 2px 4px rgba(0,0,0,.35);cursor:pointer;transition:transform .12s,box-shadow .12s;font-family:inherit}.ds-red{color:#c8322b}.ds-black{color:#14161c}.ds-corner{position:absolute;top:3px;left:5px;display:grid;line-height:1;text-align:left}.ds-corner b{font-size:15px}.ds-corner i{font-style:normal;font-size:12px}.ds-center{position:absolute;inset:0;display:grid;place-items:center;font-size:30px}.ds-card:hover{transform:translateY(-4px)}.ds-card:focus-visible{outline:3px solid #f1f5f2;outline-offset:3px}.ds-selected,.ds-selected:hover{transform:translateY(-14px);box-shadow:0 0 0 3px #e6b84f,0 6px 10px rgba(0,0,0,.4)}.ds-order{position:absolute;top:-8px;right:-6px;width:18px;height:18px;border-radius:50%;background:#e6b84f;color:#1a1500;font-size:11px;font-weight:700;display:grid;place-items:center}"
+    },
+    {
+      "name": "Card Back (stock)",
+      "kind": "custom",
+      "refersTo": "playing-card-back",
+      "description": "The only blue in the system; carries the stock count.",
+      "html": "<button class=\"ds-back\"><span class=\"ds-pattern\"></span><span class=\"ds-count\">78</span></button>",
+      "css": ".ds-back{position:relative;width:58px;height:82px;border-radius:7px;background:#2c4a8a;border:1px solid #1a2f5c;padding:0;box-shadow:0 2px 4px rgba(0,0,0,.35);cursor:pointer}.ds-pattern{position:absolute;inset:5px;border-radius:4px;border:2px solid #a9c1f2;background:repeating-linear-gradient(45deg,#3b5fa8 0 4px,#2c4a8a 4px 8px)}.ds-count{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px;text-shadow:0 1px 3px #000}.ds-back:focus-visible{outline:3px solid #f1f5f2;outline-offset:3px}"
+    },
+    {
+      "name": "Felt with Meld Target",
+      "kind": "custom",
+      "refersTo": "meld",
+      "description": "The lit table surface; a meld your selection can extend turns gold-bordered.",
+      "html": "<div class=\"ds-felt\"><p class=\"ds-banner\"><span>À vous</span> · piochez</p><button class=\"ds-meld\"><span class=\"ds-mini\">7♥</span><span class=\"ds-mini\">8♥</span><span class=\"ds-mini\">9♥</span></button></div>",
+      "css": ".ds-felt{background:radial-gradient(ellipse at center,#1f5d3a,#143f27);border:6px solid #3a2a16;border-radius:40px;padding:16px 20px;box-shadow:inset 0 0 40px rgba(0,0,0,.4)}.ds-banner{margin:0 0 10px;color:#dfeee4}.ds-banner span{color:#f2cd72}.ds-meld{display:flex;gap:4px;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.18);border:1px solid #e6b84f;cursor:pointer;color:inherit}.ds-meld:hover{background:rgba(230,184,79,.15)}.ds-meld:focus-visible{outline:2px solid #e6b84f;outline-offset:2px}.ds-mini{background:#fdfdf8;color:#c8322b;border-radius:5px;padding:6px 5px;font-weight:700;font-size:13px}"
+    },
+    {
+      "name": "Video Tile",
+      "kind": "custom",
+      "refersTo": "video-tile",
+      "description": "A seat at the table: name pill, posé badge, gold border on the active player; initials when the camera is off.",
+      "html": "<div class=\"ds-tile ds-active\"><div class=\"ds-ph\">AL</div><div class=\"ds-name\">Alice <span class=\"ds-badge\">posé</span></div></div>",
+      "css": ".ds-tile{position:relative;width:200px;aspect-ratio:4/3;background:#0b110d;border-radius:10px;overflow:hidden;border:2px solid #27392f}.ds-active{border-color:#e6b84f;box-shadow:0 0 0 3px rgba(230,184,79,.25)}.ds-ph{position:absolute;inset:0;display:grid;place-items:center;background:#16211b;font-size:32px;font-weight:700;color:#a9b8ae}.ds-name{position:absolute;left:6px;bottom:6px;display:flex;gap:6px;align-items:center;background:rgba(0,0,0,.55);color:#f1f5f2;padding:2px 8px;border-radius:999px;font-size:13px}.ds-badge{background:#e6b84f;color:#1a1500;border-radius:999px;padding:0 6px;font-size:11px;font-weight:600}"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Table du Soir",
+    "overview": "**Creative North Star: \"La Table du Soir\"**\n\nA card table under a lamp, in someone's home, late enough that the room around it has gone dark.\nThe felt is the only lit surface; the cards are the brightest things on it; the faces of the players\nsit at its edge. Everything else (buttons, panels, the log) is the dim room: present, reachable,\nand deliberately quieter than the table.\n\nThe system is dark by necessity as much as by mood. It is played on a phone at arm's length, often\nin the evening, and the cards must stay the highest-contrast object on screen. Gold is the lamp:\nit marks what is *yours right now* (your turn, your selection, your seat, the one action that\nmoves the game forward) and almost nothing else. Density follows the device: the phone layout is\ntight and stacked, the laptop layout spreads the table and seats five opponents around it.\n\nThe intended character of controls is **tactile and assertive**, like chips pushed across the\nfelt. Today they are mostly flat: dark fills, a 1px press, no volume. That gap is a direction to\nclose, not a description of what is shipped.",
+    "keyCharacteristics": [
+      "One lit surface: the felt, a radial green gradient inside a dark wood rim.",
+      "Ivory cards as the brightest, most legible objects on screen.",
+      "Gold reserved for \"yours, now\": turn, selection, seat, primary action.",
+      "Dark green panels for everything that is not the table.",
+      "Faces are part of the table: video tiles carry turn state and laid-down status.",
+      "Four layout tiers: desktop, phone portrait, tablet portrait, phone landscape."
+    ],
+    "rules": [
+      {
+        "name": "The Lamp Rule",
+        "body": "Gold means \"yours, now\". If an element is not the current player's turn,",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Surfaces Rule",
+        "body": "Text on the felt uses the felt-text family; text on panels uses",
+        "section": "colors"
+      },
+      {
+        "name": "The Blue Back Rule",
+        "body": "Blue appears only on card backs. Nothing interactive is blue.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Every number that changes during play (scores, card counts) uses",
+        "section": "typography"
+      },
+      {
+        "name": "The Objects Cast Shadows Rule",
+        "body": "If it is not a card, the felt or a sheet sliding over the",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the felt the only green surface, and the cards the brightest objects on screen.",
+      "Do reserve gold for the current player's turn, selection, seat and next action (The Lamp Rule).",
+      "Do use felt-text and felt-accent for any text placed on the felt.",
+      "Do give every number that changes during play tabular figures.",
+      "Do size every touch control to 44px on coarse pointers, at any viewport width.",
+      "Do keep keyboard focus on cards white, distinct from the gold selection ring.",
+      "Do honour `prefers-reduced-motion`: no lifts or slides, selection survives through the ring."
+    ],
+    "donts": [
+      "Don't put a shadow on a panel, a button or the page; shadows belong to cards, the felt and sheets.",
+      "Don't use blue for anything but card backs.",
+      "Don't put panel text colours (muted, gold) directly on the felt.",
+      "Don't put white text on gold; use gold-ink.",
+      "Don't introduce a second typeface beyond the sans and the room-code monospace."
+    ]
+  }
+}

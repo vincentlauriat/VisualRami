@@ -7,6 +7,7 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 ### Added
 - Device-aware layout beyond the phone: a tablet-portrait tier (real card and opponent sizes instead of phone sizing), a landscape tier that moves opponents to a left rail and pins the game to the viewport so the hand never falls below the fold, and touch-sized controls on any coarse pointer regardless of viewport width.
 - Product record (`PRODUCT.md`) and a UI technical audit (`docs/AUDIT_UI.md`).
+- Design system record (`DESIGN.md`, with the `.impeccable/design.json` sidecar): tokens, layout tiers, elevation and component rules extracted from the shipped client.
 - Public repository under the MIT license; landing page on lauriat.fr, listed on vincentlauriat.github.io and the GitHub profile.
 - Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
 
