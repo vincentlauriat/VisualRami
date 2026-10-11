@@ -21,7 +21,7 @@ Landing page: https://lauriat.fr/outils/visualrami/ · More apps: https://vincen
 | Text chat and game log | ✅ |
 | Reconnect after a page reload, absent-player auto-turn, host handover | ✅ |
 | Games survive a server restart; come back with the table code and your name (7 days) | ✅ |
-| Phone-friendly table layout (tested at 390 px) | ✅ |
+| Device-aware table layout: phone, tablet portrait, landscape, touch-sized controls | ✅ |
 | Azure App Service packaging + remote probe | ✅ |
 | TURN relay for restrictive networks | ⚙️ configurable, bring your own server |
 | Drag-and-drop hand, spectator mode, game history | ⏳ roadmap |
