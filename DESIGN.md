@@ -233,10 +233,19 @@ tabular figures, so columns do not shift as values update.
 
 ## Layout
 
-The table is the layout. On desktop (> 900px) the page is a two-column grid: the table area
-(opponents above, felt in the middle, your hand below) and a 260px log/chat column. Opponents sit
-in a centred row of tiles, `clamp(150px, 18vw, 210px)` wide, that never wraps: with many players
-the tiles share the width by seat count, so the felt keeps at least 200px on a 13" laptop.
+The table is the layout. On desktop (> 900px) the players **sit around the felt**. Opponents take
+their seats clockwise from your left, in turn order, so the next player is on your left: with one
+or two opponents they sit across the top; from three on, the first and last take the left and
+right edges and the others share the top (six players: one left, three across, one right). You sit
+at the bottom, your hand below the felt. Each player's melds lie on the felt **in front of their
+own face**, in their zone; yours sit right above your hand. A top column never squeezes a zone
+narrower than its longest meld, and spare width is shared out, so a zone stays under its seat and
+in seat order even when one player has laid much more. With side seats the piles shrink (46×64,
+no captions) and the turn line moves beside them. The felt keeps at least 200px.
+
+From 1366px up a 260px log/chat column sits beside the table; below that (901–1365px) the log and
+chat come in as a drawer from the right behind the chat button, so the seats and the felt get the
+whole width.
 
 **Phone portrait** (< 600px wide): the whole table fits one screen and nothing outside the felt
 scrolls. The top bar keeps one row (icons only, the table code without its "table" prefix), your
@@ -254,6 +263,11 @@ The log and chat become a bottom sheet behind a 💬 button.
 - **Phone landscape** (≤ 900px wide, ≤ 520px tall): a two-column grid, opponents stacked in a
   narrow left rail and the felt plus hand on the right. The log slides in from the side.
 - **Coarse pointer, any width:** every button reaches 44px; tabs 48px.
+
+At ≤ 900px the faces stay in the strip and the melds are **grouped by player on the felt**: one row
+per player, led by their name in a fixed 64px column, in seat order with yours last, nearest your
+hand. Players who have laid nothing get no row. Touching a face in the strip scrolls the felt to
+that player's row and briefly lights it.
 
 Spacing runs on a loose 4px rhythm, most often 8, 12 and 16px. The game gutter is 14px on
 desktop and follows the safe-area insets on phones.
@@ -336,9 +350,19 @@ reports it off, the player's initials replace the video. The tile of the player 
 is takes a gold border and glow; an offline player's tile drops to 50% opacity.
 
 ### Meld
-A row of overlapping cards on a 18% black wash with the owner's name in small felt-text. When
-your selection can extend it, or swap out its joker, it becomes a button with a gold border and a
-gold wash on hover and press; melds the selection cannot join stay plain.
+Cards fanned like a hand held closed, on an 18% black wash: every card but the last shows only its
+index strip (21px on phones, 18px at the seats, where cards are 38×53). A strip is a narrower
+card, not a negative-margin overlap, so a long run takes its honest width in the layout. The owner
+is the seat the meld lies in front of, so the meld carries no name. When your selection can extend
+it, or swap out its joker, it becomes a button with a gold border and a gold wash on hover and
+press; melds the selection cannot join stay plain.
+
+### Seat Zone
+Each player's melds sit together in a zone. The zone of the player whose turn it is gets a quiet
+lit edge (5% ivory wash, 18% felt-text inset line), not gold: the gold frame on the face already
+says whose turn it is. **A first laydown is a table event:** the opener's zone flashes ivory and
+fades over 3.6s, with a "1re pose · 67 pts" pill, seen by every player and announced in a polite
+live region; reduced motion keeps a steady highlight for the same 4 seconds instead of the fade.
 
 ### Discard while staging
 Discarding ends the turn and abandons staged melds, so while the tray holds anything Défausser

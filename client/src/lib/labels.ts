@@ -18,6 +18,14 @@ export const labels = {
   meld: (owner: string) => `Combinaison ${deName(owner)}`,
   meldTarget: (owner: string, cards: Card[]) => `Ajouter la sélection à la combinaison ${deName(owner)} : ${cardList(cards)}`,
   unstage: (cards: Card[]) => `Retirer ${cardList(cards)}`,
+
+  // Each player's melds sit in front of their seat.
+  zone: (owner: string) => `Combinaisons ${deName(owner)}`,
+  myZone: "Vos combinaisons",
+  seatJump: (owner: string) => `Voir les combinaisons ${deName(owner)}`,
+  firstLaydownBadge: (points: number) => `1re pose · ${points} pts`,
+  firstLaydownSpoken: (owner: string, points: number, mine: boolean) =>
+    mine ? `Vous posez pour la première fois : ${points} points.` : `${owner} pose pour la première fois : ${points} points.`,
   selectedCard: (card: Card, order: number) => `${cardName(card)}, choix ${order}`,
   sideToggle: (messages: number) => (messages > 0 ? `Journal et chat, ${messages} messages` : "Journal et chat"),
   dismissMessage: "Fermer le message",

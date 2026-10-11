@@ -30,6 +30,10 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Native checkboxes, number inputs and scrollbars rendered in light mode on the dark table (`color-scheme`).
 
 ### Changed
+- The players sit around the felt on laptops: opponents take the left, top and right edges clockwise from your left in turn order, and each one's melds lie in front of their face instead of in one anonymous heap; yours sit above your hand. On phones and tablets the faces stay in the strip, the melds are grouped by player on the felt, and touching a face scrolls to that player's melds.
+- Melds on the table fan like a closed hand, each card showing its index strip, so long runs take less room.
+- A first laydown is a table event: the player's zone lights up with "1re pose · N pts" for everyone, and screen readers hear it.
+- Between 901 and 1365px wide, the log and chat open as a drawer from the right, so the table gets the whole width.
 - Phone (portrait): the whole table fits one screen — your hand, the piles and the next action are always in view without scrolling. One-row top bar (icons), your seat in the opponents' strip, one action row; "Poser" joins the bar while melds are staged.
 - First laydown is guided: staged melds wait on the felt in a tray with a gauge toward 51 ("encore 11"), a pure-run marker, and "Poser" lighting up once the threshold is reached.
 - Gold follows "yours, now": the piles are ringed while you must draw, Défausser and Poser turn gold only once usable, only melds that accept the selection light up, and other players' "posé" badge is neutral. The turn banner adds one line saying what you can do next.
