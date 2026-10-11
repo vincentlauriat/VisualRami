@@ -60,7 +60,7 @@ Players are in different homes, on different networks, at the same time.
 |---|---|
 | Phone held in the hand | One thumb, 14 cards on a ~390 px screen, read at arm's length, variable brightness. The tightest case and the most common. |
 | Laptop, 13–16" | The only scene where five opponents' video genuinely fits on screen. Mouse or trackpad. |
-| Tablet, flat or propped | Touch at an intermediate size. Currently unaddressed: the single breakpoint is at 900 px. |
+| Tablet, flat or propped | Touch at an intermediate size. Has its own tier (600–900 px wide, portrait), with a separate tier for phones in landscape; not yet tried on a real tablet. |
 | Phone as the hand, next to another screen | Already on a video call or in front of a TV; the phone holds the cards. Built-in video becomes secondary and the hand becomes everything. |
 
 Camera and microphone require HTTPS (or `localhost`), which constrains every deployment and every
@@ -125,12 +125,15 @@ Lowest cumulative score wins.
 **Real, verifiable:**
 
 - Working v0.1.0: 2–6 players, WebRTC video/audio mesh, chat, session resume.
-- 25 rule and reducer tests in `shared`, 5 Socket.IO integration tests in `server`; CI runs
+- 26 rule and reducer tests in `shared`, 12 Socket.IO integration tests in `server`; CI runs
   typecheck, tests and build on every push.
 - `Scripts/probe-remote.mjs` — end-to-end WebSocket probe against a live deployment.
 - An independent code review, 10 findings fixed and listed in `CHANGELOG.md`.
 - A UI technical audit: `docs/AUDIT_UI.md` (2026-09-18, 12/20, 21 findings, contrast ratios
-  computed rather than estimated).
+  computed rather than estimated). Its P1 and P2 findings were fixed on 2026-10-11 (PR #10) and
+  checked with Playwright on an emulated iPhone and a desktop viewport; not with VoiceOver.
+- A player who turns their camera off is shown to the others by initials rather than a black tile:
+  camera state travels between peers as a signal (PR #11), checked with three browsers on one machine.
 - Full playthrough verified in Chrome across two tabs.
 
 **Absences future work must not paper over:**
@@ -161,8 +164,10 @@ Lowest cumulative score wins.
 ## Accessibility & Inclusion
 
 No individual accessibility need is known in the current circle of players, so WCAG AA is the
-quality floor rather than a response to a named person — and it is a floor the product does not yet
-meet (`docs/AUDIT_UI.md`).
+quality floor rather than a response to a named person. The audit's blocking findings
+(`docs/AUDIT_UI.md`) are fixed — keyboard access to melds, a modal round result, the hidden sheet
+leaving the tab order, contrast on the felt — but no screen reader has been tried yet, so the floor
+is met in code, not yet confirmed in use.
 
 **The product-specific requirement is legibility in the real scenes above, and it outranks ARIA
 semantics in priority order.** A player reads their hand at arm's length, on a phone, between two
