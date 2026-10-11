@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { DEFAULT_OPTIONS, type GameOptions } from "@visualrami/shared";
 import { forgetSeat, loadName, loadSeats, saveName } from "../lib/socket";
+import { Icon } from "./Icon";
 
 interface Props {
   connected: boolean;
@@ -82,7 +83,7 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
                   Reprendre
                 </button>
                 <button type="button" className="ghost tiny" onClick={() => forget(seat.roomId)} aria-label="Oublier">
-                  ✕
+                  <Icon name="close" />
                 </button>
               </li>
             ))}

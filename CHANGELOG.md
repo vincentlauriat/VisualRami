@@ -23,6 +23,7 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Native checkboxes, number inputs and scrollbars rendered in light mode on the dark table (`color-scheme`).
 
 ### Changed
+- Controls are tactile: raised buttons stand on a darker edge with a lit rim and sink flush when pressed (no layout shift); disabled ones lie flush. Ghost buttons, tabs and dismiss buttons stay flat. Control emoji (mic, camera, chat, close) are replaced by drawn SVG icons; checkboxes take the gold accent.
 - Phone layout (≤ 900 px): stacked sections, opponents in a scrollable strip, smaller cards, sticky action bar with 44 px targets, log/chat as a bottom sheet behind a 💬 button, iOS safe areas and no zoom on input focus.
 - Tables seat 2 to 6 players (was 4). Opponent tiles shrink to fit five of them.
 

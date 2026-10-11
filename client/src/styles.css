@@ -17,6 +17,14 @@
   --felt-text: #cfe3d5;
   --felt-text-strong: #dfeee4;
   --felt-accent: #f2cd72;
+  /* Controls stand on an edge, like a chip seen slightly from the front: a lit rim on top,
+     a darker edge below. Depth by tone and border, never by shadow. */
+  --control-face: #2b4334;
+  --control-face-hover: #34513f;
+  --control-rim: #45664f;
+  --control-side: #1c2e24;
+  --control-edge: #0a110c;
+  --gold-rim: #f7da8e;
   --radius: 12px;
   --card-w: 58px;
   --card-h: 82px;
@@ -32,7 +40,7 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 ::selection { background: rgba(230, 184, 79, 0.35); color: var(--text); }
-input { caret-color: var(--gold); }
+input { caret-color: var(--gold); accent-color: var(--gold); }
 * { scrollbar-color: var(--border-strong) transparent; }
 button {
   touch-action: manipulation;
@@ -47,17 +55,42 @@ button {
   transition: background 0.15s, transform 0.1s;
 }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
+/* :where keeps this at element specificity, so tabs, ghost and the variants below still win. */
+button:where(:not(.card, .meld, .ghost, .side-close, .tabs > *)) {
+  background: var(--control-face);
+  border-color: var(--control-side);
+  border-top-color: var(--control-rim);
+  border-bottom: 3px solid var(--control-edge);
+  font-weight: 500;
+}
+/* Pressed, and unavailable, controls lie flush with the table: the edge collapses and the face
+   drops by the same 2px, so the margin box (and every neighbour) stays put. */
+button:where(:not(.card, .meld, .ghost, .side-close, .tabs > *)):active:not(:disabled),
+button:where(:not(.card, .meld, .ghost, .side-close, .tabs > *)):disabled {
+  margin-top: 2px;
+  border-bottom-width: 1px;
+  transform: none;
+}
+button:where(:has(> .icon)) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.icon {
+  width: 1.15em; height: 1.15em; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round;
+}
 /* Designed rather than left to the UA: the default ring vanishes against a near-white card face. */
 :where(button, [tabindex]):focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 h2[tabindex="-1"]:focus { outline: none; }
-button.primary { background: var(--gold); color: #1a1500; border-color: var(--gold-dark); font-weight: 600; }
+button.primary {
+  background: var(--gold); color: #1a1500; font-weight: 600;
+  border-color: var(--gold-dark); border-top-color: var(--gold-rim);
+}
 @media (hover: hover) {
   /* Cards keep their face (a hovered card turning panel-green read as a different card), and a
      target meld keeps its own gold hover. */
-  button:not(.card, .meld):hover:not(:disabled) { background: #2b4334; }
+  button:where(:not(.card, .meld, .ghost, .side-close, .tabs > *)):hover:not(:disabled) { background: var(--control-face-hover); }
+  button:where(.ghost, .side-close, .tabs > *):hover:not(:disabled) { background: var(--control-face); }
   button.primary:hover:not(:disabled) { background: #f0c866; }
 }
-button:active:not(:disabled) { transform: translateY(1px); }
+button:where(.ghost, .side-close, .tabs > *):active:not(:disabled) { transform: translateY(1px); }
 button.ghost { background: transparent; }
 button.tiny {
   min-width: 32px; min-height: 32px; padding: 0 6px; font-size: 12px;

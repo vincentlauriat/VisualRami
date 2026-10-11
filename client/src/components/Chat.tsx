@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { ChatMessage } from "../lib/useGame";
+import { Icon } from "./Icon";
 
 interface Props {
   messages: ChatMessage[];
@@ -42,7 +43,7 @@ export function Chat({ messages, log, onSend, onClose }: Props) {
         </button>
         {onClose && (
           <button type="button" className="side-close" onClick={onClose} aria-label="Fermer le journal et le chat">
-            ✕
+            <Icon name="close" />
           </button>
         )}
       </div>

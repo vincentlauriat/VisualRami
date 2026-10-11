@@ -8,6 +8,7 @@ colors:
   gold: "#e6b84f"
   gold-dark: "#b98b23"
   gold-ink: "#1a1500"
+  gold-rim: "#f7da8e"
   card-face: "#fdfdf8"
   card-edge: "#c9c9c0"
   card-red: "#c8322b"
@@ -18,6 +19,11 @@ colors:
   panel: "#182620"
   panel-2: "#213328"
   panel-hover: "#2b4334"
+  control-face: "#2b4334"
+  control-face-hover: "#34513f"
+  control-rim: "#45664f"
+  control-side: "#1c2e24"
+  control-edge: "#0a110c"
   field: "#0e1712"
   video-well: "#0b110d"
   border: "#27392f"
@@ -77,12 +83,12 @@ spacing:
   xl: "20px"
 components:
   button:
-    backgroundColor: "{colors.panel-2}"
+    backgroundColor: "{colors.control-face}"
     textColor: "{colors.text}"
     rounded: "{rounded.control}"
     padding: "8px 14px"
   button-hover:
-    backgroundColor: "{colors.panel-hover}"
+    backgroundColor: "{colors.control-face-hover}"
   button-primary:
     backgroundColor: "{colors.gold}"
     textColor: "{colors.gold-ink}"
@@ -147,15 +153,16 @@ it marks what is *yours right now* (your turn, your selection, your seat, the on
 moves the game forward) and almost nothing else. Density follows the device: the phone layout is
 tight and stacked, the laptop layout spreads the table and seats five opponents around it.
 
-The intended character of controls is **tactile and assertive**, like chips pushed across the
-felt. Today they are mostly flat: dark fills, a 1px press, no volume. That gap is a direction to
-close, not a description of what is shipped.
+Controls are **tactile and assertive**, like chips standing on the felt: each raised control
+shows a lit rim on top and a darker edge below, and sinks flush when pressed. Volume comes from
+tone and border, never from a shadow, so the Objects Cast Shadows Rule holds.
 
 **Key Characteristics:**
 - One lit surface: the felt, a radial green gradient inside a dark wood rim.
 - Ivory cards as the brightest, most legible objects on screen.
 - Gold reserved for "yours, now": turn, selection, seat, primary action.
 - Dark green panels for everything that is not the table.
+- Controls stand on an edge and sink when pressed; unavailable ones lie flush.
 - Faces are part of the table: video tiles carry turn state and laid-down status.
 - Four layout tiers: desktop, phone portrait, tablet portrait, phone landscape.
 
@@ -272,16 +279,22 @@ pattern in the system, a 45° stripe inside an inset frame.
 ## Components
 
 ### Buttons
-Intended character: tactile and assertive. Shipped character: quiet and flat.
-- **Shape:** gently rounded (8px), 1px border-strong outline.
-- **Default:** panel-2 fill, text colour, 8px 14px padding.
-- **Primary:** gold fill, gold-ink text, gold-dark border, weight 600. One per context, the
-  action that moves the game forward (draw, lay down, discard, create the table).
-- **Ghost:** transparent fill, same outline.
-- **Tiny:** 32px square minimum (44px on touch), for dismiss and remove.
-- **Off:** danger border and pink text, for a muted mic or camera.
-- **Hover / Focus / Press:** hover lifts the fill to panel-hover on pointer devices only; focus is
-  a 2px gold outline offset 2px; press translates 1px down. Disabled is 45% opacity.
+Tactile and assertive: a raised control is a chip on its edge.
+- **Shape:** gently rounded (8px). Raised controls have a 1px lit rim on top (control-rim), 1px
+  sides (control-side) and a 3px edge below (control-edge). Weight 500.
+- **Default:** control-face fill, text colour, 8px 14px padding.
+- **Primary:** gold fill, gold-ink text, gold-rim on top, gold-dark sides and edge, weight 600.
+  One per context, the action that moves the game forward (draw, lay down, discard, create).
+- **Ghost:** flat on purpose — transparent fill, 1px border-strong outline, no edge. Leave,
+  dismiss, close and the chat toggle are ghosts; tabs are flat too.
+- **Tiny:** 32px square minimum (44px on touch), for dismiss and remove. Always ghost.
+- **Off:** danger border on every side, for a muted mic or camera.
+- **Icons:** drawn SVG on a 24-unit grid, 1.75 stroke, `currentColor`, 1.15em, 6px from the label.
+  No emoji in controls; the 🃏 mark is the only emoji and it is the logo.
+- **Hover / Focus / Press:** hover lightens the face (control-face-hover) on pointer devices only;
+  focus is a 2px gold outline offset 2px. Press collapses the edge to 1px and drops the face 2px
+  with no layout shift. Disabled lies flush the same way, at 45% opacity: available controls
+  stand up, unavailable ones do not.
 
 ### Cards / Containers
 - **Panel:** panel fill, 1px border, 12px radius, 18px padding. Home, lobby and result dialog.
@@ -326,6 +339,7 @@ and press.
 - **Do** give every number that changes during play tabular figures.
 - **Do** size every touch control to 44px on coarse pointers, at any viewport width.
 - **Do** keep keyboard focus on cards white, distinct from the gold selection ring.
+- **Do** give raised controls their edge (3px below, lit rim above) and keep ghosts, tabs and tiny buttons flat.
 - **Do** honour `prefers-reduced-motion`: no lifts or slides, selection survives through the ring.
 
 ### Don't:
@@ -333,4 +347,5 @@ and press.
 - **Don't** use blue for anything but card backs.
 - **Don't** put panel text colours (muted, gold) directly on the felt.
 - **Don't** put white text on gold; use gold-ink.
+- **Don't** use emoji as control icons; draw them on the 24-unit grid at 1.75 stroke.
 - **Don't** introduce a second typeface beyond the sans and the room-code monospace.

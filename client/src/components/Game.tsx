@@ -16,6 +16,7 @@ import { VideoTile } from "./VideoTile";
 import { MediaControls } from "./MediaControls";
 import { Chat } from "./Chat";
 import { labels } from "../lib/labels";
+import { Icon } from "./Icon";
 
 interface Props {
   state: PublicGameState;
@@ -197,7 +198,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
             aria-controls="side-panel"
             aria-label={labels.sideToggle(chat.length)}
           >
-            💬{chat.length > 0 && <span className="tag" aria-hidden>{chat.length}</span>}
+            <Icon name="chat" />{chat.length > 0 && <span className="tag" aria-hidden>{chat.length}</span>}
           </button>
           <button type="button" className="ghost" onClick={onLeave} title="Votre place reste réservée : revenez avec le code de la table">
             Quitter
@@ -300,7 +301,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                 <div className="toast" role="alert" onClick={dismissToast}>
                   <span>{error ?? notice}</span>
                   <button type="button" className="ghost tiny" onClick={dismissToast} aria-label={labels.dismissMessage}>
-                    ✕
+                    <Icon name="close" />
                   </button>
                 </div>
               )}
@@ -324,7 +325,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                           <CardView key={c.id} card={c} size="small" />
                         ))}
                         <button type="button" className="ghost tiny" onClick={() => unstage(i)} aria-label={labels.unstage(m.cards)}>
-                          ✕
+                          <Icon name="close" />
                         </button>
                       </div>
                     ))}

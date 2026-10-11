@@ -1,4 +1,5 @@
 import type { WebRTCState } from "../lib/useWebRTC";
+import { Icon } from "./Icon";
 
 export function MediaControls({ rtc, compact }: { rtc: WebRTCState; compact?: boolean }) {
   const canToggle = rtc.mediaStatus === "ready" || rtc.mediaStatus === "audio-only";
@@ -6,12 +7,12 @@ export function MediaControls({ rtc, compact }: { rtc: WebRTCState; compact?: bo
     <div className={`media-controls${compact ? " compact" : ""}`}>
       {rtc.mediaStatus === "idle" || rtc.mediaStatus === "denied" ? (
         <button type="button" onClick={() => rtc.startMedia()}>
-          🎥 Activer caméra et micro
+          <Icon name="camera" /> Activer caméra et micro
         </button>
       ) : (
         <>
           <button type="button" onClick={rtc.toggleMic} disabled={!canToggle} className={rtc.micOn ? "" : "off"}>
-            {rtc.micOn ? "🎙️ Micro" : "🔇 Micro coupé"}
+            {rtc.micOn ? <><Icon name="mic" /> Micro</> : <><Icon name="micOff" /> Micro coupé</>}
           </button>
           <button
             type="button"
@@ -19,7 +20,7 @@ export function MediaControls({ rtc, compact }: { rtc: WebRTCState; compact?: bo
             disabled={rtc.mediaStatus !== "ready"}
             className={rtc.camOn ? "" : "off"}
           >
-            {rtc.camOn ? "📷 Caméra" : "🚫 Caméra coupée"}
+            {rtc.camOn ? <><Icon name="camera" /> Caméra</> : <><Icon name="cameraOff" /> Caméra coupée</>}
           </button>
         </>
       )}

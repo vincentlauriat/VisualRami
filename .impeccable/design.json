@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-11T11:14:16+00:00",
+  "generatedAt": "2026-10-11T11:22:48+00:00",
   "title": "Design System: VisualRami",
   "extensions": {
     "colorMeta": {
@@ -423,6 +423,96 @@
           "oklch(84% 0.166 152.4)",
           "oklch(95% 0.166 152.4)"
         ]
+      },
+      "gold-rim": {
+        "role": "secondary",
+        "displayName": "Liseré de laiton",
+        "canonical": "#f7da8e",
+        "tonalRamp": [
+          "oklch(15% 0.100 89.4)",
+          "oklch(25% 0.100 89.4)",
+          "oklch(35% 0.100 89.4)",
+          "oklch(48% 0.100 89.4)",
+          "oklch(60% 0.100 89.4)",
+          "oklch(72% 0.100 89.4)",
+          "oklch(84% 0.100 89.4)",
+          "oklch(95% 0.100 89.4)"
+        ]
+      },
+      "control-face": {
+        "role": "neutral",
+        "displayName": "Face de jeton",
+        "canonical": "#2b4334",
+        "tonalRamp": [
+          "oklch(15% 0.040 156.3)",
+          "oklch(25% 0.040 156.3)",
+          "oklch(35% 0.040 156.3)",
+          "oklch(48% 0.040 156.3)",
+          "oklch(60% 0.040 156.3)",
+          "oklch(72% 0.040 156.3)",
+          "oklch(84% 0.040 156.3)",
+          "oklch(95% 0.040 156.3)"
+        ]
+      },
+      "control-face-hover": {
+        "role": "neutral",
+        "displayName": "Face de jeton, survol",
+        "canonical": "#34513f",
+        "tonalRamp": [
+          "oklch(15% 0.046 156.4)",
+          "oklch(25% 0.046 156.4)",
+          "oklch(35% 0.046 156.4)",
+          "oklch(48% 0.046 156.4)",
+          "oklch(60% 0.046 156.4)",
+          "oklch(72% 0.046 156.4)",
+          "oklch(84% 0.046 156.4)",
+          "oklch(95% 0.046 156.4)"
+        ]
+      },
+      "control-rim": {
+        "role": "neutral",
+        "displayName": "Liseré de jeton",
+        "canonical": "#45664f",
+        "tonalRamp": [
+          "oklch(15% 0.053 153.6)",
+          "oklch(25% 0.053 153.6)",
+          "oklch(35% 0.053 153.6)",
+          "oklch(48% 0.053 153.6)",
+          "oklch(60% 0.053 153.6)",
+          "oklch(72% 0.053 153.6)",
+          "oklch(84% 0.053 153.6)",
+          "oklch(95% 0.053 153.6)"
+        ]
+      },
+      "control-side": {
+        "role": "neutral",
+        "displayName": "Flanc de jeton",
+        "canonical": "#1c2e24",
+        "tonalRamp": [
+          "oklch(15% 0.030 159.4)",
+          "oklch(25% 0.030 159.4)",
+          "oklch(35% 0.030 159.4)",
+          "oklch(48% 0.030 159.4)",
+          "oklch(60% 0.030 159.4)",
+          "oklch(72% 0.030 159.4)",
+          "oklch(84% 0.030 159.4)",
+          "oklch(95% 0.030 159.4)"
+        ]
+      },
+      "control-edge": {
+        "role": "neutral",
+        "displayName": "Tranche de jeton",
+        "canonical": "#0a110c",
+        "tonalRamp": [
+          "oklch(15% 0.015 153.5)",
+          "oklch(25% 0.015 153.5)",
+          "oklch(35% 0.015 153.5)",
+          "oklch(48% 0.015 153.5)",
+          "oklch(60% 0.015 153.5)",
+          "oklch(72% 0.015 153.5)",
+          "oklch(84% 0.015 153.5)",
+          "oklch(95% 0.015 153.5)"
+        ]
       }
     },
     "typographyMeta": {
@@ -532,9 +622,9 @@
       "name": "Button",
       "kind": "button",
       "refersTo": "button",
-      "description": "Default control: dark fill, quiet, flat.",
-      "html": "<button class=\"ds-btn\">Trier par couleur</button>",
-      "css": ".ds-btn{font:inherit;color:var(--text,#f1f5f2);background:var(--panel-2,#213328);border:1px solid var(--border-strong,#2f4a3b);border-radius:8px;padding:8px 14px;cursor:pointer;transition:background .15s,transform .1s}.ds-btn:hover{background:#2b4334}.ds-btn:focus-visible{outline:2px solid var(--gold,#e6b84f);outline-offset:2px}.ds-btn:active{transform:translateY(1px)}"
+      "description": "Raised control: a chip on its edge, lit rim above, dark edge below; sinks flush when pressed.",
+      "html": "<button class=\"ds-btn\"><svg class=\"ds-icon\" viewBox=\"0 0 24 24\"><rect x=\"9\" y=\"3\" width=\"6\" height=\"11\" rx=\"3\"/><path d=\"M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21\"/></svg>Micro</button>",
+      "css": ".ds-btn{font:inherit;font-weight:500;color:#f1f5f2;background:var(--control-face,#2b4334);border:1px solid var(--control-side,#1c2e24);border-top-color:var(--control-rim,#45664f);border-bottom:3px solid var(--control-edge,#0a110c);border-radius:8px;padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s}.ds-btn:hover{background:var(--control-face-hover,#34513f)}.ds-btn:focus-visible{outline:2px solid #e6b84f;outline-offset:2px}.ds-btn:active{margin-top:2px;border-bottom-width:1px}.ds-icon{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}"
     },
     {
       "name": "Primary Button",
@@ -542,7 +632,15 @@
       "refersTo": "button-primary",
       "description": "The one action that moves the game forward.",
       "html": "<button class=\"ds-btn-primary\">Défausser</button>",
-      "css": ".ds-btn-primary{font:inherit;font-weight:600;color:#1a1500;background:var(--gold,#e6b84f);border:1px solid var(--gold-dark,#b98b23);border-radius:8px;padding:8px 14px;cursor:pointer;transition:background .15s,transform .1s}.ds-btn-primary:hover{background:#f0c866}.ds-btn-primary:focus-visible{outline:2px solid var(--gold,#e6b84f);outline-offset:2px}.ds-btn-primary:active{transform:translateY(1px)}"
+      "css": ".ds-btn-primary{font:inherit;font-weight:600;color:#1a1500;background:#e6b84f;border:1px solid #b98b23;border-top-color:#f7da8e;border-bottom:3px solid #b98b23;border-radius:8px;padding:8px 14px;cursor:pointer;transition:background .15s}.ds-btn-primary:hover{background:#f0c866}.ds-btn-primary:focus-visible{outline:2px solid #e6b84f;outline-offset:2px}.ds-btn-primary:active{margin-top:2px;border-bottom-width:1px}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Flat on purpose: leave, dismiss, close, chat toggle.",
+      "html": "<button class=\"ds-ghost\">Quitter</button>",
+      "css": ".ds-ghost{font:inherit;color:#f1f5f2;background:transparent;border:1px solid #2f4a3b;border-radius:8px;padding:8px 14px;cursor:pointer;transition:background .15s,transform .1s}.ds-ghost:hover{background:#2b4334}.ds-ghost:focus-visible{outline:2px solid #e6b84f;outline-offset:2px}.ds-ghost:active{transform:translateY(1px)}"
     },
     {
       "name": "Input",
@@ -595,12 +693,13 @@
   ],
   "narrative": {
     "northStar": "La Table du Soir",
-    "overview": "**Creative North Star: \"La Table du Soir\"**\n\nA card table under a lamp, in someone's home, late enough that the room around it has gone dark.\nThe felt is the only lit surface; the cards are the brightest things on it; the faces of the players\nsit at its edge. Everything else (buttons, panels, the log) is the dim room: present, reachable,\nand deliberately quieter than the table.\n\nThe system is dark by necessity as much as by mood. It is played on a phone at arm's length, often\nin the evening, and the cards must stay the highest-contrast object on screen. Gold is the lamp:\nit marks what is *yours right now* (your turn, your selection, your seat, the one action that\nmoves the game forward) and almost nothing else. Density follows the device: the phone layout is\ntight and stacked, the laptop layout spreads the table and seats five opponents around it.\n\nThe intended character of controls is **tactile and assertive**, like chips pushed across the\nfelt. Today they are mostly flat: dark fills, a 1px press, no volume. That gap is a direction to\nclose, not a description of what is shipped.",
+    "overview": "**Creative North Star: \"La Table du Soir\"**\n\nA card table under a lamp, in someone's home, late enough that the room around it has gone dark.\nThe felt is the only lit surface; the cards are the brightest things on it; the faces of the players\nsit at its edge. Everything else (buttons, panels, the log) is the dim room: present, reachable,\nand deliberately quieter than the table.\n\nThe system is dark by necessity as much as by mood. It is played on a phone at arm's length, often\nin the evening, and the cards must stay the highest-contrast object on screen. Gold is the lamp:\nit marks what is *yours right now* (your turn, your selection, your seat, the one action that\nmoves the game forward) and almost nothing else. Density follows the device: the phone layout is\ntight and stacked, the laptop layout spreads the table and seats five opponents around it.\n\nControls are **tactile and assertive**, like chips standing on the felt: each raised control\nshows a lit rim on top and a darker edge below, and sinks flush when pressed. Volume comes from\ntone and border, never from a shadow, so the Objects Cast Shadows Rule holds.",
     "keyCharacteristics": [
       "One lit surface: the felt, a radial green gradient inside a dark wood rim.",
       "Ivory cards as the brightest, most legible objects on screen.",
       "Gold reserved for \"yours, now\": turn, selection, seat, primary action.",
       "Dark green panels for everything that is not the table.",
+      "Controls stand on an edge and sink when pressed; unavailable ones lie flush.",
       "Faces are part of the table: video tiles carry turn state and laid-down status.",
       "Four layout tiers: desktop, phone portrait, tablet portrait, phone landscape."
     ],
@@ -638,6 +737,7 @@
       "Do give every number that changes during play tabular figures.",
       "Do size every touch control to 44px on coarse pointers, at any viewport width.",
       "Do keep keyboard focus on cards white, distinct from the gold selection ring.",
+      "Do give raised controls their edge (3px below, lit rim above) and keep ghosts, tabs and tiny buttons flat.",
       "Do honour `prefers-reduced-motion`: no lifts or slides, selection survives through the ring."
     ],
     "donts": [
@@ -645,6 +745,7 @@
       "Don't use blue for anything but card backs.",
       "Don't put panel text colours (muted, gold) directly on the felt.",
       "Don't put white text on gold; use gold-ink.",
+      "Don't use emoji as control icons; draw them on the 24-unit grid at 1.75 stroke.",
       "Don't introduce a second typeface beyond the sans and the room-code monospace."
     ]
   }
