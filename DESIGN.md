@@ -200,7 +200,9 @@ A warm-dark palette built from the materials of a card table: green felt, brass,
 
 ### Named Rules
 **The Lamp Rule.** Gold means "yours, now". If an element is not the current player's turn,
-selection, seat or next action, it is not gold.
+selection, seat or next action, it is not gold. In practice: the two piles take a gold ring while
+it is your turn to draw; Défausser and Poser are gold only once they can actually be pressed; only
+the melds that will accept your selection light up; another player's "posé" badge is neutral.
 
 **The Two Surfaces Rule.** Text on the felt uses the felt-text family; text on panels uses
 text / muted. The panel colours lose contrast on the felt's lit centre, so they never cross over.
@@ -234,6 +236,11 @@ tabular figures, so columns do not shift as values update.
 The table is the layout. On desktop (> 900px) the page is a two-column grid: the table area
 (opponents above, felt in the middle, your hand below) and a 260px log/chat column. Opponents sit
 in a centred, wrapping row of tiles, `clamp(150px, 18vw, 210px)` wide.
+
+**Phone portrait** (< 600px wide): the whole table fits one screen and nothing outside the felt
+scrolls. The top bar keeps one row (icons only, the table code without its "table" prefix), your
+own seat joins the opponents' strip, and sort, clear, prepare and discard share a single action
+row; while melds are staged, "Poser" takes the sort buttons' place.
 
 At ≤ 900px the game becomes a single column in natural document flow: opponents in a horizontal
 scroll strip, the felt, then your hand, with sort and play actions in a sticky bar at the bottom.
@@ -327,8 +334,18 @@ is takes a gold border and glow; an offline player's tile drops to 50% opacity.
 
 ### Meld
 A row of overlapping cards on a 18% black wash with the owner's name in small felt-text. When
-your selection can extend it, it becomes a button with a gold border and a gold wash on hover
-and press.
+your selection can extend it, or swap out its joker, it becomes a button with a gold border and a
+gold wash on hover and press; melds the selection cannot join stay plain.
+
+### Staging Tray
+Melds prepared for a laydown wait on the felt, above the table's melds, inside a dashed
+felt-accent tray on a 22% black wash: on the table, not laid yet. For the first laydown it carries
+a gauge toward the threshold (felt-text, turning felt-accent once reached), "N / 51 pts · encore M",
+and a pure-run marker.
+
+### Turn Banner
+The current turn in felt-text-strong ("À vous" in felt-accent), with one line of guidance below
+in felt-text that names the next possible move.
 
 ## Do's and Don'ts
 

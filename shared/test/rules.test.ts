@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyzeRun, analyzeSet, checkFirstLaydown, isValidMeld } from "../src/rules.js";
+import { analyzeRun, analyzeSet, arrangeMeld, checkFirstLaydown, isValidMeld } from "../src/rules.js";
 import type { Card, Rank, Suit } from "../src/types.js";
 
 let counter = 0;
@@ -81,5 +81,33 @@ describe("checkFirstLaydown", () => {
     expect(isValidMeld([c(2, "hearts"), c(2, "clubs"), c(2, "spades")])).toBe(true);
     expect(isValidMeld([c(2, "hearts"), c(3, "hearts"), c(4, "hearts")])).toBe(true);
     expect(isValidMeld([c(2, "hearts"), c(3, "hearts")])).toBe(false);
+  });
+});
+
+describe("arrangeMeld", () => {
+  const ranks = (cards: Card[] | null) => cards?.map((x) => (x.joker ? "J" : x.rank));
+  it("sorts a run tapped out of order", () => {
+    expect(ranks(arrangeMeld([c(13), c(10), c(12), c(11)]))).toEqual([10, 11, 12, 13]);
+  });
+  it("fills a gap with the joker", () => {
+    expect(ranks(arrangeMeld([c(9), joker(), c(7)]))).toEqual([7, "J", 9]);
+  });
+  it("extends at the high end, or the low end when the run already reaches the king", () => {
+    expect(ranks(arrangeMeld([joker(), c(6), c(5)]))).toEqual([5, 6, "J"]);
+    expect(ranks(arrangeMeld([c(13), joker(), c(12)]))).toEqual(["J", 12, 13]);
+  });
+  it("places an ace high when that is the only valid reading", () => {
+    expect(ranks(arrangeMeld([c(1), c(12), c(13)]))).toEqual([12, 13, 1]);
+  });
+  it("keeps a valid order as given and leaves sets alone", () => {
+    const run = [c(4), joker(), c(6)];
+    expect(arrangeMeld(run)).toBe(run);
+    const set = [c(8, "clubs"), c(8, "hearts"), c(8, "spades")];
+    expect(arrangeMeld(set)).toBe(set);
+  });
+  it("refuses what no order can fix", () => {
+    expect(arrangeMeld([c(3), c(3), c(4)])).toBeNull();
+    expect(arrangeMeld([c(3), c(7), c(9)])).toBeNull();
+    expect(arrangeMeld([c(3, "hearts"), c(4, "spades"), c(5, "hearts")])).toBeNull();
   });
 });

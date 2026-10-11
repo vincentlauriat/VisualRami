@@ -12,9 +12,11 @@ interface Props {
   offline?: boolean;
   /** The peer said its camera is off; its track keeps sending black frames. */
   videoOff?: boolean;
+  /** Another player's badge: neutral, since gold is reserved for what is yours. */
+  badgeMuted?: boolean;
 }
 
-export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, active, offline, videoOff }: Props) {
+export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, active, offline, videoOff, badgeMuted }: Props) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -33,7 +35,7 @@ export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, a
       )}
       <div className="video-name">
         <span>{name}{suffix ? ` ${suffix}` : ""}</span>
-        {badge && <span className="video-badge">{badge}</span>}
+        {badge && <span className={`video-badge${badgeMuted ? " muted" : ""}`}>{badge}</span>}
       </div>
     </div>
   );

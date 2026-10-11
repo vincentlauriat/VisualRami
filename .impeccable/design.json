@@ -596,6 +596,10 @@
     ],
     "breakpoints": [
       {
+        "name": "phone-portrait",
+        "value": "max-width: 599px (whole table fits one screen)"
+      },
+      {
         "name": "compact",
         "value": "max-width: 900px"
       },

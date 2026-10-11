@@ -10,6 +10,7 @@ export const SUIT_SYMBOL: Record<Suit, string> = {
   spades: "♠",
 };
 
+/** French card indices (Valet, Dame, Roi): the interface language. An i18n layer will swap these. */
 export const RANK_LABEL: Record<Rank, string> = {
   1: "A",
   2: "2",
@@ -21,9 +22,9 @@ export const RANK_LABEL: Record<Rank, string> = {
   8: "8",
   9: "9",
   10: "10",
-  11: "J",
-  12: "Q",
-  13: "K",
+  11: "V",
+  12: "D",
+  13: "R",
 };
 
 /** Two 52-card decks plus 4 jokers = 108 cards. */

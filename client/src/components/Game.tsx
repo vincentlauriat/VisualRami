@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   analyzeMeld,
+  arrangeMeld,
   checkFirstLaydown,
   sortByRank,
   sortBySuit,
@@ -17,6 +18,7 @@ import { MediaControls } from "./MediaControls";
 import { Chat } from "./Chat";
 import { labels } from "../lib/labels";
 import { Icon } from "./Icon";
+import { invalidMeldReason, meldFit, type MeldFit } from "../lib/meldHelp";
 
 interface Props {
   state: PublicGameState;
@@ -126,12 +128,14 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
   }
 
   function stage() {
-    const analysis = analyzeMeld(selectedCards);
-    if (!analysis) {
-      setNotice("Cette sélection n'est pas une combinaison valide (vérifiez l'ordre des cartes).");
+    // Tap order does not matter: the selection is put in a valid order before it is checked.
+    const cards = arrangeMeld(selectedCards);
+    const analysis = cards && analyzeMeld(cards);
+    if (!cards || !analysis) {
+      setNotice(invalidMeldReason(selectedCards));
       return;
     }
-    setStaged((st) => [...st, { cards: selectedCards, points: analysis.points, pure: analysis.pure, kind: analysis.kind }]);
+    setStaged((st) => [...st, { cards, points: analysis.points, pure: analysis.pure, kind: analysis.kind }]);
     setSelected([]);
     setNotice(null);
   }
@@ -145,46 +149,64 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
     if (ok) setStaged([]);
   }
 
-  async function onMeldClick(meld: Meld) {
-    if (!isMyTurn || state.phase !== "play" || selectedCards.length === 0) return;
-    if (!me.hasLaidDown) {
-      setNotice("Faites d'abord votre première pose avant de compléter les combinaisons.");
-      return;
-    }
-    const ids = selectedCards.map((c) => c.id);
-    const atEnd = analyzeMeld([...meld.cards, ...selectedCards]);
-    if (atEnd && atEnd.kind === meld.kind) {
-      if (await onAct({ type: "extend", meldId: meld.id, cardIds: ids, position: "end" })) setSelected([]);
-      return;
-    }
-    const atStart = analyzeMeld([...selectedCards, ...meld.cards]);
-    if (atStart && atStart.kind === meld.kind) {
-      if (await onAct({ type: "extend", meldId: meld.id, cardIds: ids, position: "start" })) setSelected([]);
-      return;
-    }
-    if (selectedCards.length === 1 && meld.cards.some((c) => c.joker)) {
-      if (await onAct({ type: "swapJoker", meldId: meld.id, cardId: ids[0]! })) setSelected([]);
-      return;
-    }
-    setNotice("Ces cartes ne complètent pas cette combinaison.");
-  }
-
-  async function discard() {
-    if (selectedCards.length !== 1) return;
-    if (await onAct({ type: "discard", cardId: selectedCards[0]!.id })) setSelected([]);
-  }
-
   const opponents = state.players.filter((p) => p.id !== state.you.id);
   const topDiscard = state.discardTop;
   const canDraw = isMyTurn && state.phase === "draw";
   const canPlay = isMyTurn && state.phase === "play";
+  // Only melds that will really accept the selection are offered as targets.
+  const fits = useMemo(() => {
+    const map = new Map<string, MeldFit>();
+    if (!canPlay || !me.hasLaidDown) return map;
+    for (const meld of state.melds) {
+      const fit = meldFit(meld, selectedCards);
+      if (fit) map.set(meld.id, fit);
+    }
+    return map;
+  }, [canPlay, me.hasLaidDown, state.melds, selectedCards]);
+  const keepDiscard =
+    selectedCards.length === 1 && hand.length > 1 && selectedCards[0]!.id === state.drewFromDiscardCardId;
+  const canDiscard = canPlay && selectedCards.length === 1 && !keepDiscard;
+  const canLay = staged.length > 0 && (firstLaydown ? !!firstCheck?.ok : true);
+  const minPoints = state.options.firstMeldMinPoints;
+  const hint = !isMyTurn || finished
+    ? null
+    : canDraw
+      ? labels.hintDraw
+      : keepDiscard
+        ? labels.hintKeepDiscard
+        : fits.size > 0
+          ? labels.hintTargets
+          : labels.hintPlay;
+
+  async function onMeldClick(meld: Meld) {
+    if (!canPlay || selectedCards.length === 0) return;
+    if (!me.hasLaidDown) {
+      setNotice(labels.laydownFirst);
+      return;
+    }
+    const fit = fits.get(meld.id);
+    if (!fit) {
+      setNotice(labels.meldNoFit);
+      return;
+    }
+    const action: GameAction =
+      fit.type === "extend"
+        ? { type: "extend", meldId: meld.id, cardIds: fit.cardIds, position: fit.position }
+        : { type: "swapJoker", meldId: meld.id, cardId: fit.cardId };
+    if (await onAct(action)) setSelected([]);
+  }
+
+  async function discard() {
+    if (!canDiscard) return;
+    if (await onAct({ type: "discard", cardId: selectedCards[0]!.id })) setSelected([]);
+  }
 
   return (
     <div className={`game${sideOpen ? " side-open" : ""}`}>
       <header className="topbar" inert={finished}>
         <h1>
           <span className="logo">🃏</span> <span className="brand">VisualRami</span>
-          <span className="tag">table {state.roomId}</span>
+          <span className="tag"><span className="tag-prefix">table </span>{state.roomId}</span>
           <span className="tag">manche {state.round}</span>
         </h1>
         <div className="topbar-right">
@@ -200,8 +222,15 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
           >
             <Icon name="chat" />{chat.length > 0 && <span className="tag" aria-hidden>{chat.length}</span>}
           </button>
-          <button type="button" className="ghost" onClick={onLeave} title="Votre place reste réservée : revenez avec le code de la table">
-            Quitter
+          <button
+            type="button"
+            className="ghost"
+            onClick={onLeave}
+            aria-label="Quitter la table"
+            title="Votre place reste réservée : revenez avec le code de la table"
+          >
+            <Icon name="leave" />
+            <span className="btn-label">Quitter</span>
           </button>
         </div>
       </header>
@@ -209,6 +238,13 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
       <div className="game-body" inert={finished}>
         <main className="table-area">
           <section className="opponents">
+            {/* On a phone your own seat joins the strip, so the hand gets the row it used to take. */}
+            <div className={`opponent self-seat${isMyTurn ? " active" : ""}`}>
+              <VideoTile stream={rtc.localStream} name={me.name} muted mirror active={isMyTurn} badge={me.hasLaidDown ? "posé" : undefined} />
+              <div className="opponent-info">
+                <span>{me.score} pts</span>
+              </div>
+            </div>
             {opponents.map((p) => (
               <div key={p.id} className={`opponent${state.currentPlayerId === p.id ? " active" : ""}`}>
                 <VideoTile
@@ -218,6 +254,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                   active={state.currentPlayerId === p.id}
                   offline={!p.connected}
                   badge={p.hasLaidDown ? "posé" : undefined}
+                  badgeMuted
                 />
                 <div className="opponent-info">
                   <span className="mini-hand" aria-hidden>
@@ -257,14 +294,53 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                 ) : (
                   <span>{labels.turnOf(state.players.find((p) => p.id === state.currentPlayerId)?.name ?? "…")}</span>
                 )}
+                {hint && <span className="turn-hint">{hint}</span>}
               </div>
             </div>
+
+            {/* Staged melds wait on the felt, where they are about to be laid. */}
+            {staged.length > 0 && (
+              <div className="staging">
+                <div className="staging-head">
+                  {firstLaydown ? (
+                    <div className="laydown-progress">
+                      <span className={`gauge${firstCheck?.ok ? " full" : ""}`} aria-hidden>
+                        <span style={{ width: `${Math.min(100, (stagedTotal / minPoints) * 100)}%` }} />
+                      </span>
+                      <span className="laydown-points">{labels.laydownProgress(stagedTotal, minPoints)}</span>
+                      {state.options.requirePureRun && (
+                        <span className={`pip${firstCheck?.hasPureRun ? " on" : ""}`}>
+                          {firstCheck?.hasPureRun ? labels.pureRunDone : labels.pureRunMissing}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="laydown-points">{labels.laydownPoints(stagedTotal)}</span>
+                  )}
+                  <button type="button" className={canLay ? "primary" : undefined} disabled={!canLay} onClick={layDown}>
+                    Poser sur la table
+                  </button>
+                </div>
+                <div className="staging-melds">
+                  {staged.map((m, i) => (
+                    <div key={m.cards.map((c) => c.id).join("|")} className="meld staged">
+                      {m.cards.map((c) => (
+                        <CardView key={c.id} card={c} size="small" />
+                      ))}
+                      <button type="button" className="ghost tiny" onClick={() => unstage(i)} aria-label={labels.unstage(m.cards)}>
+                        <Icon name="close" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="melds">
               {state.melds.length === 0 && <p className="hint">Aucune combinaison posée pour l'instant.</p>}
               {state.melds.map((meld) => {
                 const owner = state.players.find((p) => p.id === meld.ownerId);
-                const clickable = canPlay && selectedCards.length > 0 && me.hasLaidDown;
+                const clickable = fits.has(meld.id);
                 const cards = meld.cards.map((c) => <CardView key={c.id} card={c} size="small" />);
                 const ownerTag = <span className="meld-owner" aria-hidden>{owner?.name}</span>;
                 // Cards on the table are pictures, so a target meld can be a real button.
@@ -306,33 +382,6 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                 </div>
               )}
 
-              {staged.length > 0 && (
-                <div className="staging">
-                  <div className="staging-head">
-                    <span>
-                      À poser : {stagedTotal} pts
-                      {firstLaydown && ` / ${state.options.firstMeldMinPoints} requis`}
-                      {firstLaydown && state.options.requirePureRun && (firstCheck?.hasPureRun ? " · tierce franche ✓" : " · tierce franche manquante")}
-                    </span>
-                    <button type="button" className="primary" disabled={firstLaydown ? !firstCheck?.ok : false} onClick={layDown}>
-                      Poser sur la table
-                    </button>
-                  </div>
-                  <div className="staging-melds">
-                    {staged.map((m, i) => (
-                      <div key={m.cards.map((c) => c.id).join("|")} className="meld staged">
-                        {m.cards.map((c) => (
-                          <CardView key={c.id} card={c} size="small" />
-                        ))}
-                        <button type="button" className="ghost tiny" onClick={() => unstage(i)} aria-label={labels.unstage(m.cards)}>
-                          <Icon name="close" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <div className="hand">
                 {hand.map((card) => {
                   const idx = selected.indexOf(card.id);
@@ -349,30 +398,36 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                 })}
               </div>
 
-              <div className="actions">
+              <div className={`actions${staged.length > 0 ? " staging-on" : ""}`}>
                 <div className="sort">
-                  <button type="button" onClick={() => setHand((h) => sortBySuit(h))}>Trier ♠♥</button>
-                  <button type="button" onClick={() => setHand((h) => sortByRank(h))}>Trier 1→K</button>
-                  <button type="button" onClick={() => setSelected([])} disabled={selected.length === 0}>Désélectionner</button>
+                  <button type="button" onClick={() => setHand((h) => sortBySuit(h))} aria-label="Trier par couleur">
+                    <span className="btn-label">Trier </span>♠♥
+                  </button>
+                  <button type="button" onClick={() => setHand((h) => sortByRank(h))} aria-label="Trier par valeur">
+                    <span className="btn-label">Trier </span>A→R
+                  </button>
+                  <button type="button" onClick={() => setSelected([])} disabled={selected.length === 0} aria-label="Désélectionner">
+                    <Icon name="close" />
+                    <span className="btn-label">Désélectionner</span>
+                  </button>
                 </div>
                 <div className="play">
                   <button type="button" disabled={!canPlay || selectedCards.length < 3} onClick={stage}>
-                    Préparer la combinaison ({selectedCards.length})
+                    Préparer<span className="btn-label"> la combinaison</span>
+                    {selectedCards.length > 0 && <span className="btn-label"> ({selectedCards.length})</span>}
                   </button>
-                  <button
-                    type="button"
-                    className="primary"
-                    disabled={!canPlay || selectedCards.length !== 1 || (hand.length > 1 && selectedCards[0]!.id === state.drewFromDiscardCardId)}
-                    title={hand.length > 1 && selectedCards[0]?.id === state.drewFromDiscardCardId ? "Carte prise dans la défausse ce tour" : undefined}
-                    onClick={discard}
-                  >
+                  {/* Phones only: the tray's own button can scroll out of the felt, so it rides here too. */}
+                  {staged.length > 0 && (
+                    <button type="button" className={`lay-now${canLay ? " primary" : ""}`} disabled={!canLay} onClick={layDown}>
+                      Poser
+                    </button>
+                  )}
+                  {/* Gold only once discarding is actually possible: the Lamp Rule. */}
+                  <button type="button" className={canDiscard ? "primary" : undefined} disabled={!canDiscard} onClick={discard}>
                     Défausser
                   </button>
                 </div>
               </div>
-              {canPlay && me.hasLaidDown && selectedCards.length > 0 && (
-                <p className="hint">Choisissez une combinaison sur la table pour y ajouter la sélection (ou échanger un joker).</p>
-              )}
             </div>
           </section>
         </main>
