@@ -12,6 +12,8 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
 
 ### Fixed
+- A run was only accepted when its cards were tapped in sequence; the selection is now put in order (jokers filling the gaps) before it is checked, and an invalid one says what is wrong ("Il manque le 6 de cœur pour faire la suite.", "Une suite se fait dans une seule couleur.") instead of blaming the order.
+- The rule that a card taken from the discard pile cannot be thrown back was only a mouse tooltip; it is now said on the table.
 - Accessibility pass on the table: melds you can add to are real buttons; the round result is a modal dialog that takes focus and makes the page behind it inert; the closed log/chat sheet leaves the tab order; cards, the stock and the discard are announced in French ("Dame de cœur", "Piocher dans le talon, 78 cartes"); the turn banner is a live region; designed focus rings, distinct from the gold selection ring on cards; a targeted `prefers-reduced-motion` mode.
 - Contrast: the "À vous" turn banner and text on the felt use felt-calibrated colours (≥ 5:1), and error text is lifted to 5.7:1.
 - The desktop page was 32 px wider than the window (the chat input's intrinsic width widened the side column) and auto-scrolled sideways when the log updated.
@@ -23,6 +25,10 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Native checkboxes, number inputs and scrollbars rendered in light mode on the dark table (`color-scheme`).
 
 ### Changed
+- Phone (portrait): the whole table fits one screen — your hand, the piles and the next action are always in view without scrolling. One-row top bar (icons), your seat in the opponents' strip, one action row; "Poser" joins the bar while melds are staged.
+- First laydown is guided: staged melds wait on the felt in a tray with a gauge toward 51 ("encore 11"), a pure-run marker, and "Poser" lighting up once the threshold is reached.
+- Gold follows "yours, now": the piles are ringed while you must draw, Défausser and Poser turn gold only once usable, only melds that accept the selection light up, and other players' "posé" badge is neutral. The turn banner adds one line saying what you can do next.
+- Card indices are French (V, D, R) on faces and in the log; "Trier A→R".
 - Controls are tactile: raised buttons stand on a darker edge with a lit rim and sink flush when pressed (no layout shift); disabled ones lie flush. Ghost buttons, tabs and dismiss buttons stay flat. Control emoji (mic, camera, chat, close) are replaced by drawn SVG icons; checkboxes take the gold accent.
 - Phone layout (≤ 900 px): stacked sections, opponents in a scrollable strip, smaller cards, sticky action bar with 44 px targets, log/chat as a bottom sheet behind a 💬 button, iOS safe areas and no zoom on input focus.
 - Tables seat 2 to 6 players (was 4). Opponent tiles shrink to fit five of them.

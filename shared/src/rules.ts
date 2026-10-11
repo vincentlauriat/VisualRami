@@ -87,6 +87,46 @@ export function analyzeMeld(cards: Card[]): MeldAnalysis | null {
   return analyzeRun(cards) ?? analyzeSet(cards);
 }
 
+/**
+ * Puts a selection in an order the analysers accept, so a player never has to tap a run in
+ * sequence. A valid order is kept as given (it may place a joker deliberately). Otherwise real
+ * cards are sorted, jokers fill the gaps, and a spare joker extends the high end, or the low end
+ * once the high end is full. Sets are order-free, so only runs ever need rearranging.
+ */
+export function arrangeMeld(cards: Card[]): Card[] | null {
+  if (analyzeMeld(cards)) return cards;
+  const real = cards.filter((c) => !c.joker);
+  const jokers = cards.filter((c) => c.joker);
+  if (real.length === 0) return null;
+  for (const aceHigh of [false, true]) {
+    const value = (c: Card): number => (c.rank === 1 && aceHigh ? 14 : c.rank!);
+    const sorted = [...real].sort((a, b) => value(a) - value(b));
+    const spare = [...jokers];
+    const out: Card[] = [];
+    let ok = true;
+    for (let i = 0; i < sorted.length && ok; i++) {
+      if (i > 0) {
+        const gap = value(sorted[i]!) - value(sorted[i - 1]!) - 1;
+        if (gap < 0 || gap > spare.length) ok = false;
+        else for (let g = 0; g < gap; g++) out.push(spare.pop()!);
+      }
+      out.push(sorted[i]!);
+    }
+    if (!ok) continue;
+    let top = value(sorted[sorted.length - 1]!);
+    const high = aceHigh ? 14 : 13;
+    while (spare.length > 0) {
+      const j = spare.pop()!;
+      if (top < high) {
+        out.push(j);
+        top++;
+      } else out.unshift(j);
+    }
+    if (analyzeMeld(out)) return out;
+  }
+  return null;
+}
+
 export function isValidMeld(cards: Card[]): boolean {
   return analyzeMeld(cards) !== null;
 }
