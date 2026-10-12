@@ -315,6 +315,8 @@ Tactile and assertive: a raised control is a chip on its edge.
   One per context, the action that moves the game forward (draw, lay down, discard, create).
 - **Ghost:** flat on purpose — transparent fill, 1px border-strong outline, no edge. Leave,
   dismiss, close and the chat toggle are ghosts; tabs are flat too.
+- **Link:** a secondary way out, not a control: muted underlined text, no fill or edge, 44px tall.
+  "Créer une autre table" and "Saisir un autre code" under the invitation card.
 - **Tiny:** 32px square minimum (44px on touch), for dismiss and remove. Always ghost.
 - **Off:** danger border on every side, for a muted mic or camera.
 - **Icons:** drawn SVG on a 24-unit grid, 1.75 stroke, `currentColor`, 1.15em, 6px from the label.
@@ -326,6 +328,22 @@ Tactile and assertive: a raised control is a chip on its edge.
 
 ### Cards / Containers
 - **Panel:** panel fill, 1px border, 12px radius, 18px padding. Home, lobby and the round result.
+- **Home:** exactly one gold button, the visitor's likely next step: Rejoindre once a full code is
+  typed, else Reprendre (the most recent remembered seat) when there is one, else Créer la table.
+  The hero line and the rules run at most about 70 characters per line on a desktop.
+- **Invitation card:** arriving by a `?table=CODE` link shows only that table, in one panel at most
+  460px wide: "Rejoindre la table CODE" (the code in plain text: the button is the lamp), the name
+  field and the gold "Rejoindre la table"; or, with a seat remembered for that code, "Reprendre la
+  table CODE" and a gold "Reprendre". Errors land on the card ("Table introuvable : vérifiez le
+  code"), with a "Saisir un autre code" link back to the full home. "Créer une autre table" unfolds
+  the create panel below, never gold.
+- **Rules:** one list of short sentences with a bold lead word ("Première pose :"), used on the
+  home page and in the table's Règles tab, where the first-laydown line follows the room's real
+  threshold and pure-run option.
+- **Selection points:** while cards are selected, a neutral pill (panel-2, border-strong, 13px)
+  floats just above the hand: "3 cartes · 27 pts", and before your first laydown, for a real
+  meld, "· encore 24 pour 51". Information, so never gold; a message above the hand takes its
+  place.
 - **Staging area:** panel fill, border-strong, 10px radius, holding melds before a laydown.
 - **Round result:** a panel laid on the felt in place of the piles, never a modal and never a scrim:
   faces, log and chat stay lit and usable while the table talks the round over. A labelled region
@@ -348,7 +366,7 @@ Tactile and assertive: a raised control is a chip on its edge.
 ### Navigation
 A single top bar: 🃏 mark and title on the left, table code tag, mic/camera controls and leave
 button on the right. On phones the brand word hides, buttons reach 44px, and a chat toggle (its
-unread count a small bubble on the icon's corner) opens the log/chat sheet. The log/chat panel has two tabs; the active tab takes
+unread count a small bubble on the icon's corner) opens the log/chat sheet. The side panel has three tabs (Journal, Chat, Règles); the active tab takes
 panel-2 and gold text. Leaving takes two presses: the first replaces the ghost Quitter with
 "Quitter la table ?", a ghost Quitter with a danger outline and a ghost Rester (never gold:
 leaving is not the lamp's action). The question takes focus, Escape or Rester puts it away, and

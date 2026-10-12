@@ -158,7 +158,7 @@ describe("socket server", () => {
     });
     expect(cRejoin.roomId).toBe(created.roomId);
     const gone = await emit<{ error?: string }>(await client(), "room:join", { roomId: other.roomId, name: "Dan" });
-    expect(gone.error).toBe("Salle introuvable");
+    expect(gone.error).toBe("Table introuvable");
     c.disconnect();
 
     a.disconnect();
@@ -269,7 +269,7 @@ describe("socket server", () => {
   it("rejects joining an unknown room", async () => {
     const s = await client();
     const res = await emit<{ error?: string }>(s, "room:join", { roomId: "ZZZZZ", name: "X" });
-    expect(res.error).toBe("Salle introuvable");
+    expect(res.error).toBe("Table introuvable");
     s.disconnect();
   });
 });

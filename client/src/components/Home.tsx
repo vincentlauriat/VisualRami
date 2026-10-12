@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { DEFAULT_OPTIONS, type GameOptions } from "@visualrami/shared";
 import { forgetSeat, loadName, loadSeats, saveName } from "../lib/socket";
+import { labels } from "../lib/labels";
 import { Icon } from "./Icon";
+import { Rules } from "./Rules";
 
 interface Props {
   connected: boolean;
@@ -20,39 +22,155 @@ function formatAge(ts: number): string {
   return `il y a ${Math.round(hours / 24)} j`;
 }
 
+type Where = "invite" | "resume" | "create" | "join";
+
 export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Props) {
   const [name, setName] = useState(loadName());
-  const [code, setCode] = useState(initialCode ?? "");
+  const [code, setCode] = useState(initialCode?.toUpperCase() ?? "");
   const [seats, setSeats] = useState(() => loadSeats());
   const [minPoints, setMinPoints] = useState(DEFAULT_OPTIONS.firstMeldMinPoints);
   const [pureRun, setPureRun] = useState(DEFAULT_OPTIONS.requirePureRun);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ where: Where; text: string } | null>(null);
+  // Arriving by an invitation link shows that one table; the full home is a click away.
+  const [invite, setInvite] = useState(!!initialCode);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const ready = name.trim().length > 0 && connected && !busy;
+  const inviteCode = initialCode?.toUpperCase() ?? "";
+  const inviteSeat = seats.find((s) => s.roomId === inviteCode);
+  // One gold button, the action this visitor most likely came for: a code they typed, else a
+  // seat they hold, else a new table.
+  const primary: Where = code.trim().length === 5 ? "join" : seats.length > 0 ? "resume" : "create";
 
-  async function run(fn: () => Promise<void>) {
+  async function run(where: Where, fn: () => Promise<void>) {
     setBusy(true);
     setError(null);
     saveName(name.trim());
     try {
       await fn();
     } catch (err) {
-      setError((err as Error).message);
+      const text = (err as Error).message;
+      setError({ where, text: text === "Table introuvable" ? labels.tableNotFound : text });
     } finally {
       setBusy(false);
     }
   }
 
-  function submitJoin(e: FormEvent) {
+  function submitJoin(e: FormEvent, where: Where, roomId: string) {
     e.preventDefault();
-    if (!ready || !code.trim()) return;
-    void run(() => onJoin(code.trim().toUpperCase(), name.trim()));
+    if (!ready || !roomId.trim()) return;
+    void run(where, () => onJoin(roomId.trim().toUpperCase(), name.trim()));
   }
 
   function forget(roomId: string) {
     forgetSeat(roomId);
     setSeats(loadSeats());
+  }
+
+  function leaveInvite() {
+    setInvite(false);
+    setError(null);
+  }
+
+  const errorAt = (where: Where) =>
+    error?.where === where && (
+      <p className="hint error" role="alert">
+        {error.text}
+      </p>
+    );
+
+  const createPanel = (gold: boolean) => (
+    <section className="panel">
+      <h2>Créer une table</h2>
+      <label className="field">
+        <span>Points minimum pour la première pose</span>
+        <input type="number" min={0} max={200} value={minPoints} onChange={(e) => setMinPoints(Number(e.target.value))} />
+      </label>
+      <label className="field check">
+        <input type="checkbox" checked={pureRun} onChange={(e) => setPureRun(e.target.checked)} />
+        <span>Tierce franche obligatoire à la première pose</span>
+      </label>
+      <button
+        type="button"
+        className={gold ? "primary" : undefined}
+        disabled={!ready}
+        onClick={() => run("create", () => onCreate(name.trim(), { firstMeldMinPoints: minPoints, requirePureRun: pureRun }))}
+      >
+        Créer la table
+      </button>
+      {errorAt("create")}
+    </section>
+  );
+
+  const nameField = (
+    <label className="field">
+      <span>Votre prénom</span>
+      <input value={name} onChange={(e) => setName(e.target.value)} maxLength={24} placeholder="Ex. Vincent" autoFocus />
+    </label>
+  );
+
+  if (invite) {
+    const notFound = error?.where === "invite" && error.text === labels.tableNotFound;
+    return (
+      <main className="home invite">
+        <header className="home-hero">
+          <h1>
+            <span className="logo">🃏</span> VisualRami
+          </h1>
+        </header>
+
+        <section className="panel invite-card" aria-labelledby="invite-title">
+          {inviteSeat ? (
+            <>
+              <h2 id="invite-title">
+                Reprendre la table <span className="room-code small">{inviteCode}</span>
+              </h2>
+              <p className="hint">
+                Votre place est gardée, au prénom de {inviteSeat.name} · {formatAge(inviteSeat.savedAt)}.
+              </p>
+              <button
+                type="button"
+                className="primary"
+                disabled={!connected || busy}
+                onClick={() => run("invite", () => onResume(inviteSeat.roomId, inviteSeat.name))}
+              >
+                Reprendre
+              </button>
+            </>
+          ) : (
+            <form onSubmit={(e) => submitJoin(e, "invite", inviteCode)}>
+              <h2 id="invite-title">
+                Rejoindre la table <span className="room-code small">{inviteCode}</span>
+              </h2>
+              {nameField}
+              <button type="submit" className="primary" disabled={!ready}>
+                Rejoindre la table
+              </button>
+            </form>
+          )}
+          {!connected && <p className="hint warn">Connexion au serveur…</p>}
+          {errorAt("invite")}
+        </section>
+
+        <p className="invite-alt">
+          {notFound && (
+            <button type="button" className="link" onClick={leaveInvite}>
+              Saisir un autre code
+            </button>
+          )}
+          <button type="button" className="link" aria-expanded={createOpen} onClick={() => setCreateOpen((v) => !v)}>
+            Créer une autre table
+          </button>
+        </p>
+        {createOpen && (
+          <>
+            {inviteSeat && <section className="panel">{nameField}</section>}
+            {createPanel(false)}
+          </>
+        )}
+      </main>
+    );
   }
 
   return (
@@ -68,7 +186,7 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
         <section className="panel seats">
           <h2>Reprendre une partie</h2>
           <ul className="seat-list">
-            {seats.map((seat) => (
+            {seats.map((seat, i) => (
               <li key={seat.roomId}>
                 <span className="room-code small">{seat.roomId}</span>
                 <span className="seat-meta">
@@ -76,9 +194,9 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
                 </span>
                 <button
                   type="button"
-                  className="primary"
+                  className={primary === "resume" && i === 0 ? "primary" : undefined}
                   disabled={!connected || busy}
-                  onClick={() => run(() => onResume(seat.roomId, seat.name))}
+                  onClick={() => run("resume", () => onResume(seat.roomId, seat.name))}
                 >
                   Reprendre
                 </button>
@@ -88,55 +206,20 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
               </li>
             ))}
           </ul>
+          {errorAt("resume")}
           <p className="hint">Les parties commencées restent ouvertes 7 jours. Depuis un autre appareil, entrez le code et le même prénom.</p>
         </section>
       )}
 
       <section className="panel">
-        <label className="field">
-          <span>Votre prénom</span>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={24}
-            placeholder="Ex. Vincent"
-            autoFocus
-          />
-        </label>
+        {nameField}
         {!connected && <p className="hint warn">Connexion au serveur…</p>}
-        {error && <p className="hint error">{error}</p>}
       </section>
 
       <div className="home-columns">
-        <section className="panel">
-          <h2>Créer une table</h2>
-          <label className="field">
-            <span>Points minimum pour la première pose</span>
-            <input
-              type="number"
-              min={0}
-              max={200}
-              value={minPoints}
-              onChange={(e) => setMinPoints(Number(e.target.value))}
-            />
-          </label>
-          <label className="field check">
-            <input type="checkbox" checked={pureRun} onChange={(e) => setPureRun(e.target.checked)} />
-            <span>Tierce franche obligatoire à la première pose</span>
-          </label>
-          <button
-            type="button"
-            className="primary"
-            disabled={!ready}
-            onClick={() =>
-              run(() => onCreate(name.trim(), { firstMeldMinPoints: minPoints, requirePureRun: pureRun }))
-            }
-          >
-            Créer la table
-          </button>
-        </section>
+        {createPanel(primary === "create")}
 
-        <form className="panel" onSubmit={submitJoin}>
+        <form className="panel" onSubmit={(e) => submitJoin(e, "join", code)}>
           <h2>Rejoindre une table</h2>
           <label className="field">
             <span>Code de la table</span>
@@ -146,9 +229,15 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
               maxLength={5}
               placeholder="ABCDE"
               className="code-input"
+              aria-describedby={error?.where === "join" ? "join-error" : undefined}
             />
           </label>
-          <button type="submit" className="primary" disabled={!ready || code.trim().length < 5}>
+          {error?.where === "join" && (
+            <p className="hint error" id="join-error" role="alert">
+              {error.text}
+            </p>
+          )}
+          <button type="submit" className={primary === "join" ? "primary" : undefined} disabled={!ready || code.trim().length < 5}>
             Rejoindre
           </button>
         </form>
@@ -156,15 +245,7 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
 
       <section className="panel rules">
         <h2>Règles en bref</h2>
-        <ul>
-          <li>2 à 6 joueurs, deux jeux de 52 cartes et 4 jokers, 14 cartes chacun.</li>
-          <li>À son tour : piocher (talon ou défausse), poser, puis défausser une carte.</li>
-          <li>Combinaisons : suites de 3+ cartes de même couleur, ou brelans/carrés de même valeur.</li>
-          <li>Première pose : au moins 51 points, avec une tierce franche (suite sans joker).</li>
-          <li>Une fois posé, on complète les combinaisons de tous et on récupère les jokers.</li>
-          <li>Gagne la manche qui défausse sa dernière carte. Les autres marquent leurs cartes en main (×2 sans pose).</li>
-          <li>Une partie commencée reste ouverte 7 jours : revenez avec le code de la table et votre prénom.</li>
-        </ul>
+        <Rules options={DEFAULT_OPTIONS} home />
       </section>
     </main>
   );

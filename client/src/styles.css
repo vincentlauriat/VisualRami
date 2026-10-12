@@ -57,7 +57,7 @@ button {
 }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 /* :where keeps this at element specificity, so tabs, ghost and the variants below still win. */
-button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)) {
+button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .link, .tabs > *)) {
   background: var(--control-face);
   border-color: var(--control-side);
   border-top-color: var(--control-rim);
@@ -66,8 +66,8 @@ button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)) {
 }
 /* Pressed, and unavailable, controls lie flush with the table: the edge collapses and the face
    drops by the same 2px, so the margin box (and every neighbour) stays put. */
-button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)):active:not(:disabled),
-button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)):disabled {
+button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .link, .tabs > *)):active:not(:disabled),
+button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .link, .tabs > *)):disabled {
   margin-top: 2px;
   border-bottom-width: 1px;
   transform: none;
@@ -87,7 +87,7 @@ button.primary {
 @media (hover: hover) {
   /* Cards keep their face (a hovered card turning panel-green read as a different card), and a
      target meld keeps its own gold hover. */
-  button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)):hover:not(:disabled) { background: var(--control-face-hover); }
+  button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .link, .tabs > *)):hover:not(:disabled) { background: var(--control-face-hover); }
   button:where(.ghost, .side-close, .tabs > *):hover:not(:disabled) { background: var(--control-face); }
   button.primary:hover:not(:disabled) { background: #f0c866; }
 }
@@ -141,7 +141,27 @@ h2 { font-size: 17px; }
 .field { display: grid; gap: 6px; margin-bottom: 12px; font-size: 14px; }
 .field.check { grid-template-columns: auto 1fr; align-items: center; }
 .code-input { text-transform: uppercase; letter-spacing: 4px; font-size: 20px; font-family: monospace; }
-.rules ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+/* The rules, at home and at the table: short lines (about 70 characters at most on a desktop). */
+.rule-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 58ch; }
+.rule-list b { color: var(--text); font-weight: 600; }
+.side-body .rule-list { padding-left: 16px; font-size: 13px; line-height: 1.55; }
+.side-body .rule-list li + li { margin-top: 6px; }
+.home-hero p { max-width: 56ch; margin-inline: auto; }
+/* Arriving by link: one table, one card. */
+.home.invite { max-width: 460px; }
+.invite-card { display: grid; gap: 4px; }
+.invite-card h2 { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+/* The button is the lamp here; the code is what you are joining, in plain text. */
+.invite-card .room-code { color: var(--text); }
+.invite-card form { display: grid; }
+.invite-card button.primary { justify-self: start; }
+.invite-alt { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin: 0; }
+/* A link, not a control: the invitation is the one thing to press here. */
+button.link {
+  background: none; border: none; padding: 6px 2px; min-height: 44px; color: var(--muted);
+  text-decoration: underline; text-underline-offset: 3px; font-size: 14px;
+}
+@media (hover: hover) { button.link:hover { color: var(--text); } }
 .seat-list { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 8px; }
 .seat-list li { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .seat-meta { color: var(--muted); font-size: 14px; flex: 1; }
@@ -433,6 +453,15 @@ button.meld { color: inherit; text-align: left; }
 .pip.on { color: var(--felt-accent); }
 .actions .lay-now { display: none; }
 .staging-melds { display: flex; flex-wrap: wrap; gap: 10px; }
+/* What the selection is worth: a quiet pill floating above the hand, like the messages, so the hand
+   never moves when it appears. */
+.selection-info {
+  position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 5; margin: 0; pointer-events: none;
+  padding: 3px 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--border-strong);
+  color: var(--text); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+/* Empty, it stays in place (and in the accessibility tree) so the next selection is announced. */
+.selection-info:empty { opacity: 0; }
 /* Floats just above the hand rather than pushing the hand down when it appears. */
 .hand-area .toast { position: absolute; left: 0; right: 0; bottom: calc(100% + 6px); z-index: 6; }
 .toast {

@@ -194,7 +194,7 @@ export function createApp(options: AppOptions = {}) {
       "room:create",
       (payload: { name?: string; options?: unknown }, ack: Ack<{ roomId: string; playerId: string; token: string }>) => {
         if (typeof ack !== "function") return;
-        if (currentRoom(socket)) return ack({ error: "Déjà dans une salle" });
+        if (currentRoom(socket)) return ack({ error: "Déjà à une table" });
         const { room, playerId, token } = rooms.create(
           sanitizeName(payload?.name),
           socket.id,
@@ -213,7 +213,7 @@ export function createApp(options: AppOptions = {}) {
         ack: Ack<{ roomId: string; playerId: string; token: string; resumed: boolean }>,
       ) => {
         if (typeof ack !== "function") return;
-        if (currentRoom(socket)) return ack({ error: "Déjà dans une salle" });
+        if (currentRoom(socket)) return ack({ error: "Déjà à une table" });
         const roomId = typeof payload?.roomId === "string" ? payload.roomId.trim() : "";
         const result = rooms.join(roomId, sanitizeName(payload?.name), socket.id);
         if (!result.ok) return ack({ error: result.error });
@@ -255,7 +255,7 @@ export function createApp(options: AppOptions = {}) {
     socket.on("game:action", (payload: unknown, ack?: Ack<{ ok: true }>) => {
       const ctx = currentRoom(socket);
       if (!ctx) {
-        if (typeof ack === "function") ack({ error: "Pas dans une salle" });
+        if (typeof ack === "function") ack({ error: "Pas à une table" });
         return;
       }
       const action = validateAction(payload);

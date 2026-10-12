@@ -34,7 +34,7 @@ Trois workspaces npm :
 | Sens | Événement | Charge utile |
 |---|---|---|
 | C→S | `room:create` | `{ name, options }` → ack `{ roomId, playerId, token }` |
-| C→S | `room:join` | `{ roomId, name }` → même ack plus `resumed` (vrai quand un siège déconnecté d'une partie commencée a été repris) |
+| C→S | `room:join` | `{ roomId, name }` → même ack plus `resumed` (vrai quand un siège déconnecté d'une partie commencée a été repris). Les erreurs sont des phrases en français affichées telles quelles, par exemple `{ error: "Table introuvable" }` (le client ajoute « vérifiez le code » quand elle vient d'un code saisi ou d'un lien) |
 | C→S | `room:rejoin` | `{ roomId, playerId, token }` — idempotent pour la socket qui tient déjà ce siège (le client le renvoie à l'événement `online` du navigateur). Le client n'oublie son siège que sur une réponse `{ error }`, jamais sur un délai dépassé ou une socket coupée |
 | C→S | `room:leave` | – (le joueur a appuyé sur Quitter : une partie commencée garde le siège et journalise « X a quitté la table » ; une connexion perdue ne journalise rien) |
 | C→S | `game:action` | `GameAction` → ack `{ ok }` ou `{ error }` |

@@ -3,6 +3,7 @@ import {
   analyzeMeld,
   arrangeMeld,
   checkFirstLaydown,
+  handCardPoints,
   sortByRank,
   sortBySuit,
   type Card,
@@ -210,6 +211,18 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
   const keepDiscard =
     selectedCards.length === 1 && hand.length > 1 && selectedCards[0]!.id === state.drewFromDiscardCardId;
   const canDiscard = canPlay && selectedCards.length === 1 && !keepDiscard;
+  // What the selection is worth, before it is prepared: a whole meld counts as the table will
+  // count it, a partial pick by its cards' values (a joker only counts once it has a place).
+  const selectionInfo = useMemo(() => {
+    if (finished || selectedCards.length === 0) return null;
+    const arranged = selectedCards.length >= 3 ? arrangeMeld(selectedCards) : null;
+    const meld = arranged ? analyzeMeld(arranged) : null;
+    const points = meld ? meld.points : selectedCards.reduce((sum, c) => sum + (c.joker ? 0 : handCardPoints(c)), 0);
+    const min = state.options.firstMeldMinPoints;
+    // Before the first laydown, a real meld says how far the table's threshold still is.
+    const toGo = meld && !me.hasLaidDown && min > 0 ? min - stagedTotal - points : null;
+    return labels.selection(selectedCards.length, points, toGo, min);
+  }, [finished, selectedCards, state.options.firstMeldMinPoints, me.hasLaidDown, stagedTotal]);
   const canLay = connected && staged.length > 0 && (firstLaydown ? !!firstCheck?.ok : true);
   const minPoints = state.options.firstMeldMinPoints;
   const hint = finished
@@ -570,6 +583,11 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                 </div>
               )}
 
+              {/* Information, not an action: it stays out of the lamp's gold. Hidden under a message. */}
+              <p className="selection-info" aria-live="polite">
+                {!error && !notice ? selectionInfo : null}
+              </p>
+
               <div className={`hand${hand.length > 14 ? " dense" : ""}`} ref={handRef}>
                 {hand.map((card) => {
                   const idx = selected.indexOf(card.id);
@@ -638,7 +656,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
           </section>
         </main>
 
-        <Chat messages={chat} log={state.log} offline={!connected} onSend={onSendChat} onClose={closeSide} />
+        <Chat messages={chat} log={state.log} options={state.options} offline={!connected} onSend={onSendChat} onClose={closeSide} />
       </div>
 
     </div>

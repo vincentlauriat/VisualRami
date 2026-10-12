@@ -112,7 +112,7 @@ export class RoomManager {
    */
   join(roomId: string, name: string, socketId: string): JoinResult {
     const room = this.get(roomId);
-    if (!room) return { ok: false, error: "Salle introuvable" };
+    if (!room) return { ok: false, error: "Table introuvable" };
     if (room.state.phase !== "lobby") {
       const wanted = normalizeName(name);
       const seat = room.state.players.find((p) => normalizeName(p.name) === wanted);
@@ -147,7 +147,7 @@ export class RoomManager {
 
   rejoin(roomId: string, playerId: string, token: string, socketId: string): RejoinResult {
     const room = this.get(roomId);
-    if (!room) return { ok: false, error: "Salle introuvable" };
+    if (!room) return { ok: false, error: "Table introuvable" };
     if (room.tokens.get(playerId) !== token) return { ok: false, error: "Session invalide" };
     if (!room.state.players.some((p) => p.id === playerId)) {
       return { ok: false, error: "Joueur inconnu dans cette salle" };

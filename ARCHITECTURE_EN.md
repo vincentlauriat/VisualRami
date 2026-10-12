@@ -34,7 +34,7 @@ Three npm workspaces:
 | Direction | Event | Payload |
 |---|---|---|
 | C→S | `room:create` | `{ name, options }` → ack `{ roomId, playerId, token }` |
-| C→S | `room:join` | `{ roomId, name }` → same ack plus `resumed` (true when a disconnected seat of a started game was taken back) |
+| C→S | `room:join` | `{ roomId, name }` → same ack plus `resumed` (true when a disconnected seat of a started game was taken back). Errors are French sentences shown as is, e.g. `{ error: "Table introuvable" }` (the client adds "vérifiez le code" when it comes from a typed or linked code) |
 | C→S | `room:rejoin` | `{ roomId, playerId, token }` — idempotent for the socket already holding that seat (the client re-sends it on the browser's `online` event). The client clears its seat only on an `{ error }` reply, never on a timeout or a dropped socket |
 | C→S | `room:leave` | – (the player pressed Quitter: a started game keeps the seat and logs "X a quitté la table"; a dropped connection logs nothing) |
 | C→S | `game:action` | `GameAction` → ack `{ ok }` or `{ error }` |
