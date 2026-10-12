@@ -24,6 +24,7 @@ Landing page: https://lauriat.fr/outils/visualrami/ · More apps: https://vincen
 | Device-aware table layout: phone, tablet portrait, landscape, touch-sized controls | ✅ |
 | Azure App Service packaging + remote probe | ✅ |
 | TURN relay for restrictive networks | ⚙️ configurable, bring your own server |
+| Computer player (play alone or fill a seat; easy and medium levels) | 📐 designed — [docs/COMPUTER_PLAYER.md](docs/COMPUTER_PLAYER.md) |
 | Drag-and-drop hand, spectator mode, game history | ⏳ roadmap |
 
 ## Quick start
@@ -54,6 +55,7 @@ npm run probe -- https://<host>           # end-to-end WebSocket check against a
 | [docs/EXECUTION_PLAN.md](docs/EXECUTION_PLAN.md) | Phases, deliverables, status, risks |
 | [ARCHITECTURE_EN.md](ARCHITECTURE_EN.md) / [ARCHITECTURE.md](ARCHITECTURE.md) | Packages, state model, socket events, media, deployment (EN / FR) |
 | [docs/GAME_RULES.md](docs/GAME_RULES.md) | The rules exactly as implemented |
+| [docs/COMPUTER_PLAYER.md](docs/COMPUTER_PLAYER.md) | Computer player design: where it runs, search, levels, UX, tests, phases |
 | [docs/DEPLOYMENT_AZURE.md](docs/DEPLOYMENT_AZURE.md) | App Service procedure and the pitfalls met |
 | [CHANGELOG.md](CHANGELOG.md) | Versions and notable changes |
 
