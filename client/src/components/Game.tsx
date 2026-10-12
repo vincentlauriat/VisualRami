@@ -3,6 +3,7 @@ import {
   analyzeMeld,
   arrangeMeld,
   checkFirstLaydown,
+  handCardPoints,
   sortByRank,
   sortBySuit,
   type Card,
@@ -17,7 +18,7 @@ import { VideoTile } from "./VideoTile";
 import { MediaControls } from "./MediaControls";
 import { Chat } from "./Chat";
 import { labels } from "../lib/labels";
-import { Icon } from "./Icon";
+import { Icon, Mark } from "./Icon";
 import { RoundResult } from "./RoundResult";
 import { invalidMeldReason, meldFit, type MeldFit } from "../lib/meldHelp";
 
@@ -70,6 +71,11 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
   // The timer waits while focus is in the question, so a screen reader is not cut off mid-way.
   const [leaveFocused, setLeaveFocused] = useState(false);
   const finished = state.phase === "finished";
+  // Your own messages are not news to you: the badge counts the others'.
+  const othersMessages = chat.filter((m) => m.from !== state.you.id).length;
+  // The card you just drew, marked quietly in the hand until your turn ends.
+  const [drawnId, setDrawnId] = useState<string | null>(null);
+  const handBefore = useRef(state.you.hand.map((c) => c.id));
 
   // Keep local hand order stable while syncing with the server's hand content.
   useEffect(() => {
@@ -90,7 +96,17 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
       setSelected([]);
       setStaged([]);
     }
+    setDrawnId(null);
   }, [isMyTurn, state.round]);
+
+  // A draw is the one moment the hand grows by exactly one card during your turn.
+  useEffect(() => {
+    const before = new Set(handBefore.current);
+    handBefore.current = state.you.hand.map((c) => c.id);
+    if (!isMyTurn || state.phase !== "play") return;
+    const added = state.you.hand.filter((c) => !before.has(c.id));
+    if (added.length === 1 && state.you.hand.length === before.size + 1) setDrawnId(added[0]!.id);
+  }, [state.you.hand, isMyTurn, state.phase]);
 
   useEffect(() => {
     if (!error) return;
@@ -210,6 +226,18 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
   const keepDiscard =
     selectedCards.length === 1 && hand.length > 1 && selectedCards[0]!.id === state.drewFromDiscardCardId;
   const canDiscard = canPlay && selectedCards.length === 1 && !keepDiscard;
+  // What the selection is worth, before it is prepared: a whole meld counts as the table will
+  // count it, a partial pick by its cards' values (a joker only counts once it has a place).
+  const selectionInfo = useMemo(() => {
+    if (finished || selectedCards.length === 0) return null;
+    const arranged = selectedCards.length >= 3 ? arrangeMeld(selectedCards) : null;
+    const meld = arranged ? analyzeMeld(arranged) : null;
+    const points = meld ? meld.points : selectedCards.reduce((sum, c) => sum + (c.joker ? 0 : handCardPoints(c)), 0);
+    const min = state.options.firstMeldMinPoints;
+    // Before the first laydown, a real meld says how far the table's threshold still is.
+    const toGo = meld && !me.hasLaidDown && min > 0 ? min - stagedTotal - points : null;
+    return labels.selection(selectedCards.length, points, toGo, min);
+  }, [finished, selectedCards, state.options.firstMeldMinPoints, me.hasLaidDown, stagedTotal]);
   const canLay = connected && staged.length > 0 && (firstLaydown ? !!firstCheck?.ok : true);
   const minPoints = state.options.firstMeldMinPoints;
   const hint = finished
@@ -361,7 +389,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
     <div className={`game${sideOpen ? " side-open" : ""}`}>
       <header className="topbar">
         <h1>
-          <span className="logo">🃏</span> <span className="brand">VisualRami</span>
+          <span className="logo"><Mark /></span> <span className="brand">VisualRami</span>
           <span className="tag"><span className="tag-prefix">table </span>{state.roomId}</span>
           <span className="tag">manche {state.round}</span>
         </h1>
@@ -374,9 +402,9 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
             onClick={() => setSideOpen((v) => !v)}
             aria-expanded={sideOpen}
             aria-controls="side-panel"
-            aria-label={labels.sideToggle(chat.length)}
+            aria-label={labels.sideToggle(othersMessages)}
           >
-            <Icon name="chat" />{chat.length > 0 && <span className="tag" aria-hidden>{chat.length}</span>}
+            <Icon name="chat" />{othersMessages > 0 && <span className="tag unread" aria-hidden>{othersMessages}</span>}
           </button>
           {leaveArmed ? (
             <div
@@ -509,7 +537,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                     {firstLaydown ? (
                       <div className="laydown-progress">
                         <span className={`gauge${firstCheck?.ok ? " full" : ""}`} aria-hidden>
-                          <span style={{ width: `${Math.min(100, (stagedTotal / minPoints) * 100)}%` }} />
+                          <span style={{ transform: `scaleX(${Math.min(1, stagedTotal / minPoints)})` }} />
                         </span>
                         <span className="laydown-points">{labels.laydownProgress(stagedTotal, minPoints)}</span>
                         {state.options.requirePureRun && (
@@ -570,6 +598,11 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                 </div>
               )}
 
+              {/* Information, not an action: it stays out of the lamp's gold. Hidden under a message. */}
+              <p className="selection-info" aria-live="polite">
+                {!error && !notice ? selectionInfo : null}
+              </p>
+
               <div className={`hand${hand.length > 14 ? " dense" : ""}`} ref={handRef}>
                 {hand.map((card) => {
                   const idx = selected.indexOf(card.id);
@@ -580,6 +613,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                       selected={idx >= 0}
                       dimmed={stagedIds.has(card.id)}
                       order={idx >= 0 && selected.length > 1 ? idx + 1 : undefined}
+                      drawn={card.id === drawnId}
                       // Between rounds the hand is only to look at.
                       onClick={finished ? undefined : () => toggle(card)}
                     />
@@ -616,11 +650,21 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                   {/* Gold only once discarding is actually possible: the Lamp Rule. */}
                   <button
                     type="button"
-                    className={canDiscard && (staged.length === 0 || discardArmed) ? "primary" : undefined}
+                    // Armed, it is a confirmation, not the lamp: Poser stays the gold action.
+                    className={discardArmed ? "ghost confirm-danger" : canDiscard && staged.length === 0 ? "primary" : undefined}
                     disabled={!canDiscard}
                     onClick={discard}
+                    aria-label={discardArmed ? labels.discardAnyway : undefined}
                   >
-                    {discardArmed ? "Défausser quand même" : "Défausser"}
+                    {/* On a phone the armed label stays one word and a "?": the banner says why. */}
+                    {discardArmed ? (
+                      <>
+                        <span className="label-long">{labels.discardAnyway}</span>
+                        <span className="label-short">{labels.discardAnywayShort}</span>
+                      </>
+                    ) : (
+                      "Défausser"
+                    )}
                   </button>
                 </div>
               </div>
@@ -629,7 +673,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
           </section>
         </main>
 
-        <Chat messages={chat} log={state.log} offline={!connected} onSend={onSendChat} onClose={closeSide} />
+        <Chat messages={chat} log={state.log} options={state.options} offline={!connected} onSend={onSendChat} onClose={closeSide} />
       </div>
 
     </div>

@@ -1,7 +1,7 @@
 /**
  * Why a request failed. `transport`: no answer reached us (timeout, socket dropped mid-request),
  * so nothing is known about the outcome and the request may be retried. Otherwise the server
- * answered with a verdict ("Session invalide", "Salle introuvable"…).
+ * answered with a verdict ("Session invalide", "Table introuvable"…).
  */
 export class RequestError extends Error {
   readonly transport: boolean;

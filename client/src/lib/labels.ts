@@ -27,8 +27,13 @@ export const labels = {
   firstLaydownSpoken: (owner: string, points: number, mine: boolean) =>
     mine ? `Vous posez pour la première fois : ${points} points.` : `${owner} pose pour la première fois : ${points} points.`,
   selectedCard: (card: Card, order: number) => `${cardName(card)}, choix ${order}`,
-  sideToggle: (messages: number) => (messages > 0 ? `Journal et chat, ${messages} messages` : "Journal et chat"),
+  sideToggle: (messages: number) =>
+    messages > 0 ? `Journal, chat et règles, ${messages} messages` : "Journal, chat et règles",
   dismissMessage: "Fermer le message",
+  justDrawn: "piochée à l'instant",
+
+  // Arriving and finding a table.
+  tableNotFound: "Table introuvable : vérifiez le code",
 
   // End of round: the count, face up on the felt.
   youWinRound: "Vous remportez la manche",
@@ -76,11 +81,16 @@ export const labels = {
   hintKeepDiscard: "Carte prise dans la défausse : gardez-la ce tour-ci.",
   hintAfterLaydown: "Cette carte ira sur la table après votre première pose.",
   hintDiscardStaged: "Défausser maintenant abandonne la préparation.",
+  discardAnyway: "Défausser quand même",
+  discardAnywayShort: "Défausser ?",
   laydownProgress: (points: number, min: number) =>
     points >= min ? `${points} pts : seuil de ${min} atteint` : `${points} / ${min} pts · encore ${min - points}`,
   pureRunDone: "Tierce franche ✓",
   pureRunMissing: "Tierce franche à trouver",
   laydownPoints: (points: number) => `${points} pts à poser`,
+  selection: (count: number, points: number, toGo: number | null, min: number) =>
+    `${count} carte${count > 1 ? "s" : ""} · ${points} pts` +
+    (toGo === null ? "" : toGo > 0 ? ` · encore ${toGo} pour ${min}` : ` · seuil de ${min} atteint`),
 
   // Why a selection is not a combination. Each names the fix, not just the failure.
   meldTooShort: "Une combinaison compte au moins 3 cartes.",

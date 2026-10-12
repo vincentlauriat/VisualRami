@@ -8,6 +8,9 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Device-aware layout beyond the phone: a tablet-portrait tier (real card and opponent sizes instead of phone sizing), a landscape tier that moves opponents to a left rail and pins the game to the viewport so the hand never falls below the fold, and touch-sized controls on any coarse pointer regardless of viewport width.
 - Presence at the table: losing your own connection shows a "Connexion perdue — reconnexion…" strip (a polite live region) and stills the piles, play buttons, chat and "Nouvelle manche" until the seat is back; nothing tapped offline is sent later. An absent player's tile reads "absent · sa place est gardée", a muted microphone shows a drawn glyph on that player's tile for everyone (sent over the same `media` signal as the camera), and pressing Quitter logs "X a quitté la table".
 - End of round on the felt: the result is no longer a modal over a dark scrim but a panel on the table, so faces, log and chat stay usable for everyone. Every losing hand is revealed with its points ("×2 : pas posé" when doubled), the winner reads "0 (gagnant)" instead of "+0" and their tile carries "remporte la manche". The other players press "Prêt" and the host sees who is ready before dealing ("Nouvelle manche"). New `ready` action and `GameState.ready` field (older snapshots load without it); other players' hands reach the client only once the round is over.
+- Arriving by an invitation link (`?table=CODE`) shows one card, "Rejoindre la table CODE", with the name field and one gold button ("Reprendre" when a seat is remembered for that table); creating another table is a discreet link below.
+- Règles tab beside Journal and Chat at the table (drawer on laptops, sheet on phones): card values, the first laydown as this table plays it, joker, end of round and ×2, in short sentences shared with the home page.
+- Live points on the selection: "3 cartes · 27 pts" above the hand, and before the first laydown "· encore 24 pour 51" for a real meld.
 - Quitter asks first: one press arms "Quitter la table ?" with Quitter / Rester, which disarms by itself after 5 s or on Escape.
 - Product record (`PRODUCT.md`) and a UI technical audit (`docs/AUDIT_UI.md`).
 - Design system record (`DESIGN.md`, with the `.impeccable/design.json` sidecar): tokens, layout tiers, elevation and component rules extracted from the shipped client.
@@ -15,9 +18,30 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
 
 ### Fixed
+- Desktop and laptop with two or three players: the piles stood at the far left and the turn line at the far right of an empty felt, 750–900px apart; they now sit together at its centre, as with side seats.
+- At 1100px a 15-card hand left one card alone on a second row; from 15 cards the hand closes up and stays on one row (901–1365px).
+- Phone landscape (844×390): the felt was 139px tall and "Aucune combinaison…" was cut off. Your face joins the left rail and the turn line sits beside the piles; the felt is 187px and the line shows.
+- Lamp Rule: the armed discard ("Défausser ?" / "Défausser quand même") was gold next to a gold Poser; it is now a ghost with a danger outline, like the armed Quitter.
+- Phone: the tile scrolling under your pinned seat showed sliced ("aximilien"); it now fades into the seat's edge.
+- Reduced motion: the first-laydown gauge animated its width and kept moving under `prefers-reduced-motion`; it fills by `scaleX` and holds still.
+- No emoji left: the joker's centre is a drawn jester's cap, and the 🃏 logo (home, lobby, top bar, favicon) is a drawn card mark.
+- Log: "pose 1 combinaison(s)" is now "1 combinaison" / "2 combinaisons".
+- The chat badge counted your own messages; it counts only the others'.
+- Home and lobby: the background gradient repeated on a long page, leaving a seam (around 1270px on a phone); it is painted once, then plain.
+- Lobby: "Copier le lien" is the main action (gold, unless the host can start) and stays on the code's line on a phone; each copy button confirms its own copy.
+- Règles and Journal tabs no longer show the message field, which belongs to Chat.
+- Rules: "figures et 10 : 10" (two colons) reads "figures et 10 valent 10".
+- Top bar: the table and round tags had their text touching the pill; they have 4px above and below.
+- The card you just drew is marked in your hand for the rest of the turn (a small green pip, and a short settle that reduced motion turns off); screen readers hear "piochée à l'instant".
+- The home page had two equal gold buttons (Créer and Rejoindre, three with Reprendre); it now has one, the likely next step. Its hero line and rules ran 103–109 characters per line on a desktop; they now stay at about 70.
+- A wrong code showed its error under "Votre prénom"; it now sits under the code field, or on the invitation card, as "Table introuvable : vérifiez le code". Server messages say "table" instead of "salle" ("Table introuvable", "Déjà à une table", "Pas à une table").
+- Phone seats: names lost their room to "(vous)" and "posé" ("Od… (vous)", then only "(vous) posé" after a laydown). The pill now holds the name alone (Bérangère, Jean-Pierre whole at 92px), "posé" is a corner chip opposite the mic pip, and your "(vous)" is read out but not shown in the strip. Seat text is 12px at least.
+- Phone, five opponents: following the active seat scrolled your own seat off screen; it is now pinned at the head of the strip.
+- Phone: "Défausser quand même" took three lines and made the action bar jump; it reads "Défausser ?" on phones (full words kept for screen readers) and the action buttons no longer wrap.
+- Phone top bar: the round tag was clipped with a wide table code and an unread chat badge. The unread count now sits on the chat icon, the 🃏 mark leaves the in-game bar, and the bar holds at 360px.
 - Round result (audit P1): the modal made the whole page inert for players who could only wait for the host, and dimmed every face. It is now a labelled region whose heading takes focus on appearance, with no focus trap and nothing inert; non-hosts can chat, open the log and say they are ready.
 - Phone top bar: an unread chat badge folded the microphone and camera buttons into a column.
-- A reconnection whose `room:rejoin` got no answer (the socket dropped again mid-request, or the 8 s timeout) threw the player back to the home page and forgot the remembered seat, as if the server had refused it. Only a real refusal ("Session invalide", "Salle introuvable") clears the seat now; no answer keeps it and asks again. Resuming from the home page keeps the seat the same way, and a `room:rejoin` from the socket that already holds the seat is now a refresh (it used to drop a lobby player).
+- A reconnection whose `room:rejoin` got no answer (the socket dropped again mid-request, or the 8 s timeout) threw the player back to the home page and forgot the remembered seat, as if the server had refused it. Only a real refusal ("Session invalide", "Table introuvable") clears the seat now; no answer keeps it and asks again. Resuming from the home page keeps the seat the same way, and a `room:rejoin` from the socket that already holds the seat is now a refresh (it used to drop a lobby player).
 - The browser's `offline` event now shows the connection loss at once, instead of after the ~45 s a half-open socket takes to notice.
 - A tap made while the connection was down was buffered by Socket.IO and replayed on reconnect: an action when the link came back within 8 s (it then landed late, on a table the player had stopped watching), a chat message whenever it came back. Actions, chat and leave are now sent only while the seat is attached.
 - Phone top bar wrapped to two rows when the table code was wide (e.g. "MUWVR"): the title now clips instead.

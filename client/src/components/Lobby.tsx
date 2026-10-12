@@ -3,6 +3,7 @@ import { MAX_PLAYERS, type PublicGameState } from "@visualrami/shared";
 import type { WebRTCState } from "../lib/useWebRTC";
 import { VideoTile } from "./VideoTile";
 import { MediaControls } from "./MediaControls";
+import { Mark } from "./Icon";
 
 interface Props {
   state: PublicGameState;
@@ -14,16 +15,17 @@ interface Props {
 }
 
 export function Lobby({ state, rtc, connected, onStart, onLeave }: Props) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"code" | "link" | null>(null);
   const isHost = state.hostId === state.you.id;
+  const canStart = isHost && state.players.length >= 2;
   const me = state.players.find((p) => p.id === state.you.id);
   const link = `${location.origin}/?table=${state.roomId}`;
 
-  async function copy(text: string) {
+  async function copy(text: string, what: "code" | "link") {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setCopied(what);
+      setTimeout(() => setCopied(null), 1500);
     } catch {
       // clipboard blocked: the code is still visible on screen
     }
@@ -33,7 +35,7 @@ export function Lobby({ state, rtc, connected, onStart, onLeave }: Props) {
     <main className="lobby">
       <header className="topbar">
         <h1>
-          <span className="logo">🃏</span> VisualRami
+          <span className="logo"><Mark /></span> VisualRami
         </h1>
         <button type="button" className="ghost" onClick={onLeave}>
           Quitter
@@ -44,11 +46,12 @@ export function Lobby({ state, rtc, connected, onStart, onLeave }: Props) {
         <p>Code de la table</p>
         <div className="code-row">
           <strong className="room-code">{state.roomId}</strong>
-          <button type="button" onClick={() => copy(state.roomId)}>
-            {copied ? "Copié !" : "Copier le code"}
+          {/* The link is what travels: it is the lamp here, unless the host can start the game now. */}
+          <button type="button" className={canStart ? undefined : "primary"} onClick={() => copy(link, "link")}>
+            {copied === "link" ? "Lien copié" : "Copier le lien"}
           </button>
-          <button type="button" onClick={() => copy(link)}>
-            Copier le lien
+          <button type="button" onClick={() => copy(state.roomId, "code")}>
+            {copied === "code" ? "Code copié" : "Copier le code"}
           </button>
         </div>
         <p className="hint">

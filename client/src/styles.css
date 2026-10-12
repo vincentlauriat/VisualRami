@@ -36,7 +36,9 @@
 html, body, #root { height: 100%; margin: 0; }
 body {
   font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
-  background: radial-gradient(circle at 30% 0%, #1b2a22, var(--bg) 60%);
+  /* The lift is painted once, then night continues: a repeating tile showed a seam on a long page. */
+  background: var(--bg) radial-gradient(circle at 30% 0%, #1b2a22, var(--bg) 60%) no-repeat;
+  min-height: 100%;
   color: var(--text);
   -webkit-text-size-adjust: 100%;
 }
@@ -57,7 +59,7 @@ button {
 }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 /* :where keeps this at element specificity, so tabs, ghost and the variants below still win. */
-button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)) {
+button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .link, .tabs > *)) {
   background: var(--control-face);
   border-color: var(--control-side);
   border-top-color: var(--control-rim);
@@ -66,8 +68,8 @@ button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)) {
 }
 /* Pressed, and unavailable, controls lie flush with the table: the edge collapses and the face
    drops by the same 2px, so the margin box (and every neighbour) stays put. */
-button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)):active:not(:disabled),
-button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)):disabled {
+button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .link, .tabs > *)):active:not(:disabled),
+button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .link, .tabs > *)):disabled {
   margin-top: 2px;
   border-bottom-width: 1px;
   transform: none;
@@ -87,7 +89,7 @@ button.primary {
 @media (hover: hover) {
   /* Cards keep their face (a hovered card turning panel-green read as a different card), and a
      target meld keeps its own gold hover. */
-  button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .tabs > *)):hover:not(:disabled) { background: var(--control-face-hover); }
+  button:where(:not(.card, .meld, .ghost, .side-close, .seat-jump, .link, .tabs > *)):hover:not(:disabled) { background: var(--control-face-hover); }
   button:where(.ghost, .side-close, .tabs > *):hover:not(:disabled) { background: var(--control-face); }
   button.primary:hover:not(:disabled) { background: #f0c866; }
 }
@@ -110,7 +112,9 @@ input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
 h1, h2 { margin: 0 0 8px; }
 h1 { font-size: 22px; display: flex; align-items: center; gap: 8px; }
 h2 { font-size: 17px; }
-.logo { font-size: 26px; }
+.logo { font-size: 26px; display: inline-flex; }
+.mark { width: 1.15em; height: 1.15em; display: block; }
+.card .center .icon { width: 1.1em; height: 1.1em; stroke-width: 1.6; }
 .hint { color: var(--muted); font-size: 14px; margin: 6px 0; }
 .hint.warn { color: var(--gold); }
 .hint.error { color: var(--danger); }
@@ -125,6 +129,8 @@ h2 { font-size: 17px; }
   font-weight: 500;
 }
 .tag.you { background: var(--gold); color: #1a1500; }
+/* In the bar the tags hold a line of their own: room above and below the text. */
+.topbar h1 .tag { padding: 4px 8px; line-height: 1.2; }
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -141,7 +147,27 @@ h2 { font-size: 17px; }
 .field { display: grid; gap: 6px; margin-bottom: 12px; font-size: 14px; }
 .field.check { grid-template-columns: auto 1fr; align-items: center; }
 .code-input { text-transform: uppercase; letter-spacing: 4px; font-size: 20px; font-family: monospace; }
-.rules ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+/* The rules, at home and at the table: short lines (about 70 characters at most on a desktop). */
+.rule-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 58ch; }
+.rule-list b { color: var(--text); font-weight: 600; }
+.side-body .rule-list { padding-left: 16px; font-size: 13px; line-height: 1.55; }
+.side-body .rule-list li + li { margin-top: 6px; }
+.home-hero p { max-width: 56ch; margin-inline: auto; }
+/* Arriving by link: one table, one card. */
+.home.invite { max-width: 460px; }
+.invite-card { display: grid; gap: 4px; }
+.invite-card h2 { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+/* The button is the lamp here; the code is what you are joining, in plain text. */
+.invite-card .room-code { color: var(--text); }
+.invite-card form { display: grid; }
+.invite-card button.primary { justify-self: start; }
+.invite-alt { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin: 0; }
+/* A link, not a control: the invitation is the one thing to press here. */
+button.link {
+  background: none; border: none; padding: 6px 2px; min-height: 44px; color: var(--muted);
+  text-decoration: underline; text-underline-offset: 3px; font-size: 14px;
+}
+@media (hover: hover) { button.link:hover { color: var(--text); } }
 .seat-list { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 8px; }
 .seat-list li { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .seat-meta { color: var(--muted); font-size: 14px; flex: 1; }
@@ -162,13 +188,15 @@ h2 { font-size: 17px; }
 }
 .leave-confirm { display: flex; align-items: center; gap: 6px; }
 .leave-ask { font-size: 14px; color: var(--muted); white-space: nowrap; }
-button.leave-yes { border-color: var(--danger); color: #ffc1bd; }
+/* A confirmation that throws something away (leaving, discarding a staging): never the lamp. */
+button.leave-yes, button.confirm-danger { border-color: var(--danger); color: #ffc1bd; }
 
 /* Lobby */
 .lobby { max-width: 900px; margin: 0 auto; padding: 20px; display: grid; gap: 16px; }
 .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .topbar-right { display: flex; gap: 10px; align-items: center; }
 .code-panel p { margin: 0 0 8px; color: var(--muted); }
+.code-panel .code-row + .hint { margin-top: 12px; }
 .code-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .room-code { font-family: monospace; font-size: 34px; letter-spacing: 6px; color: var(--gold); }
 .player-list { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 6px; }
@@ -199,6 +227,7 @@ button.leave-yes { border-color: var(--danger); color: #ffc1bd; }
   position: absolute; inset: 0; display: grid; place-items: center; background: #16211b;
   font-size: 32px; font-weight: 700; color: var(--muted);
 }
+.label-short { display: none; }
 .video-name {
   position: absolute; left: 6px; bottom: 6px; display: flex; gap: 6px; align-items: center; max-width: calc(100% - 12px);
   background: rgba(0, 0, 0, 0.55); padding: 2px 8px; border-radius: 999px; font-size: 13px;
@@ -214,7 +243,13 @@ button.leave-yes { border-color: var(--danger); color: #ffc1bd; }
   width: 24px; height: 24px; border-radius: 50%; background: rgba(0, 0, 0, 0.55); color: #ffc1bd;
 }
 .video-mic .icon { width: 14px; height: 14px; }
-.video-badge { flex: none; background: var(--gold); color: #1a1500; border-radius: 999px; padding: 0 6px; font-size: 11px; font-weight: 600; }
+/* "posé" sits in the top-left corner, the muted mic in the top-right: neither takes width from the
+   name. A status pill along the top (absent, winner) pushes both just below it. */
+.video-badge {
+  position: absolute; top: 6px; left: 6px; background: var(--gold); color: #1a1500;
+  border-radius: 999px; padding: 1px 7px; font-size: 12px; line-height: 1.35; font-weight: 600;
+}
+.video-tile:has(> .video-status) > .video-badge, .video-tile:has(> .video-status) > .video-mic { top: 30px; }
 /* Another player's "posé": information, not yours, so it does not take the lamp's gold. */
 .video-badge.muted { background: var(--control-face); color: var(--felt-text-strong); }
 .media-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -342,12 +377,17 @@ button.meld { color: inherit; text-align: left; }
   .zone .card.small .center { font-size: 19px; }
   .zone .meld { padding: 4px 5px; }
   .zone .meld .card:not(:last-child) { width: 18px; }
-  /* With side seats the centre narrows: the piles shrink and the turn line goes under them. */
+  /* The piles and the turn line sit together at the centre of the felt, at any player count: with
+     two or three players they used to stand at opposite ends of an empty felt, 900px apart. */
+  .piles { justify-content: center; }
+  .turn-banner { flex: 0 1 280px; margin-left: 10px; justify-items: start; text-align: left; }
+  .felt-center > .hint { text-align: center; }
+  /* With side seats the centre narrows: the piles shrink and the turn line tightens. */
   .table-area.sided .pile .card { --card-w: 46px; --card-h: 64px; }
   .table-area.sided .pile .card .center { font-size: 23px; }
   .table-area.sided .pile-caption { display: none; }
-  .table-area.sided .piles { gap: 12px; justify-content: center; }
-  .table-area.sided .turn-banner { flex: 1 1 150px; max-width: 260px; margin-left: 4px; justify-items: start; text-align: left; font-size: 15px; }
+  .table-area.sided .piles { gap: 12px; }
+  .table-area.sided .turn-banner { flex: 1 1 150px; max-width: 260px; margin-left: 4px; font-size: 15px; }
   .zone { align-content: flex-start; justify-content: center; min-height: 0; }
   .zone.empty { display: flex; padding: 0; }
   .zone-owner { display: none; }
@@ -387,6 +427,14 @@ button.meld { color: inherit; text-align: left; }
 /* Gold already means "selected" on a card, so keyboard focus takes the text colour instead. */
 .card:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
 .card.dimmed { opacity: 0.35; }
+/* The card you just drew: a small felt-green pip in its top-right corner and a short settle into
+   the hand. Not gold, since gold already means "selected". */
+.card.drawn::after {
+  content: ""; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--felt); box-shadow: inset 0 0 0 1px var(--felt-dark);
+}
+.hand .card.drawn:not(.selected) { animation: card-drawn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes card-drawn { from { transform: translateY(-10px); } }
 .hand .card.selected { z-index: 1; }
 .card .order {
   position: absolute; top: -8px; right: -6px; width: 18px; height: 18px; border-radius: 50%;
@@ -420,12 +468,24 @@ button.meld { color: inherit; text-align: left; }
 .staging-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 14px; }
 .laydown-progress { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
 .gauge { width: 120px; height: 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.35); overflow: hidden; }
-.gauge > span { display: block; height: 100%; border-radius: inherit; background: var(--felt-text); transition: width 0.2s ease-out; }
+.gauge > span {
+  display: block; height: 100%; border-radius: inherit; background: var(--felt-text);
+  transform-origin: left; transition: transform 0.2s ease-out;
+}
 .gauge.full > span { background: var(--felt-accent); }
 .pip { font-size: 13px; color: var(--felt-text); }
 .pip.on { color: var(--felt-accent); }
 .actions .lay-now { display: none; }
 .staging-melds { display: flex; flex-wrap: wrap; gap: 10px; }
+/* What the selection is worth: a quiet pill floating above the hand, like the messages, so the hand
+   never moves when it appears. */
+.selection-info {
+  position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 5; margin: 0; pointer-events: none;
+  padding: 3px 10px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--border-strong);
+  color: var(--text); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+/* Empty, it stays in place (and in the accessibility tree) so the next selection is announced. */
+.selection-info:empty { opacity: 0; }
 /* Floats just above the hand rather than pushing the hand down when it appears. */
 .hand-area .toast { position: absolute; left: 0; right: 0; bottom: calc(100% + 6px); z-index: 6; }
 .toast {
@@ -462,6 +522,9 @@ button.meld { color: inherit; text-align: left; }
     visibility: hidden; transition: transform 0.2s ease, visibility 0s linear 0.2s;
   }
   .game.side-open .side { transform: translateX(0); visibility: visible; transition: transform 0.2s ease; }
+  /* Fifteen cards and more close up slightly instead of leaving one alone on a second row. */
+  .hand.dense { gap: 0; }
+  .hand.dense .card + .card { margin-left: -4px; }
   .side-close { display: block; flex: none; width: 44px; border-radius: 0; border: none; border-bottom: 1px solid var(--border); background: transparent; }
 }
 
@@ -509,6 +572,9 @@ button.meld { color: inherit; text-align: left; }
   .home-columns { grid-template-columns: 1fr; }
   .home { padding: 20px 16px 40px; }
   .lobby { padding: 12px 16px 24px; }
+  /* The code and its link share one line; copying the code alone can wrap below. */
+  .code-row { gap: 10px; }
+  .code-row .room-code { font-size: 28px; letter-spacing: 4px; }
   .video-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 
   /* Game: one column, natural document flow, sticky action bar. */
@@ -534,8 +600,12 @@ button.meld { color: inherit; text-align: left; }
   .opponents { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 8px; overflow-x: auto; padding: 2px 0 6px; scrollbar-width: none; }
   .opponent { width: 104px; flex: none; }
   .opponent .video-tile { border-width: 2px; border-radius: 8px; }
-  .opponent .video-tile .video-name { font-size: 11px; padding: 1px 6px; left: 4px; bottom: 4px; }
-  .opponent-info { font-size: 11px; gap: 4px; }
+  /* 12px is the floor for seat text (DESIGN.md): the strip is read at arm's length. */
+  .opponent .video-tile .video-name { font-size: 12px; padding: 1px 6px; left: 3px; bottom: 3px; max-width: calc(100% - 6px); }
+  .opponent .video-badge { top: 3px; left: 3px; padding: 0 6px; }
+  .opponent .video-mic { top: 3px; right: 3px; width: 22px; height: 22px; }
+  .opponent .video-tile:has(> .video-status) > .video-badge, .opponent .video-tile:has(> .video-status) > .video-mic { top: 24px; }
+  .opponent-info { font-size: 12px; gap: 4px; }
   .mini-hand { display: none; }
 
   .felt { border-width: 4px; border-radius: 18px; padding: 10px; min-height: 200px; overflow: visible; }
@@ -604,9 +674,30 @@ button.meld { color: inherit; text-align: left; }
   /* One row: the title gives way (it clips) rather than pushing the controls to a second line,
      and the controls never fold among themselves (an unread badge used to stack mic over camera). */
   .topbar { flex-wrap: nowrap; }
-  .topbar-right, .media-controls.compact { flex: none; flex-wrap: nowrap; }
+  .topbar-right, .media-controls.compact { flex: none; flex-wrap: nowrap; gap: 4px; }
+  .media-controls.compact { gap: 6px; }
   .topbar h1 { min-width: 0; overflow: hidden; white-space: nowrap; }
   .tag-prefix, .btn-label { display: none; }
+  /* The table code and the round need the title's room: the mark goes, as the brand word already has. */
+  .game .topbar .logo { display: none; }
+  /* The unread count rides on the chat icon instead of widening the button. */
+  .side-toggle { position: relative; }
+  .side-toggle .tag.unread {
+    position: absolute; top: -6px; right: -6px; margin: 0; min-width: 20px; padding: 2px 5px;
+    font-size: 12px; line-height: 1.2; text-align: center; background: var(--control-face); color: var(--text);
+    border: 1px solid var(--border-strong);
+  }
+  /* Flat night behind the phone table, so the pinned seat's own background matches it exactly. */
+  .game { background: var(--bg); }
+  /* Your seat stays pinned at the head of the strip while the others scroll past it. */
+  .self-seat { position: sticky; left: 0; z-index: 2; background: var(--bg); padding-right: 8px; margin-right: -8px; }
+  /* What scrolls under the pinned seat fades into it instead of showing a sliced tile. */
+  .self-seat::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 100%; width: 18px; pointer-events: none;
+    background: linear-gradient(to right, var(--bg), transparent);
+  }
+  /* Your own "(vous)": the first, mirrored seat already says it. Still read out. */
+  .self-seat .video-suffix { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* Asking to leave takes the whole right side; the buttons' own words carry the question. */
   .topbar-right:has(.leave-confirm) > :not(.leave-confirm), .leave-ask { display: none; }
   /* A phone seat is 92px wide: "absent" shows, the rest is still read out. */
@@ -615,6 +706,8 @@ button.meld { color: inherit; text-align: left; }
   .self-seat { display: grid; }
   .me-side { display: none; }
   .opponent { width: 92px; }
+  /* The pinned seat's 8px edge is padding, so its face keeps the same 92px as the others. */
+  .self-seat { width: 100px; }
 
   .pile .card { --card-w: 44px; --card-h: 62px; }
   .pile .card .corner b { font-size: 12px; }
@@ -626,7 +719,10 @@ button.meld { color: inherit; text-align: left; }
   .actions .sort { display: flex; gap: 6px; flex: none; }
   .actions .sort button { min-width: 44px; padding: 8px; font-size: 14px; }
   .actions .play { display: flex; flex: 1; gap: 6px; min-width: 0; }
-  .actions .play button { flex: 1; min-height: 48px; padding: 8px 6px; font-size: 15px; }
+  /* Buttons share the row by their words and never wrap: an armed discard used to take three lines. */
+  .actions .play button { flex: 1 1 auto; min-height: 48px; padding: 8px 6px; font-size: 15px; white-space: nowrap; }
+  .label-long { display: none; }
+  .label-short { display: inline; }
   /* While melds are staged, "Poser" takes the sort buttons' place in the bar. */
   .actions.staging-on .sort button:not(:last-child) { display: none; }
   .actions .lay-now { display: inline-flex; align-items: center; justify-content: center; }
@@ -650,7 +746,7 @@ button.meld { color: inherit; text-align: left; }
   .result-cards .card.small .corner b { font-size: 11px; }
   .result-cards .card.small .center { font-size: 16px; }
   /* A 92px seat: a crown and "gagne" on one line, the full words still read out. */
-  .video-status.video-winner { font-size: 11px; padding: 1px 6px; left: 4px; right: 4px; top: 4px; }
+  .video-status.video-winner { font-size: 12px; padding: 0 6px; left: 3px; right: 3px; top: 3px; }
   .winner-short { display: inline; }
   .winner-long { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* Once drawn from, the piles are only a reference: they shrink to give the melds the room. */
@@ -749,7 +845,7 @@ button.meld { color: inherit; text-align: left; }
     gap: 6px; padding: 0 2px 0 0; overflow-x: visible; overflow-y: auto;
   }
   .opponent { width: 86px; }
-  .opponent-info { font-size: 10px; }
+  .opponent-info { font-size: 12px; }
 
   .felt {
     grid-column: 2; grid-row: 1;
@@ -757,7 +853,16 @@ button.meld { color: inherit; text-align: left; }
     overflow: auto;
   }
   .pile .card { --card-w: 40px; --card-h: 56px; }
-  .pile-caption { font-size: 11px; }
+  .pile-caption { display: none; }
+  /* Height is what landscape lacks: your face joins the rail like on a portrait phone, which gives
+     the felt the row your small tile and score used to take, and the turn line sits beside the
+     piles instead of above them. */
+  .self-seat { display: grid; }
+  .me-side { display: none; }
+  /* As in the portrait strip, the first mirrored seat says "you"; the word is only read out. */
+  .self-seat .video-suffix { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .turn-banner { flex: 1 1 200px; flex-basis: auto; order: 0; margin-left: 6px; justify-items: start; text-align: left; }
+  .felt { gap: 6px; }
   .me { grid-column: 2; grid-row: 2; min-height: 0; }
   .hand-area { min-height: 0; }
   .hand { max-height: 96px; overflow-y: auto; }
@@ -821,4 +926,6 @@ button.meld { color: inherit; text-align: left; }
   /* The first laydown still shows, as a steady highlight for its few seconds instead of a fade. */
   .zone.fresh { animation: none; background-color: rgba(253, 253, 248, 0.14); }
   .zone { transition: none; }
+  .gauge > span { transition: none; }
+  .hand .card.drawn:not(.selected) { animation: none; }
 }

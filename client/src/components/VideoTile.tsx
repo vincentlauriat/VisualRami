@@ -58,11 +58,12 @@ export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, a
           <Icon name="micOff" />
         </span>
       )}
+      {/* The name pill holds the name only; "posé" is a corner chip so it never takes the name's room. */}
       <div className="video-name">
         <span className="video-label">{name}</span>
         {suffix && <span className="video-suffix">{suffix}</span>}
-        {badge && <span className={`video-badge${badgeMuted ? " muted" : ""}`}>{badge}</span>}
       </div>
+      {badge && <span className={`video-badge${badgeMuted ? " muted" : ""}`}>{badge}</span>}
     </div>
   );
 }

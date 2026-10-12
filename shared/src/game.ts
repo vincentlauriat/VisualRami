@@ -301,7 +301,7 @@ function layDown(state: GameState, playerId: string, meldIds: string[][]): GameR
   }));
   let next = updatePlayer(state, playerId, { hand: remaining, hasLaidDown: true });
   next = { ...next, melds: [...state.melds, ...newMelds] };
-  next = log(next, `${player.name} pose ${newMelds.length} combinaison(s)`);
+  next = log(next, `${player.name} pose ${newMelds.length} combinaison${newMelds.length > 1 ? "s" : ""}`);
   return ok(next);
 }
 
