@@ -15,6 +15,10 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
 
 ### Fixed
+- Phone seats: names lost their room to "(vous)" and "posé" ("Od… (vous)", then only "(vous) posé" after a laydown). The pill now holds the name alone (Bérangère, Jean-Pierre whole at 92px), "posé" is a corner chip opposite the mic pip, and your "(vous)" is read out but not shown in the strip. Seat text is 12px at least.
+- Phone, five opponents: following the active seat scrolled your own seat off screen; it is now pinned at the head of the strip.
+- Phone: "Défausser quand même" took three lines and made the action bar jump; it reads "Défausser ?" on phones (full words kept for screen readers) and the action buttons no longer wrap.
+- Phone top bar: the round tag was clipped with a wide table code and an unread chat badge. The unread count now sits on the chat icon, the 🃏 mark leaves the in-game bar, and the bar holds at 360px.
 - Round result (audit P1): the modal made the whole page inert for players who could only wait for the host, and dimmed every face. It is now a labelled region whose heading takes focus on appearance, with no focus trap and nothing inert; non-hosts can chat, open the log and say they are ready.
 - Phone top bar: an unread chat badge folded the microphone and camera buttons into a column.
 - A reconnection whose `room:rejoin` got no answer (the socket dropped again mid-request, or the 8 s timeout) threw the player back to the home page and forgot the remembered seat, as if the server had refused it. Only a real refusal ("Session invalide", "Salle introuvable") clears the seat now; no answer keeps it and asks again. Resuming from the home page keeps the seat the same way, and a `room:rejoin` from the socket that already holds the seat is now a refresh (it used to drop a lobby player).

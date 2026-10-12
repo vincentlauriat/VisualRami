@@ -199,6 +199,7 @@ button.leave-yes { border-color: var(--danger); color: #ffc1bd; }
   position: absolute; inset: 0; display: grid; place-items: center; background: #16211b;
   font-size: 32px; font-weight: 700; color: var(--muted);
 }
+.label-short { display: none; }
 .video-name {
   position: absolute; left: 6px; bottom: 6px; display: flex; gap: 6px; align-items: center; max-width: calc(100% - 12px);
   background: rgba(0, 0, 0, 0.55); padding: 2px 8px; border-radius: 999px; font-size: 13px;
@@ -214,7 +215,13 @@ button.leave-yes { border-color: var(--danger); color: #ffc1bd; }
   width: 24px; height: 24px; border-radius: 50%; background: rgba(0, 0, 0, 0.55); color: #ffc1bd;
 }
 .video-mic .icon { width: 14px; height: 14px; }
-.video-badge { flex: none; background: var(--gold); color: #1a1500; border-radius: 999px; padding: 0 6px; font-size: 11px; font-weight: 600; }
+/* "posé" sits in the top-left corner, the muted mic in the top-right: neither takes width from the
+   name. A status pill along the top (absent, winner) pushes both just below it. */
+.video-badge {
+  position: absolute; top: 6px; left: 6px; background: var(--gold); color: #1a1500;
+  border-radius: 999px; padding: 1px 7px; font-size: 12px; line-height: 1.35; font-weight: 600;
+}
+.video-tile:has(> .video-status) > .video-badge, .video-tile:has(> .video-status) > .video-mic { top: 30px; }
 /* Another player's "posé": information, not yours, so it does not take the lamp's gold. */
 .video-badge.muted { background: var(--control-face); color: var(--felt-text-strong); }
 .media-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -534,8 +541,12 @@ button.meld { color: inherit; text-align: left; }
   .opponents { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 8px; overflow-x: auto; padding: 2px 0 6px; scrollbar-width: none; }
   .opponent { width: 104px; flex: none; }
   .opponent .video-tile { border-width: 2px; border-radius: 8px; }
-  .opponent .video-tile .video-name { font-size: 11px; padding: 1px 6px; left: 4px; bottom: 4px; }
-  .opponent-info { font-size: 11px; gap: 4px; }
+  /* 12px is the floor for seat text (DESIGN.md): the strip is read at arm's length. */
+  .opponent .video-tile .video-name { font-size: 12px; padding: 1px 6px; left: 3px; bottom: 3px; max-width: calc(100% - 6px); }
+  .opponent .video-badge { top: 3px; left: 3px; padding: 0 6px; }
+  .opponent .video-mic { top: 3px; right: 3px; width: 22px; height: 22px; }
+  .opponent .video-tile:has(> .video-status) > .video-badge, .opponent .video-tile:has(> .video-status) > .video-mic { top: 24px; }
+  .opponent-info { font-size: 12px; gap: 4px; }
   .mini-hand { display: none; }
 
   .felt { border-width: 4px; border-radius: 18px; padding: 10px; min-height: 200px; overflow: visible; }
@@ -604,9 +615,25 @@ button.meld { color: inherit; text-align: left; }
   /* One row: the title gives way (it clips) rather than pushing the controls to a second line,
      and the controls never fold among themselves (an unread badge used to stack mic over camera). */
   .topbar { flex-wrap: nowrap; }
-  .topbar-right, .media-controls.compact { flex: none; flex-wrap: nowrap; }
+  .topbar-right, .media-controls.compact { flex: none; flex-wrap: nowrap; gap: 4px; }
+  .media-controls.compact { gap: 6px; }
   .topbar h1 { min-width: 0; overflow: hidden; white-space: nowrap; }
   .tag-prefix, .btn-label { display: none; }
+  /* The table code and the round need the title's room: the mark goes, as the brand word already has. */
+  .game .topbar .logo { display: none; }
+  /* The unread count rides on the chat icon instead of widening the button. */
+  .side-toggle { position: relative; }
+  .side-toggle .tag.unread {
+    position: absolute; top: -6px; right: -6px; margin: 0; min-width: 20px; padding: 2px 5px;
+    font-size: 12px; line-height: 1.2; text-align: center; background: var(--control-face); color: var(--text);
+    border: 1px solid var(--border-strong);
+  }
+  /* Flat night behind the phone table, so the pinned seat's own background matches it exactly. */
+  .game { background: var(--bg); }
+  /* Your seat stays pinned at the head of the strip while the others scroll past it. */
+  .self-seat { position: sticky; left: 0; z-index: 2; background: var(--bg); padding-right: 8px; margin-right: -8px; }
+  /* Your own "(vous)": the first, mirrored seat already says it. Still read out. */
+  .self-seat .video-suffix { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* Asking to leave takes the whole right side; the buttons' own words carry the question. */
   .topbar-right:has(.leave-confirm) > :not(.leave-confirm), .leave-ask { display: none; }
   /* A phone seat is 92px wide: "absent" shows, the rest is still read out. */
@@ -615,6 +642,8 @@ button.meld { color: inherit; text-align: left; }
   .self-seat { display: grid; }
   .me-side { display: none; }
   .opponent { width: 92px; }
+  /* The pinned seat's 8px edge is padding, so its face keeps the same 92px as the others. */
+  .self-seat { width: 100px; }
 
   .pile .card { --card-w: 44px; --card-h: 62px; }
   .pile .card .corner b { font-size: 12px; }
@@ -626,7 +655,10 @@ button.meld { color: inherit; text-align: left; }
   .actions .sort { display: flex; gap: 6px; flex: none; }
   .actions .sort button { min-width: 44px; padding: 8px; font-size: 14px; }
   .actions .play { display: flex; flex: 1; gap: 6px; min-width: 0; }
-  .actions .play button { flex: 1; min-height: 48px; padding: 8px 6px; font-size: 15px; }
+  /* Buttons share the row by their words and never wrap: an armed discard used to take three lines. */
+  .actions .play button { flex: 1 1 auto; min-height: 48px; padding: 8px 6px; font-size: 15px; white-space: nowrap; }
+  .label-long { display: none; }
+  .label-short { display: inline; }
   /* While melds are staged, "Poser" takes the sort buttons' place in the bar. */
   .actions.staging-on .sort button:not(:last-child) { display: none; }
   .actions .lay-now { display: inline-flex; align-items: center; justify-content: center; }
@@ -650,7 +682,7 @@ button.meld { color: inherit; text-align: left; }
   .result-cards .card.small .corner b { font-size: 11px; }
   .result-cards .card.small .center { font-size: 16px; }
   /* A 92px seat: a crown and "gagne" on one line, the full words still read out. */
-  .video-status.video-winner { font-size: 11px; padding: 1px 6px; left: 4px; right: 4px; top: 4px; }
+  .video-status.video-winner { font-size: 12px; padding: 0 6px; left: 3px; right: 3px; top: 3px; }
   .winner-short { display: inline; }
   .winner-long { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* Once drawn from, the piles are only a reference: they shrink to give the melds the room. */
@@ -749,7 +781,7 @@ button.meld { color: inherit; text-align: left; }
     gap: 6px; padding: 0 2px 0 0; overflow-x: visible; overflow-y: auto;
   }
   .opponent { width: 86px; }
-  .opponent-info { font-size: 10px; }
+  .opponent-info { font-size: 12px; }
 
   .felt {
     grid-column: 2; grid-row: 1;

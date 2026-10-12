@@ -376,7 +376,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
             aria-controls="side-panel"
             aria-label={labels.sideToggle(chat.length)}
           >
-            <Icon name="chat" />{chat.length > 0 && <span className="tag" aria-hidden>{chat.length}</span>}
+            <Icon name="chat" />{chat.length > 0 && <span className="tag unread" aria-hidden>{chat.length}</span>}
           </button>
           {leaveArmed ? (
             <div
@@ -619,8 +619,17 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                     className={canDiscard && (staged.length === 0 || discardArmed) ? "primary" : undefined}
                     disabled={!canDiscard}
                     onClick={discard}
+                    aria-label={discardArmed ? labels.discardAnyway : undefined}
                   >
-                    {discardArmed ? "Défausser quand même" : "Défausser"}
+                    {/* On a phone the armed label stays one word and a "?": the banner says why. */}
+                    {discardArmed ? (
+                      <>
+                        <span className="label-long">{labels.discardAnyway}</span>
+                        <span className="label-short">{labels.discardAnywayShort}</span>
+                      </>
+                    ) : (
+                      "Défausser"
+                    )}
                   </button>
                 </div>
               </div>

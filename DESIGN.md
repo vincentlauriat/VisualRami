@@ -224,6 +224,8 @@ copied exactly: the five-letter table code.
 - **Title** (700, 17px): panel headings and the round-result title.
 - **Body** (400, 16px): forms, rules, chat. Inputs stay at 16px on phones to prevent iOS zoom.
 - **Label** (400, 11–14px, tabular figures): hints, captions, scores, card counts, log lines.
+  Anything on or under a seat (name pill, "posé", card count and score) is 12px at least: the strip
+  is read at arm's length.
 - **Room code** (monospace, 34px, 6px tracking): the code to share, in gold.
 - **Card rank** (700, 15px; 12–13px on small cards): the corner of every card face.
 
@@ -248,8 +250,10 @@ chat come in as a drawer from the right behind the chat button, so the seats and
 whole width.
 
 **Phone portrait** (< 600px wide): the whole table fits one screen and nothing outside the felt
-scrolls. The top bar keeps one row (icons only, the table code without its "table" prefix), your
-own seat joins the opponents' strip, and sort, clear, prepare and discard share a single action
+scrolls. The top bar keeps one row (icons only, the table code without its "table" prefix, no 🃏
+mark, the unread count riding on the chat icon) and holds at 360px with a wide code, the badge
+or an armed Quitter. Your own seat joins the opponents' strip, pinned at its head while the
+others scroll past it, so the strip's turn-following scroll never pushes you off screen; and sort, clear, prepare and discard share a single action
 row; while melds are staged, "Poser" takes the sort buttons' place. The staging tray leads the
 felt, the piles shrink once you have drawn, a 15-card hand fans into two rows of eight, and the
 strip scrolls itself to the seat whose turn it is.
@@ -343,8 +347,8 @@ Tactile and assertive: a raised control is a chip on its edge.
 
 ### Navigation
 A single top bar: 🃏 mark and title on the left, table code tag, mic/camera controls and leave
-button on the right. On phones the brand word hides, buttons reach 44px, and a 💬 toggle (with
-an unread badge) opens the log/chat sheet. The log/chat panel has two tabs; the active tab takes
+button on the right. On phones the brand word hides, buttons reach 44px, and a chat toggle (its
+unread count a small bubble on the icon's corner) opens the log/chat sheet. The log/chat panel has two tabs; the active tab takes
 panel-2 and gold text. Leaving takes two presses: the first replaces the ghost Quitter with
 "Quitter la table ?", a ghost Quitter with a danger outline and a ghost Rester (never gold:
 leaving is not the lamp's action). The question takes focus, Escape or Rester puts it away, and
@@ -360,7 +364,11 @@ because gold already means "selected". In melds, cards overlap by 14–16px.
 
 ### Video Tile (signature)
 A 4:3 dark well with the live video, mirrored for yourself, the player's name in a translucent
-one-line pill at the bottom left (a long name ends in an ellipsis; your own "(vous)" never does) and an optional gold "posé" badge. When the camera is off, or the peer
+one-line pill at the bottom left that holds the name only (a long name ends in an ellipsis; six
+to eight letters stay whole on a 92px phone seat). Your own "(vous)" follows it, except in the
+phone strip, where the first mirrored seat already says it and the word is only read out. "Posé"
+is a corner chip at the top left (gold on your own tile, neutral on others'), opposite the
+muted-mic pip; a status pill along the top (absent, winner) pushes both chips just below it. When the camera is off, or the peer
 reports it off, the player's initials replace the video. The tile of the player whose turn it
 is takes a gold border and glow. An absent player's face and name drop to 50% opacity under a
 full-strength pill along the top, "absent · sa place est gardée" (only "absent" shows on a 92px
@@ -386,8 +394,9 @@ live region; reduced motion keeps a steady highlight for the same 4 seconds inst
 
 ### Discard while staging
 Discarding ends the turn and abandons staged melds, so while the tray holds anything Défausser
-is not gold and takes two presses: the first turns it into "Défausser quand même" and says why
-on the turn banner; changing the selection disarms it.
+is not gold and takes two presses: the first turns it into "Défausser quand même" ("Défausser ?" on
+phones, where the full words stay its accessible name) and says why on the turn banner; changing
+the selection disarms it. Phone action buttons share the row by their words and never wrap.
 
 ### Staging Tray
 Melds prepared for a laydown wait on the felt, above the table's melds, inside a dashed
