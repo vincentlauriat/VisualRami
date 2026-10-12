@@ -5,6 +5,8 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 ## [Unreleased]
 
 ### Added
+- Computer player, phase 1 (`shared/src/bot/`, engine only: not playable at a table yet). Meld search over a hand (sets, runs with the ace low or high, jokers in gaps, the two decks' twin cards), best set of disjoint melds, first laydown at the room's threshold with a pure run and one card kept, extensions and joker swaps on the table, discard choice, and `planTurn(view)` for the easy level. The bot decides from `PublicGameState` alone. Unit, property (`fast-check`, new dev dependency of `shared`) and bot-versus-bot simulation tests: 300 rounds at 2 to 6 bots in CI with no illegal action and the 108 cards checked after every action.
+- `applyAction` takes an optional id source (`{ meldId }`), so simulations and replays are reproducible; the server's call is unchanged.
 - Device-aware layout beyond the phone: a tablet-portrait tier (real card and opponent sizes instead of phone sizing), a landscape tier that moves opponents to a left rail and pins the game to the viewport so the hand never falls below the fold, and touch-sized controls on any coarse pointer regardless of viewport width.
 - Presence at the table: losing your own connection shows a "Connexion perdue — reconnexion…" strip (a polite live region) and stills the piles, play buttons, chat and "Nouvelle manche" until the seat is back; nothing tapped offline is sent later. An absent player's tile reads "absent · sa place est gardée", a muted microphone shows a drawn glyph on that player's tile for everyone (sent over the same `media` signal as the camera), and pressing Quitter logs "X a quitté la table".
 - End of round on the felt: the result is no longer a modal over a dark scrim but a panel on the table, so faces, log and chat stay usable for everyone. Every losing hand is revealed with its points ("×2 : pas posé" when doubled), the winner reads "0 (gagnant)" instead of "+0" and their tile carries "remporte la manche". The other players press "Prêt" and the host sees who is ready before dealing ("Nouvelle manche"). New `ready` action and `GameState.ready` field (older snapshots load without it); other players' hands reach the client only once the round is over.
@@ -69,6 +71,7 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Native checkboxes, number inputs and scrollbars rendered in light mode on the dark table (`color-scheme`).
 
 ### Changed
+- `meldFit` (how a selection joins a meld on the table) moved from the client to `shared/src/rules.ts`, where the computer player reuses it; `client/src/lib/meldHelp.ts` re-exports it unchanged.
 - The players sit around the felt on laptops: opponents take the left, top and right edges clockwise from your left in turn order, and each one's melds lie in front of their face instead of in one anonymous heap; yours sit above your hand. On phones and tablets the faces stay in the strip, the melds are grouped by player on the felt, and touching a face scrolls to that player's melds.
 - Melds on the table fan like a closed hand, each card showing its index strip, so long runs take less room.
 - A first laydown is a table event: the player's zone lights up with "1re pose · N pts" for everyone, and screen readers hear it.

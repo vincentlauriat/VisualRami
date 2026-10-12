@@ -1,40 +1,7 @@
-import { analyzeMeld, type Card, type Meld, type Rank } from "@visualrami/shared";
+import { type Card, type Rank } from "@visualrami/shared";
 import { labels } from "./labels";
 
-export type MeldFit =
-  | { type: "extend"; position: "start" | "end"; cardIds: string[] }
-  | { type: "swapJoker"; cardId: string };
-
-/** Selection sorted by rank, jokers last: the order a run extension is most likely to need. */
-function byRank(cards: Card[]): Card[] {
-  return [...cards].sort((a, b) => (a.joker ? 99 : a.rank!) - (b.joker ? 99 : b.rank!));
-}
-
-/**
- * How the selection can join a meld on the table, if at all. Used both to light only the melds
- * that will accept it and to send the matching action, so the two can never disagree.
- */
-export function meldFit(meld: Meld, selection: Card[]): MeldFit | null {
-  if (selection.length === 0) return null;
-  for (const sel of [selection, byRank(selection)]) {
-    const ids = sel.map((c) => c.id);
-    const end = analyzeMeld([...meld.cards, ...sel]);
-    if (end && end.kind === meld.kind) return { type: "extend", position: "end", cardIds: ids };
-    const start = analyzeMeld([...sel, ...meld.cards]);
-    if (start && start.kind === meld.kind) return { type: "extend", position: "start", cardIds: ids };
-  }
-  const card = selection[0]!;
-  if (selection.length === 1 && !card.joker) {
-    for (let i = 0; i < meld.cards.length; i++) {
-      if (!meld.cards[i]!.joker) continue;
-      const candidate = meld.cards.slice();
-      candidate[i] = card;
-      const analysis = analyzeMeld(candidate);
-      if (analysis && analysis.kind === meld.kind) return { type: "swapJoker", cardId: card.id };
-    }
-  }
-  return null;
-}
+export { meldFit, type MeldFit } from "@visualrami/shared";
 
 /** Why a selection is not a combination, phrased as what would fix it. */
 export function invalidMeldReason(cards: Card[]): string {

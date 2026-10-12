@@ -358,3 +358,31 @@ describe("table size", () => {
     expect(dealt.stock).toHaveLength(108 - 6 * 14 - 1);
   });
 });
+
+describe("meld ids", () => {
+  it("uses an injected id generator, so a seeded replay is identical", () => {
+    const play = (): GameState => {
+      let state = setup();
+      const me = currentPlayer(state)!;
+      const hand: Card[] = [
+        card(10, "hearts", "h10"),
+        card(11, "hearts", "h11"),
+        card(12, "hearts", "h12"),
+        card(9, "spades", "s9"),
+        card(9, "clubs", "c9"),
+        card(9, "diamonds", "d9"),
+        card(2, "clubs", "c2"),
+      ];
+      state = { ...state, players: state.players.map((p) => (p.id === me.id ? { ...p, hand } : p)) };
+      let n = 0;
+      const ids = { meldId: () => `id${++n}` };
+      state = must(applyAction(state, me.id, { type: "draw", source: "stock" }, rng, ids));
+      return must(
+        applyAction(state, me.id, { type: "layDown", melds: [["h10", "h11", "h12"], ["s9", "c9", "d9"]] }, rng, ids),
+      );
+    };
+    const first = play();
+    expect(first.melds.map((m) => m.id)).toEqual(["id1", "id2"]);
+    expect(play().melds).toEqual(first.melds);
+  });
+});

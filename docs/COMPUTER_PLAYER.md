@@ -1,6 +1,6 @@
 # Computer player — design
 
-**Status:** Design accepted 2026-10-12 — not implemented yet.
+**Status:** Design accepted 2026-10-12. Phase 1 (meld search and easy level, `shared/src/bot/`) done 2026-10-13, see [Phase 1 as built](#phase-1-as-built-2026-10-13); phases 2 to 4 not started.
 
 ## Summary
 
@@ -89,13 +89,56 @@ The bot runs **on the server**, as a full player in the room. It goes through th
 
 | Phase | Content | Size | Risks |
 |---|---|---|---|
-| **1. Meld search** (`shared/src/bot/`) | Points 1 to 6 of section 2, easy bot, unit and property tests, simulations | 2 to 3 d | Joker and ace edge cases; duplicates across the two decks |
+| **1. Meld search** (`shared/src/bot/`) — **done 2026-10-13** | Points 1 to 6 of section 2, easy bot, unit and property tests, simulations | 2 to 3 d | Joker and ace edge cases; duplicates across the two decks |
 | **2. Server integration** | `isBot` and `difficulty` in `Player` / `PublicPlayer`, `room:addBot` / `room:removeBot`, `BotScheduler`, exclusions (host, seat by first name), pause without humans, re-arm on restore, tests | 1.5 to 2 d | Races between timers and human actions: one timer per room, cancelled on every `broadcast` |
 | **3. Client** | Solo button on Home, add and remove in the lobby, difficulty choice, seat without video, bots excluded from `peerIds`, strings ready for i18n (bilingual constraint of `PRODUCT.md`) | 1 to 2 d | Seat layout on phones |
 | **4. Medium bot** | Potential evaluation, memory, defence against the next player, tuning by simulation | 2 to 3 d | Subjective tuning: plan a test game with real players |
 | 5. Later | Hard level in `worker_threads` or client side; offline mode; replacing an absent human with a bot instead of the minimal `autoPlayTurn` | 1 to 2 weeks | B1 CPU; second code path |
 
 Total for v1 (phases 1 to 4): about 7 to 10 days.
+
+## Phase 1 as built (2026-10-13)
+
+**Modules** (`shared/src/bot/`, exported from `@visualrami/shared`)
+
+| File | Content |
+|---|---|
+| `melds.ts` | `enumerateMelds(hand)`: sets of distinct suits, same-suit runs with the ace low (1..13) or high (2..14), jokers in gaps, at the ends, or standing in for a card the hand holds. One candidate per multiset of cards, under its best-scoring reading. `analyzeMeld` is the final judge of every candidate. |
+| `packing.ts` | `bestPacking(hand, score)`: depth-first search over card **keys and counts** (suit and rank, or joker), not ids, so the two copies of a card can sit in two different melds. Each packing is visited once (the first key left is either kept in hand or covered by a meld containing it), with a ceiling of 200,000 nodes. `findOpening(hand, rules)` (threshold, pure run, one card kept, then re-checked with `checkFirstLaydown`) and `findLaydown(hand)` once opened. The objective is to minimise the points left in hand. |
+| `table.ts` | `findExtensions`, `findJokerSwaps`, `swapResult`. They reuse `meldFit`, moved from `client/src/lib/meldHelp.ts` into `shared/src/rules.ts` (the client re-exports it). `swapResult` mirrors the reducer: the card replaces the first joker it can stand for. |
+| `discard.ts` | `chooseDiscard(hand, drewFromDiscardCardId)`. Priorities: jokers go last, then cards of the hand's best melds, then cards with a neighbour (a pair, or a same-suit card at most two ranks away, ace counted both ways). Among what is left, the card worth the most points goes first. The card taken from the discard pile never goes back, unless it is the last one. |
+| `plan.ts` | `planPlay(context)` and `planTurn: BotPolicy`, typed `(view: PublicGameState, memory?: BotMemory) => GameAction[]`. |
+
+**Design precisions and deviations**
+- **A turn takes two calls to `planTurn`, not one.** The card drawn from the stock is unknown before the draw. So the plan covers the current phase only. In `draw` it returns `[draw]`. In `play`, on the view after the draw, it returns `[layDown?, extend*, swapJoker*, layDown*, …, discard]`. The caller applies the actions one by one and calls again while it is the bot's turn. This fits the server pacing of phase 2 (a broadcast after each action). Outside its turn the plan is empty.
+- **The play phase is simulated on a local copy** of the hand and the table melds, so every step is checked as the engine will see it. A swapped joker returns to the hand and can be laid down or extended later in the same plan. Melds laid this turn get their ids from the engine, so the plan never extends them. That is not a loss: the packing already puts every card that fits them into the laydown.
+- **Easy level, as specified, made precise.** The discard pile's top is taken only when replaying the play phase with that card in hand puts it on the table this very turn: in an opening that reaches the threshold, a later laydown, or an extension. Otherwise it would stay stuck in hand, since it cannot be discarded again. The bot opens as soon as a valid opening exists, then lays, extends (jokers included) and takes jokers back while anything fits.
+- **Empty stock and a 1-card discard pile**: the bot takes that card before any other rule applies. In 300 simulated rounds this case never arose naturally (the discard pile has always grown by the time the stock runs out). A unit test builds it on purpose. The engine still has no rule to end a round where everyone keeps passing that single card around. No bot triggered it, but it remains an engine gap.
+- **Deterministic ids**: `applyAction(state, playerId, action, rng, ids?)` takes an optional `{ meldId: () => string }`. Without it the ids stay `m<counter>-<time>`, and the server call (`rooms.ts:190`) is unchanged. A test replays a 4-bot game of 5 rounds twice from one seed and compares the final states.
+- **Fairness**: enforced by the `BotPolicy` type, and by a test that reads the sources of `shared/src/bot/`. It fails on any mention of `GameState` (other than `PublicGameState`), on an import of `../game.js`, and on `applyAction` or `toPublicState`. A type-level test was ruled out: `shared/tsconfig.json` does not cover `test/`, and vitest does not typecheck. A second test feeds a deep-frozen view to check that the bot does not mutate it.
+- `BotMemory` is `Readonly<Record<string, unknown>>` for now. The easy level ignores it, and the medium level will define it.
+
+**Tests** (`shared/test/`)
+- `bot.search.test.ts` (16): sets of distinct suits, a joker in a gap or at an end, ace low and high, never both, jokers never outnumbering real cards, twin cards de-duplicated. Opening at 51 with and without a pure run, below the threshold, with a joker, with a high ace, refusal to lay the whole hand, both twins in two runs. Extensions, joker swap, discard.
+- `bot.play.test.ts` (11): fairness (3); forced draw from the discard pile; when to take the discard; a full turn (open, take a joker back with the last real card, go out on the joker); and five `fast-check` properties. Every meld found is valid and made of the hand's cards. No meld of 3 to 5 cards is missed (brute-force check over subsets). Every opening passes `checkFirstLaydown` and keeps a card. A bot turn on a random hand and table (jokers and both twins in a dense pool) is accepted by the reducer, with the 108 cards conserved. Full rounds from random seeds at 2 to 6 bots have no illegal action.
+- `bot.sim.test.ts` (6): for each table size from 2 to 6 bots, 12 games of 5 rounds (`newRound` included), plus the replay test. A round over 600 turns fails with a dump of the piles and hands.
+- `game.test.ts` (+1): the injected id source.
+- Mutation check: swapping `start` and `end` in the extensions makes 9 of these tests fail.
+
+**Measurements** (Apple Silicon, `vitest`, not asserted)
+
+| Bots | Rounds | Turns per round (mean, max) | Mean decision |
+|---|---|---|---|
+| 2 | 60 | 21.2, 51 | 0.20 ms |
+| 3 | 60 | 21.5, 43 | 0.20 ms |
+| 4 | 60 | 22.0, 74 | 0.20 ms |
+| 5 | 60 | 25.9, 57 | 0.21 ms |
+| 6 | 60 | 27.0, 56 | 0.28 ms |
+
+- A longer local run of 1,000 rounds (200 per table size) also had 0 illegal actions. Every round ended, the longest after 89 turns.
+- Slowest single decision: 3 to 6 ms when the bot test files run alone, about 70 ms once under the parallel load of the full `npm test` (cause not measured).
+- The "< 2 ms" estimate of section 3 for the easy level holds on average (0.2 ms), not in the worst case (5 ms on a dense hand). Nothing was measured on the B1.
+- On dense 14 to 15 card hands (aces, faces, low cards, 4 jokers): 1 ms on average, 5 ms at worst. A hand never exceeds 15 cards in play. The search grows quickly beyond that (about 180 ms for 20 cards), hence the node ceiling.
 
 ## 7. Decisions (2026-10-12)
 

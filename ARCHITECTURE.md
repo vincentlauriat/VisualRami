@@ -17,7 +17,7 @@ Trois workspaces npm :
 
 | Paquet | Rôle |
 |---|---|
-| `@visualrami/shared` | Modèle de cartes, règles des combinaisons, réducteur pur `applyAction(state, playerId, action)`, projection `toPublicState`. Aucune E/S. |
+| `@visualrami/shared` | Modèle de cartes, règles des combinaisons, réducteur pur `applyAction(state, playerId, action)`, projection `toPublicState`. Joueur ordinateur dans `src/bot/` (recherche de combinaisons, niveau facile `planTurn(view)`, décide à partir du seul `PublicGameState`). Aucune E/S. |
 | `@visualrami/server` | `RoomManager` (salles par code à 5 lettres, jetons de reprise par joueur), handlers Socket.IO, relais de signalisation WebRTC, sert `client/dist`. HTTPS optionnel via `HTTPS_KEY`/`HTTPS_CERT` ; CORS socket fermé sauf si `CORS_ORIGIN` est défini. |
 | `@visualrami/client` | UI React. `useGame` (socket + session en `sessionStorage`), `useWebRTC` (maillage complet, négociation parfaite), écrans Accueil / Salon / Table. |
 

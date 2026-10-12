@@ -17,6 +17,18 @@ export const MAX_PLAYERS = 6;
 
 let meldCounter = 0;
 
+/**
+ * Where new meld ids come from. The default mixes a module counter with the clock, which is
+ * unique enough for the server; simulations and replays inject a counter to stay reproducible.
+ */
+export interface IdSource {
+  meldId?: () => string;
+}
+
+function defaultMeldId(): string {
+  return `m${++meldCounter}-${Date.now().toString(36)}`;
+}
+
 export function createGame(
   roomId: string,
   host: { id: string; name: string },
@@ -148,6 +160,7 @@ export function applyAction(
   playerId: string,
   action: GameAction,
   rng: Rng = Math.random,
+  ids: IdSource = {},
 ): GameResult {
   switch (action.type) {
     case "start":
@@ -159,7 +172,7 @@ export function applyAction(
     case "draw":
       return draw(state, playerId, action.source, rng);
     case "layDown":
-      return layDown(state, playerId, action.melds);
+      return layDown(state, playerId, action.melds, ids.meldId ?? defaultMeldId);
     case "extend":
       return extend(state, playerId, action.meldId, action.cardIds, action.position);
     case "swapJoker":
@@ -267,7 +280,7 @@ function reshuffleStock(state: GameState, rng: Rng): GameState {
   );
 }
 
-function layDown(state: GameState, playerId: string, meldIds: string[][]): GameResult {
+function layDown(state: GameState, playerId: string, meldIds: string[][], newId: () => string): GameResult {
   const err = requireTurn(state, playerId, "play");
   if (err) return fail(err);
   if (meldIds.length === 0) return fail("Aucune combinaison à poser");
@@ -292,7 +305,7 @@ function layDown(state: GameState, playerId: string, meldIds: string[][]): GameR
   if (!leavesACard(player.hand, allIds)) return fail("Vous devez garder une carte à défausser");
   const remaining = removeCards(player.hand, allIds);
   const newMelds: Meld[] = melds.map((cards) => ({
-    id: `m${++meldCounter}-${Date.now().toString(36)}`,
+    id: newId(),
     kind: analyzeMeld(cards)!.kind,
     cards,
     ownerId: playerId,

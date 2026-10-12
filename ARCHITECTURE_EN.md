@@ -17,7 +17,7 @@ Three npm workspaces:
 
 | Package | Role |
 |---|---|
-| `@visualrami/shared` | Card model, meld rules, pure reducer `applyAction(state, playerId, action)`, public-view projection `toPublicState`. No I/O. |
+| `@visualrami/shared` | Card model, meld rules, pure reducer `applyAction(state, playerId, action)`, public-view projection `toPublicState`. Computer player in `src/bot/` (meld search, easy level `planTurn(view)`, decides from `PublicGameState` only). No I/O. |
 | `@visualrami/server` | `RoomManager` (rooms keyed by 5-letter code, per-player rejoin tokens), Socket.IO handlers, WebRTC signal relay, serves `client/dist`. Optional HTTPS via `HTTPS_KEY`/`HTTPS_CERT`; socket CORS closed unless `CORS_ORIGIN` is set. |
 | `@visualrami/client` | React UI. `useGame` (socket + session in `sessionStorage`), `useWebRTC` (full mesh, perfect negotiation), screens Home / Lobby / Game. |
 
