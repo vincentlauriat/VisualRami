@@ -1,5 +1,5 @@
 import { buildDeck, cardLabel, handCardPoints, shuffle, type Rng } from "./cards.js";
-import { analyzeMeld, checkFirstLaydown, isValidMeld } from "./rules.js";
+import { analyzeMeld, checkFirstLaydown, isValidMeld, leavesACard } from "./rules.js";
 import {
   DEFAULT_OPTIONS,
   type Card,
@@ -289,10 +289,8 @@ function layDown(state: GameState, playerId: string, meldIds: string[][]): GameR
     );
     if (!check.ok) return fail(check.error!);
   }
+  if (!leavesACard(player.hand, allIds)) return fail("Vous devez garder une carte à défausser");
   const remaining = removeCards(player.hand, allIds);
-  if (remaining.length === 0) {
-    return fail("Vous devez garder une carte à défausser");
-  }
   const newMelds: Meld[] = melds.map((cards) => ({
     id: `m${++meldCounter}-${Date.now().toString(36)}`,
     kind: analyzeMeld(cards)!.kind,
@@ -326,8 +324,8 @@ function extend(
   if (!analysis || analysis.kind !== meld.kind) {
     return fail("Ces cartes ne complètent pas cette combinaison");
   }
+  if (!leavesACard(player.hand, cardIds)) return fail("Vous devez garder une carte à défausser");
   const remaining = removeCards(player.hand, cardIds);
-  if (remaining.length === 0) return fail("Vous devez garder une carte à défausser");
   let next = updatePlayer(state, playerId, { hand: remaining });
   next = {
     ...next,

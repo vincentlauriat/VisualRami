@@ -171,3 +171,12 @@ export function checkFirstLaydown(
   }
   return { ok: true, points, hasPureRun };
 }
+
+/**
+ * A laydown or an extension must leave at least one card in hand: the turn ends on a discard.
+ * Shared so the client can refuse what the server would refuse, before anything is sent.
+ */
+export function leavesACard(hand: Card[], usedIds: Iterable<string>): boolean {
+  const used = new Set(usedIds);
+  return hand.some((c) => !used.has(c.id));
+}

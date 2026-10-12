@@ -272,6 +272,25 @@ describe("end of round", () => {
     for (const c of others) expect(JSON.stringify(pub)).not.toContain(`"${c.id}"`);
   });
 
+  it("refuses a laydown that would use every card in hand", () => {
+    let state = setup();
+    const me = currentPlayer(state)!;
+    const hand: Card[] = [card(10, "hearts", "h10"), card(11, "hearts", "h11"), card(12, "hearts", "h12")];
+    state = {
+      ...state,
+      options: { ...state.options, firstMeldMinPoints: 0, requirePureRun: false },
+      players: state.players.map((p) => (p.id === me.id ? { ...p, hand } : p)),
+      stock: [card(9, "spades", "s9"), ...state.stock],
+    };
+    state = must(applyAction(state, me.id, { type: "draw", source: "stock" }, rng));
+    const run = { type: "layDown" as const, melds: [["h10", "h11", "h12"]] };
+    // Holding only the run, laying it would leave nothing to discard.
+    const onlyRun = { ...state, players: state.players.map((p) => (p.id === me.id ? { ...p, hand } : p)) };
+    expect(applyAction(onlyRun, me.id, run, rng)).toMatchObject({ ok: false, error: /garder une carte/ });
+    // With the 9 of spades drawn, the same laydown keeps a card to discard.
+    expect(applyAction(state, me.id, run, rng).ok).toBe(true);
+  });
+
   it("logs a laydown with the right plural", () => {
     const { state, winner } = finishedRound();
     const name = state.players.find((p) => p.id === winner)!.name;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyzeRun, analyzeSet, arrangeMeld, checkFirstLaydown, isValidMeld } from "../src/rules.js";
+import { analyzeRun, analyzeSet, arrangeMeld, checkFirstLaydown, isValidMeld, leavesACard } from "../src/rules.js";
 import type { Card, Rank, Suit } from "../src/types.js";
 
 let counter = 0;
@@ -81,6 +81,16 @@ describe("checkFirstLaydown", () => {
     expect(isValidMeld([c(2, "hearts"), c(2, "clubs"), c(2, "spades")])).toBe(true);
     expect(isValidMeld([c(2, "hearts"), c(3, "hearts"), c(4, "hearts")])).toBe(true);
     expect(isValidMeld([c(2, "hearts"), c(3, "hearts")])).toBe(false);
+  });
+});
+
+describe("leavesACard", () => {
+  it("is false only when every card in hand would be used", () => {
+    const hand = [c(10), c(11), c(12), c(9, "spades")];
+    expect(leavesACard(hand, hand.slice(0, 3).map((x) => x.id))).toBe(true);
+    expect(leavesACard(hand, hand.map((x) => x.id))).toBe(false);
+    expect(leavesACard(hand, [])).toBe(true);
+    expect(leavesACard([], [])).toBe(false);
   });
 });
 
