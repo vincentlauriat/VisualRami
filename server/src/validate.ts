@@ -1,4 +1,4 @@
-import type { GameAction } from "@visualrami/shared";
+import type { GameAction, GameOptions } from "@visualrami/shared";
 
 const isString = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= 64;
 const isStringArray = (v: unknown): v is string[] =>
@@ -33,4 +33,23 @@ export function validateAction(input: unknown): GameAction | null {
     default:
       return null;
   }
+}
+
+/** Highest first-laydown threshold a table may ask for. */
+export const MAX_FIRST_MELD_POINTS = 100;
+
+/**
+ * The room options a creator may set, from an untrusted payload. A threshold above the cap is
+ * brought down to it; anything unreadable is dropped and the default applies. Tables saved with a
+ * higher threshold before the cap keep theirs: the reshuffle limit still ends their rounds.
+ */
+export function sanitizeOptions(input: unknown): Partial<GameOptions> {
+  if (!input || typeof input !== "object") return {};
+  const o = input as Record<string, unknown>;
+  const out: Partial<GameOptions> = {};
+  if (typeof o.firstMeldMinPoints === "number" && o.firstMeldMinPoints >= 0) {
+    out.firstMeldMinPoints = Math.min(Math.floor(o.firstMeldMinPoints), MAX_FIRST_MELD_POINTS);
+  }
+  if (typeof o.requirePureRun === "boolean") out.requirePureRun = o.requirePureRun;
+  return out;
 }

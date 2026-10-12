@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateAction } from "../src/validate.js";
+import { sanitizeOptions, validateAction } from "../src/validate.js";
 
 describe("validateAction", () => {
   it("rejects malformed payloads that used to crash the reducer", () => {
@@ -35,5 +35,21 @@ describe("validateAction", () => {
       meldId: "m",
       cardId: "x",
     });
+  });
+});
+
+describe("sanitizeOptions", () => {
+  it("caps the first-laydown threshold at 100 and keeps sane values", () => {
+    expect(sanitizeOptions({ firstMeldMinPoints: 51 })).toEqual({ firstMeldMinPoints: 51 });
+    expect(sanitizeOptions({ firstMeldMinPoints: 100 })).toEqual({ firstMeldMinPoints: 100 });
+    expect(sanitizeOptions({ firstMeldMinPoints: 150 })).toEqual({ firstMeldMinPoints: 100 });
+    expect(sanitizeOptions({ firstMeldMinPoints: 72.9 })).toEqual({ firstMeldMinPoints: 72 });
+  });
+
+  it("drops what it cannot read", () => {
+    expect(sanitizeOptions({ firstMeldMinPoints: -5, requirePureRun: "yes" })).toEqual({});
+    expect(sanitizeOptions({ firstMeldMinPoints: Number.NaN })).toEqual({});
+    expect(sanitizeOptions(null)).toEqual({});
+    expect(sanitizeOptions({ requirePureRun: false })).toEqual({ requirePureRun: false });
   });
 });

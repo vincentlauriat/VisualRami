@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { DEFAULT_OPTIONS, type GameOptions } from "@visualrami/shared";
 import { forgetSeat, loadName, loadSeats, saveName } from "../lib/socket";
 import { labels } from "../lib/labels";
+import { MAX_MIN_POINTS, readMinPoints } from "../lib/minPoints";
 import { Icon, Mark } from "./Icon";
 import { Rules } from "./Rules";
 
@@ -29,6 +30,8 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
   const [code, setCode] = useState(initialCode?.toUpperCase() ?? "");
   const [seats, setSeats] = useState(() => loadSeats());
   const [minPoints, setMinPoints] = useState(DEFAULT_OPTIONS.firstMeldMinPoints);
+  // What the field shows while typing; `minPoints` is the last valid value, the one sent.
+  const [minPointsText, setMinPointsText] = useState(String(DEFAULT_OPTIONS.firstMeldMinPoints));
   const [pureRun, setPureRun] = useState(DEFAULT_OPTIONS.requirePureRun);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ where: Where; text: string } | null>(null);
@@ -85,7 +88,17 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
       <h2>Créer une table</h2>
       <label className="field">
         <span>Points minimum pour la première pose</span>
-        <input type="number" min={0} max={200} value={minPoints} onChange={(e) => setMinPoints(Number(e.target.value))} />
+        <input
+          type="number"
+          min={0}
+          max={MAX_MIN_POINTS}
+          value={minPointsText}
+          onChange={(e) => {
+            setMinPointsText(e.target.value);
+            setMinPoints((last) => readMinPoints(e.target.value, last));
+          }}
+          onBlur={() => setMinPointsText(String(minPoints))}
+        />
       </label>
       <label className="field check">
         <input type="checkbox" checked={pureRun} onChange={(e) => setPureRun(e.target.checked)} />

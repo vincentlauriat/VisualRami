@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { GameAction, PublicGameState } from "@visualrami/shared";
 import { labels } from "../lib/labels";
+import { resultTitle } from "../lib/roundResult";
 import { CardView } from "./CardView";
 import { Icon } from "./Icon";
 
@@ -12,6 +13,7 @@ interface Props {
 
 /**
  * The count at the end of a round, laid on the felt: every losing hand face up with its points.
+ * A drawn round (the stock ran out) has no winner row: every hand is shown and counted.
  * Not a modal: faces, chat and log stay live while the table talks it over. The host deals the
  * next round; the others say they are ready.
  */
@@ -19,7 +21,6 @@ export function RoundResult({ state, connected, onAct }: Props) {
   const title = useRef<HTMLHeadingElement>(null);
   const isHost = state.hostId === state.you.id;
   const meReady = state.ready.includes(state.you.id);
-  const winner = state.players.find((p) => p.id === state.winnerId);
   const rows = [...state.players].sort((a, b) => Number(b.id === state.winnerId) - Number(a.id === state.winnerId));
   const guests = state.players.filter((p) => p.id !== state.hostId);
   // An absent player cannot answer: they are named apart rather than waited for.
@@ -39,7 +40,7 @@ export function RoundResult({ state, connected, onAct }: Props) {
     <section className="round-result" role="region" aria-labelledby="result-title">
       <div className="result-head">
         <h2 id="result-title" tabIndex={-1} ref={title}>
-          {state.winnerId === state.you.id ? labels.youWinRound : labels.winsRound(winner?.name ?? "?")}
+          {resultTitle(state)}
         </h2>
         <div className="result-action">
           {isHost ? (

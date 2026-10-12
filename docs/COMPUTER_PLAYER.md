@@ -1,6 +1,6 @@
 # Computer player — design
 
-**Status:** Design accepted 2026-10-12 — not implemented yet.
+**Status:** Design accepted 2026-10-12. Phase 1 (meld search and easy level, `shared/src/bot/`) done 2026-10-13, see [Phase 1 as built](#phase-1-as-built-2026-10-13); phases 2 to 4 not started.
 
 ## Summary
 
@@ -27,7 +27,7 @@ The bot runs **on the server**, as a full player in the room. It goes through th
 - **The absence timer and the value of `connected`.** `scheduleAbsentTurn` does nothing when `current.connected` is true (`app.ts:131`). On reload, everyone is marked disconnected (`rooms.ts:273`). A separate `BotScheduler` is needed, modelled on `absentTimers` (`app.ts:118-140`), with one timer per room. It must be re-armed on every `broadcast` and on restore.
 - **Pause when no human is connected.** Otherwise, in solo, the bot plays, the absent human is auto-played every 45 s (`app.ts:22`), and the game runs with nobody there. Rule: the bot only plays while at least one human is connected.
 - **Persistence.** If `isBot` and the difficulty live in `Player` (inside `GameState`), they are saved automatically. The medium bot's memory (seen cards) can go in `Room`. Otherwise we accept losing it on restart: the bot resumes from what is visible.
-- **CPU on the B1.** Easy and medium cost under 5 ms per decision: a hand has at most 15 cards and the search stays exhaustive. That fits in the event loop. Monte-Carlo would block every table on the instance: it would need `worker_threads` and a time budget.
+- **CPU on the B1.** Easy and medium should cost a few milliseconds per decision: a hand has at most 15 cards. Measured for easy on Apple Silicon (2026-10-13): 0.2 ms on average, about 10 ms on the worst constructed hands, and a 25 ms budget per decision as a ceiling. That fits in the event loop. Monte-Carlo would block every table on the instance: it would need `worker_threads` and a time budget.
 
 ## 2. What the engine exposes, and what is missing
 
@@ -51,13 +51,13 @@ The bot runs **on the server**, as a full player in the room. It goes through th
 - The engine puts no restriction on taking from the discard pile (`game.ts:223-227`). Many house rules for Rami 51 impose one. The bot will exploit this; see the decisions section.
 - `PublicGameState` only exposes `discardTop` (`types.ts:85`). The medium bot's memory must therefore be built by observing every broadcast state, not read from the state. This is fair: a human sees every discard go by.
 - Meld ids depend on `Date.now()` and a module counter (`game.ts:18`, `278`). Legality is unaffected, but these ids must be neutralised for identical replays.
-- Possible dead end: empty stock and a 1-card discard pile make `draw("stock")` fail (`game.ts:229-232`). Only taking from the discard pile is left. The bot must handle this fallback.
+- ~~Possible dead end: empty stock and a 1-card discard pile make `draw("stock")` fail.~~ *Wrong, corrected 2026-10-13:* that state cannot be reached at a draw. Every turn ends on a discard, so when the stock runs out the discard pile holds at least two cards, and a reshuffle leaves one that the same turn's discard brings back to two. The real endless round came from a first-laydown threshold nobody could reach: at 200 points, 20 rounds out of 20 never ended in the reviewer's simulation; at 120, 4 out of 20. See [the two rules](#rounds-that-cannot-end-2026-10-13).
 
 ## 3. Strategy levels
 
 | Level | Behaviour | Complexity | Cost per decision |
 |---|---|---|---|
-| **a. Easy** | Takes from the discard pile only if the card immediately completes a meld. Lays down as soon as a valid opening exists. Extends melds whenever possible. Discards the isolated card worth the most points. | ~300 lines plus tests (the bulk is the search in points 1 to 4) | < 2 ms |
+| **a. Easy** | Takes from the discard pile only if the card immediately completes a meld. Lays down as soon as a valid opening exists. Extends melds whenever possible. Discards the isolated card worth the most points. | ~300 lines plus tests (the bulk is the search in points 1 to 4) | < 2 ms on average (measured 0.2 ms); about 10 ms at worst, 25 ms budget |
 | **b. Medium** | Evaluates the hand (melds + 2-card "near-runs" + pairs) rather than only the melds it could lay down. Keeps jokers. Delays the laydown if it would break a better potential. Remembers discards and opponents' pickups. Avoids discarding a card an opponent has shown interest in, or one that extends a meld on the table for the next player. Sheds its high cards when an opponent nears 0. | +200 to 300 lines, tuned by simulation | < 5 ms |
 | c. Hard | Determinisation: sample N distributions of the unknown cards consistent with what was observed, play the game out with the "medium" policy, keep the move with the best average gain (simplified ISMCTS). | High: needs a fast round simulator and budget control | 100 ms to a few seconds. On the B1: `worker_threads` required, or client-side execution |
 
@@ -89,13 +89,108 @@ The bot runs **on the server**, as a full player in the room. It goes through th
 
 | Phase | Content | Size | Risks |
 |---|---|---|---|
-| **1. Meld search** (`shared/src/bot/`) | Points 1 to 6 of section 2, easy bot, unit and property tests, simulations | 2 to 3 d | Joker and ace edge cases; duplicates across the two decks |
+| **1. Meld search** (`shared/src/bot/`) — **done 2026-10-13** | Points 1 to 6 of section 2, easy bot, unit and property tests, simulations | 2 to 3 d | Joker and ace edge cases; duplicates across the two decks |
 | **2. Server integration** | `isBot` and `difficulty` in `Player` / `PublicPlayer`, `room:addBot` / `room:removeBot`, `BotScheduler`, exclusions (host, seat by first name), pause without humans, re-arm on restore, tests | 1.5 to 2 d | Races between timers and human actions: one timer per room, cancelled on every `broadcast` |
 | **3. Client** | Solo button on Home, add and remove in the lobby, difficulty choice, seat without video, bots excluded from `peerIds`, strings ready for i18n (bilingual constraint of `PRODUCT.md`) | 1 to 2 d | Seat layout on phones |
 | **4. Medium bot** | Potential evaluation, memory, defence against the next player, tuning by simulation | 2 to 3 d | Subjective tuning: plan a test game with real players |
 | 5. Later | Hard level in `worker_threads` or client side; offline mode; replacing an absent human with a bot instead of the minimal `autoPlayTurn` | 1 to 2 weeks | B1 CPU; second code path |
 
 Total for v1 (phases 1 to 4): about 7 to 10 days.
+
+## Phase 1 as built (2026-10-13)
+
+**Modules** (`shared/src/bot/`, exported from `@visualrami/shared`)
+
+| File | Content |
+|---|---|
+| `melds.ts` | `enumerateMelds(hand)`: sets of distinct suits, same-suit runs with the ace low (1..13) or high (2..14), jokers in gaps, at the ends, or standing in for a card the hand holds. One candidate per multiset of cards, under its best-scoring reading. `analyzeMeld` is the final judge of every candidate. |
+| `packing.ts` | `bestPackings(hand, goals, { budget })`: one depth-first search over card **keys and counts** (suit and rank, or joker), not ids, so the two copies of a card can sit in two different melds, serving several goals at once (opening, laydown, the discard's "best melds"). Every goal minimises the points left in hand, then the cards left; `accept` filters complete packings. Each packing is visited exactly once: the first key left either goes into a meld containing it, taken in non-decreasing list order, or stays in hand with all its remaining copies. Branch-and-bound prunes a branch once it leaves more in hand than the best accepted packing of every goal (counting the card a laydown must keep), or once the threshold is out of reach (cards counted at their highest meld value, ace and joker 11). Ceiling of 100,000 nodes, plus a time budget. `findOpening` re-checks its result with `checkFirstLaydown`. |
+| `table.ts` | `findExtensions`, `findJokerSwaps`, `swapResult`. They reuse `meldFit`, moved from `client/src/lib/meldHelp.ts` into `shared/src/rules.ts` (the client re-exports it). `swapResult` mirrors the reducer: the card replaces the first joker it can stand for. |
+| `discard.ts` | `chooseDiscard(hand, drewFromDiscardCardId)`. Priorities: jokers go last, then cards of the hand's best melds, then cards with a neighbour (a pair, or a same-suit card at most two ranks away, ace counted both ways). Among what is left, the card worth the most points goes first. The card taken from the discard pile never goes back, unless it is the last one. |
+| `plan.ts` | `planPlay(context, budget)` and `planTurn(view, memory?, options?)`, a `BotPolicy` (`(view: PublicGameState, memory?: BotMemory) => GameAction[]`) with an optional time budget (`budgetMs`, 25 ms by default, `Infinity` for replays). |
+
+**Design precisions and deviations**
+- **A turn takes two calls to `planTurn`, not one.** The card drawn from the stock is unknown before the draw. So the plan covers the current phase only. In `draw` it returns `[draw]`. In `play`, on the view after the draw, it returns `[layDown?, extend*, swapJoker*, layDown*, …, discard]`. The caller applies the actions one by one and calls again while it is the bot's turn. This fits the server pacing of phase 2 (a broadcast after each action). Outside its turn the plan is empty.
+- **The play phase is simulated on a local copy** of the hand and the table melds, so every step is checked as the engine will see it. A swapped joker returns to the hand and can be laid down or extended later in the same plan. Melds laid this turn get their ids from the engine, so the plan never extends them. That is not a loss: the packing already puts every card that fits them into the laydown.
+- **Easy level, as specified, made precise.** The discard pile's top is taken only when replaying the play phase with that card in hand puts it on the table this very turn: in an opening that reaches the threshold, a later laydown, or an extension. Otherwise it would stay stuck in hand, since it cannot be discarded again. The bot opens as soon as a valid opening exists, then lays, extends (jokers included) and takes jokers back while anything fits.
+- **No special draw rule.** Phase 1 shipped one ("take the discard pile's only card when the stock is empty") for a state that cannot occur; it is gone. The simulation harness keeps a defensive check that fails on a draw with nothing to draw.
+- **One time budget per decision**, shared by every search of that decision, including the draw decision's replay of the play phase. Once it is spent, the searches still to run return nothing at once: the bot then lays nothing more this turn and discards, which is always legal. A plan cut short is not cached.
+- **The draw decision's plan is reused.** Deciding whether to take the discard pile's top plans the play phase with that card at the end of the hand, which is exactly what the engine does when the bot takes it. The next call finds that plan in a one-entry cache. The key covers everything `planPlay` reads: the hand in order, each table meld's id, kind and cards, the opening state, the card taken and the options. Callers get a deep copy of the cached actions.
+- **A draw decision cut short by the budget draws from the stock.** A partial plan may be wrong about whether the discard pile's top goes on the table, and that card cannot be discarded again. Every search also checks the deadline when it starts, so a budget of 0 really stops it.
+- **Deterministic ids**: `applyAction(state, playerId, action, rng, ids?)` takes an optional `{ meldId: () => string }`. Without it the ids stay `m<counter>-<time>`, and the server call (`rooms.ts:190`) is unchanged. A test replays a 4-bot game of 5 rounds twice from one seed and compares the final states.
+- **Fairness**: enforced by the `BotPolicy` type, and by a test that reads the sources of `shared/src/bot/`. It fails on any mention of `GameState` (other than `PublicGameState`), on an import of `../game.js`, and on `applyAction` or `toPublicState`. A type-level test was ruled out: `shared/tsconfig.json` does not cover `test/`, and vitest does not typecheck. A second test feeds a deep-frozen view to check that the bot does not mutate it.
+- `BotMemory` is `Readonly<Record<string, unknown>>` for now. The easy level ignores it, and the medium level will define it.
+
+**Tests** (`shared/test/`, updated 2026-10-13)
+- `bot.search.test.ts` (20): sets of distinct suits, a joker in a gap or at an end, ace low and high, never both, jokers never outnumbering real cards, twin cards de-duplicated. Opening at 51 with and without a pure run, below the threshold, with a joker, with a high ace, refusal to lay the whole hand, both twins in two runs. Extensions, joker swap, discard. The packing search:
+  - every packing is visited once, on the reviewer's two slow hands (pruning off, every leaf compared);
+  - a fast-check property compares the best packing of three goals with an exhaustive search without pruning, the algorithm as first written;
+  - the slow hands return within 100 ms (measured 1 to 3 ms);
+  - an exhausted budget still gives a legal answer.
+- `bot.play.test.ts` (11): fairness (3); the bot's draw that ends a drawn round; when to take the discard; a full turn (open, take a joker back with the last real card, go out on the joker); five fast-check properties (every meld valid, none missed, every opening valid, a bot turn on a random hand and table accepted by the reducer with the 108 cards conserved, full rounds from random seeds legal).
+- Generators draw hands from a dense pool (aces, faces, low cards, jokers), from a random window of five ranks in all four suits, or from the whole deck.
+- **fast-check runs on a fixed seed** (`test/fcSeed.ts`). CI gates merges, so a red build must be reproducible and never a roll of the dice on an unrelated change. To explore, run locally with `FC_SEED=<n>` and a larger `numRuns`; fast-check prints the seed and path of any counterexample.
+- `bot.sim.test.ts` (17): for each table size from 2 to 6 bots:
+  - 6 games of 5 rounds at 51 points;
+  - 3 games of 2 rounds at 100 points (the cap);
+  - one round at 200 points (tables saved before the cap).
+
+  Plus the replay test, without a time budget, and a test with no budget at all, where every search stops at once and the bot stays legal.
+- Two error classes: `IllegalAction` (a refused action, an empty plan, a turn that does not end) and `TurnLimitExceeded` (a round past 1,000 turns, well above the longest measured: 317).
+- Mutation checks:
+  - swapping `start` and `end` in the extensions fails 9 tests;
+  - over-pruning the bound fails the exhaustive comparison;
+  - dropping the non-decreasing candidate order fails the visited-once test.
+
+**Measurements** (Apple Silicon, not asserted)
+
+The reviewer's slow hands, per call, before and after the 2026-10-13 rework:
+
+| Hand | Threshold | Before: laydown search | Before: draw / play decision | After: laydown search | After: draw / play decision |
+|---|---|---|---|---|---|
+| H1: ♥9-10-J-Q-K-A, ♥10-J-Q twice, Q♠ Q♣, 4 jokers | 51 | 180 ms | 183 / 184 ms | 2 ms | 3 / 2 ms |
+| H1 | 120 | | 179 / 180 ms | | 2 / 2 ms |
+| H1 | 200 | | 361 / 355 ms | | 2 / 2 ms |
+| H2: ♥9 to K twice, A♥, 4 jokers | 51 | 297 ms | 296 / 297 ms | 1 ms | 1 / 1 ms |
+| H2 | 120 | | 296 / 293 ms | | 1 / 1 ms |
+| H2 | 200 | | 595 / 599 ms | | 1 / 1 ms |
+
+- **Visited once.** Packings visited for H1 went from 25,936 to 14,137, the number of distinct packings. H2 has 18,022 distinct packings.
+- **Random dense hands**: 2,000 per pool and threshold (51, 100, 120), draw and play decisions. Pools: faces and aces, hearts and spades from 8 up, low cards, whole deck.
+  - Worst 1.6 to 9.6 ms, mean 0.2 to 0.7 ms, no budget hit, in three runs.
+  - One earlier run showed one 160 ms decision with 3 budget hits; it did not reproduce on the same sequence, and its cause is not established. The likeliest one, not verified, is a pause of the whole process (the machine was shared with other jobs), which the budget cannot interrupt.
+- **Reviewer's simulation** (`sim.mjs`):
+
+  | Run | Rounds | Never ended (before / after) | Slowest decision after | Longest round after |
+  |---|---|---|---|---|
+  | 51 points | 600 | 0 / 0 | 9.4 ms | 99 turns |
+  | 120 points | 20 | 4 / 0 | 7.1 ms | 317 turns |
+  | 200 points | 20 | 20 / 0 | 6.9 ms | 317 turns, all drawn |
+
+  Before, the slowest decision took 320 to 640 ms.
+- **CI simulations** (final full `npm test`):
+
+  | Threshold | Rounds | Turns per round (mean, max) | Mean decision | Slowest | Drawn rounds | Budget hits |
+  |---|---|---|---|---|---|---|
+  | 51 | 150 | 19.8 to 28.7, max 56 | 0.16 to 0.29 ms | 7.9 ms | 0 | 0 |
+  | 100 | 30 | 34.8 to 86.5, max 317 | 0.20 to 0.86 ms | 7.4 ms | 1 | 0 |
+  | 200 | 5 | 93 to 317 | 0.29 to 1.35 ms | 11.5 ms | 5 (all) | 0 |
+
+  The run before the out-of-time early exit was added did hit the budget under the parallel load of the full suite: 11 hits at 2 bots and 2 at 3 bots, both at 200 points, with decisions up to 52 ms.
+- The "< 2 ms" estimate of section 3 holds on average (0.2 ms). In the worst case on constructed hands it does not: up to about 10 ms, 25 ms by budget. Nothing was measured on the B1.
+- **Client bundle**: `client/dist/assets/index-*.js` is 318,644 bytes with and without the bot exported from `@visualrami/shared`, under the same content hash. Tree-shaking removes it, so no `@visualrami/shared/bot` subpath is needed.
+
+## Rounds that cannot end (2026-10-13)
+
+Decision of the product owner: both rules.
+
+1. **The first-laydown threshold of a new table is capped at 100 points.** The form stops at 100. The server (`sanitizeOptions`, `server/src/validate.ts`) brings a higher request down to 100 rather than ignoring it. A table saved with a higher threshold loads unchanged.
+2. **A round is drawn after 3 reshuffles.**
+   - `GameState.reshuffles` counts the reshuffles of the stock. It is reset at each deal, and a snapshot without it loads as 0.
+   - A draw from the empty stock once 3 reshuffles have taken place ends the round: no winner (`winnerId: null` in phase `finished`), everyone counts their hand with ×2 for those who never laid down, every hand is revealed.
+   - The log reads "Talon épuisé 3 fois : manche nulle", and the panel "Manche nulle : talon épuisé".
+   - `autoPlayTurn` returns that finished state.
+   - The bot needs nothing special: its draw ends the round, and its next plan is empty.
 
 ## 7. Decisions (2026-10-12)
 

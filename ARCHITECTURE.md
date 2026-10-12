@@ -17,7 +17,7 @@ Trois workspaces npm :
 
 | Paquet | Rôle |
 |---|---|
-| `@visualrami/shared` | Modèle de cartes, règles des combinaisons, réducteur pur `applyAction(state, playerId, action)`, projection `toPublicState`. Aucune E/S. |
+| `@visualrami/shared` | Modèle de cartes, règles des combinaisons, réducteur pur `applyAction(state, playerId, action)`, projection `toPublicState`. Joueur ordinateur dans `src/bot/` (recherche de combinaisons, niveau facile `planTurn(view)`, décide à partir du seul `PublicGameState`). Aucune E/S. |
 | `@visualrami/server` | `RoomManager` (salles par code à 5 lettres, jetons de reprise par joueur), handlers Socket.IO, relais de signalisation WebRTC, sert `client/dist`. HTTPS optionnel via `HTTPS_KEY`/`HTTPS_CERT` ; CORS socket fermé sauf si `CORS_ORIGIN` est défini. |
 | `@visualrami/client` | UI React. `useGame` (socket + session en `sessionStorage`), `useWebRTC` (maillage complet, négociation parfaite), écrans Accueil / Salon / Table. |
 
@@ -25,7 +25,7 @@ Trois workspaces npm :
 
 - Le serveur détient le `GameState` complet ; les clients ne reçoivent que `PublicGameState` (leur main, le nombre de cartes des autres, la taille du talon, le dessus de la défausse et sa profondeur, les combinaisons, le journal). Les mains des autres ne sont envoyées qu'une fois la manche terminée (`revealedHands`, `null` pendant le jeu), pour afficher le décompte à découvert.
 - Chaque action est validée par le réducteur partagé côté serveur ; le client réutilise les mêmes règles pour le retour immédiat (zone de préparation, cibles de combinaison).
-- Phases d'un tour : `draw` → `play` → joueur suivant. La manche se termine à la dernière défausse ; `newRound` redistribue et fait tourner le premier joueur. Entre deux manches, `{ type: "ready", ready }` (joueurs autres que l'hôte, phase `finished` uniquement) enregistre qui est prêt dans `GameState.ready` (persisté ; un instantané sans ce champ se charge avec `[]`) ; l'hôte distribue toujours, et chaque donne le vide.
+- Phases d'un tour : `draw` → `play` → joueur suivant. La manche se termine à la dernière défausse, ou devient nulle quand un joueur pioche dans le talon vide après 3 remélanges (`GameState.reshuffles`, remis à zéro à chaque donne ; un instantané sans entier ≥ 0 à cet endroit se charge avec `0` ; la vue publique porte `reshufflesLeft`, pour que le client prévienne sur le talon avant cette pioche) : `finished` avec `winnerId: null`, toutes les mains révélées et comptées. Le serveur plafonne à 100 points le seuil de première pose d'une nouvelle table (`sanitizeOptions` dans `server/src/validate.ts`) ; les tables sauvegardées gardent le leur ; `newRound` redistribue et fait tourner le premier joueur. Entre deux manches, `{ type: "ready", ready }` (joueurs autres que l'hôte, phase `finished` uniquement) enregistre qui est prêt dans `GameState.ready` (persisté ; un instantané sans ce champ se charge avec `[]`) ; l'hôte distribue toujours, et chaque donne le vide.
 - Chaque charge utile socket passe par `server/src/validate.ts` avant d'atteindre le réducteur ; une exception du réducteur est interceptée et renvoyée comme erreur.
 - Si le joueur courant n'a plus de socket pendant 45 s, le serveur joue un tour minimal pour lui (`autoPlayTurn` : pioche au talon, défausse). Le rôle d'hôte passe à un joueur connecté si l'hôte décroche.
 

@@ -202,7 +202,9 @@ A warm-dark palette built from the materials of a card table: green felt, brass,
 **The Lamp Rule.** Gold means "yours, now". If an element is not the current player's turn,
 selection, seat or next action, it is not gold. In practice: the two piles take a gold ring while
 it is your turn to draw; Défausser and Poser are gold only once they can actually be pressed; only
-the melds that will accept your selection light up; another player's "posé" badge is neutral.
+the melds that will accept your selection light up; another player's "posé" badge is neutral. An
+exhausted stock (drawing there draws the round) is a warning, not the next action: it takes an
+Alerte ring instead of the gold one, while the discard pile keeps its gold ring.
 
 **The Two Surfaces Rule.** Text on the felt uses the felt-text family; text on panels uses
 text / muted. The panel colours lose contrast on the felt's lit centre, so they never cross over.
@@ -429,6 +431,18 @@ lit edge (5% ivory wash, 18% felt-text inset line), not gold: the gold frame on 
 says whose turn it is. **A first laydown is a table event:** the opener's zone flashes ivory and
 fades over 3.6s, with a "1re pose · 67 pts" pill, seen by every player and announced in a polite
 live region; reduced motion keeps a steady highlight for the same 4 seconds instead of the fade.
+
+### Exhausted stock
+Once the stock is empty and already reshuffled three times, a draw there ends the round as drawn.
+The stock card takes a 2px danger ring (3px while it is yours to draw), never gold. Under its
+"Talon" caption, an Alerte pill reads "Piocher ici termine la manche (manche nulle)":
+- danger text on danger-surface with a 1px danger border, 8px radius, 12px text, about 10em wide;
+- danger on the felt alone holds only 2.9:1, the pill holds 5.5:1.
+
+Everyone at the table sees the pill. The words are also part of the stock's accessible name, so the
+pill itself is hidden from assistive technology. The player who must draw also reads it in the turn
+hint, "Talon épuisé : piocher au talon termine la manche (manche nulle). La défausse reste
+possible.", which the polite live region announces.
 
 ### Discard while staging
 Discarding ends the turn and abandons staged melds, so while the tray holds anything Défausser
