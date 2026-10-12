@@ -74,10 +74,12 @@ export function Chat({ messages, log, options, onSend, offline, onClose }: Props
           ))
         )}
       </div>
-      <form className="chat-form" onSubmit={submit}>
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message…" aria-label="Message" maxLength={300} />
-        <button type="submit" disabled={offline}>Envoyer</button>
-      </form>
+      {tab === "chat" && (
+        <form className="chat-form" onSubmit={submit}>
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message…" aria-label="Message" maxLength={300} />
+          <button type="submit" disabled={offline}>Envoyer</button>
+        </form>
+      )}
     </aside>
   );
 }

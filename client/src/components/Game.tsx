@@ -18,7 +18,7 @@ import { VideoTile } from "./VideoTile";
 import { MediaControls } from "./MediaControls";
 import { Chat } from "./Chat";
 import { labels } from "../lib/labels";
-import { Icon } from "./Icon";
+import { Icon, Mark } from "./Icon";
 import { RoundResult } from "./RoundResult";
 import { invalidMeldReason, meldFit, type MeldFit } from "../lib/meldHelp";
 
@@ -71,6 +71,11 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
   // The timer waits while focus is in the question, so a screen reader is not cut off mid-way.
   const [leaveFocused, setLeaveFocused] = useState(false);
   const finished = state.phase === "finished";
+  // Your own messages are not news to you: the badge counts the others'.
+  const othersMessages = chat.filter((m) => m.from !== state.you.id).length;
+  // The card you just drew, marked quietly in the hand until your turn ends.
+  const [drawnId, setDrawnId] = useState<string | null>(null);
+  const handBefore = useRef(state.you.hand.map((c) => c.id));
 
   // Keep local hand order stable while syncing with the server's hand content.
   useEffect(() => {
@@ -91,7 +96,17 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
       setSelected([]);
       setStaged([]);
     }
+    setDrawnId(null);
   }, [isMyTurn, state.round]);
+
+  // A draw is the one moment the hand grows by exactly one card during your turn.
+  useEffect(() => {
+    const before = new Set(handBefore.current);
+    handBefore.current = state.you.hand.map((c) => c.id);
+    if (!isMyTurn || state.phase !== "play") return;
+    const added = state.you.hand.filter((c) => !before.has(c.id));
+    if (added.length === 1 && state.you.hand.length === before.size + 1) setDrawnId(added[0]!.id);
+  }, [state.you.hand, isMyTurn, state.phase]);
 
   useEffect(() => {
     if (!error) return;
@@ -374,7 +389,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
     <div className={`game${sideOpen ? " side-open" : ""}`}>
       <header className="topbar">
         <h1>
-          <span className="logo">🃏</span> <span className="brand">VisualRami</span>
+          <span className="logo"><Mark /></span> <span className="brand">VisualRami</span>
           <span className="tag"><span className="tag-prefix">table </span>{state.roomId}</span>
           <span className="tag">manche {state.round}</span>
         </h1>
@@ -387,9 +402,9 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
             onClick={() => setSideOpen((v) => !v)}
             aria-expanded={sideOpen}
             aria-controls="side-panel"
-            aria-label={labels.sideToggle(chat.length)}
+            aria-label={labels.sideToggle(othersMessages)}
           >
-            <Icon name="chat" />{chat.length > 0 && <span className="tag unread" aria-hidden>{chat.length}</span>}
+            <Icon name="chat" />{othersMessages > 0 && <span className="tag unread" aria-hidden>{othersMessages}</span>}
           </button>
           {leaveArmed ? (
             <div
@@ -522,7 +537,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                     {firstLaydown ? (
                       <div className="laydown-progress">
                         <span className={`gauge${firstCheck?.ok ? " full" : ""}`} aria-hidden>
-                          <span style={{ width: `${Math.min(100, (stagedTotal / minPoints) * 100)}%` }} />
+                          <span style={{ transform: `scaleX(${Math.min(1, stagedTotal / minPoints)})` }} />
                         </span>
                         <span className="laydown-points">{labels.laydownProgress(stagedTotal, minPoints)}</span>
                         {state.options.requirePureRun && (
@@ -598,6 +613,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                       selected={idx >= 0}
                       dimmed={stagedIds.has(card.id)}
                       order={idx >= 0 && selected.length > 1 ? idx + 1 : undefined}
+                      drawn={card.id === drawnId}
                       // Between rounds the hand is only to look at.
                       onClick={finished ? undefined : () => toggle(card)}
                     />
@@ -634,7 +650,8 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                   {/* Gold only once discarding is actually possible: the Lamp Rule. */}
                   <button
                     type="button"
-                    className={canDiscard && (staged.length === 0 || discardArmed) ? "primary" : undefined}
+                    // Armed, it is a confirmation, not the lamp: Poser stays the gold action.
+                    className={discardArmed ? "ghost confirm-danger" : canDiscard && staged.length === 0 ? "primary" : undefined}
                     disabled={!canDiscard}
                     onClick={discard}
                     aria-label={discardArmed ? labels.discardAnyway : undefined}

@@ -30,6 +30,7 @@ export const labels = {
   sideToggle: (messages: number) =>
     messages > 0 ? `Journal, chat et règles, ${messages} messages` : "Journal, chat et règles",
   dismissMessage: "Fermer le message",
+  justDrawn: "piochée à l'instant",
 
   // Arriving and finding a table.
   tableNotFound: "Table introuvable : vérifiez le code",

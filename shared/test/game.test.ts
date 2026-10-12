@@ -272,6 +272,13 @@ describe("end of round", () => {
     for (const c of others) expect(JSON.stringify(pub)).not.toContain(`"${c.id}"`);
   });
 
+  it("logs a laydown with the right plural", () => {
+    const { state, winner } = finishedRound();
+    const name = state.players.find((p) => p.id === winner)!.name;
+    expect(state.log).toContain(`${name} pose 2 combinaisons`);
+    expect(state.log.some((line) => line.includes("combinaison(s)"))).toBe(false);
+  });
+
   it("turns every losing hand face up for everyone once the round is over", () => {
     const { state, winner, loser } = finishedRound();
     for (const viewer of [winner, loser]) {

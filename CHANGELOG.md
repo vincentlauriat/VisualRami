@@ -18,6 +18,21 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
 
 ### Fixed
+- Desktop and laptop with two or three players: the piles stood at the far left and the turn line at the far right of an empty felt, 750–900px apart; they now sit together at its centre, as with side seats.
+- At 1100px a 15-card hand left one card alone on a second row; from 15 cards the hand closes up and stays on one row (901–1365px).
+- Phone landscape (844×390): the felt was 139px tall and "Aucune combinaison…" was cut off. Your face joins the left rail and the turn line sits beside the piles; the felt is 187px and the line shows.
+- Lamp Rule: the armed discard ("Défausser ?" / "Défausser quand même") was gold next to a gold Poser; it is now a ghost with a danger outline, like the armed Quitter.
+- Phone: the tile scrolling under your pinned seat showed sliced ("aximilien"); it now fades into the seat's edge.
+- Reduced motion: the first-laydown gauge animated its width and kept moving under `prefers-reduced-motion`; it fills by `scaleX` and holds still.
+- No emoji left: the joker's centre is a drawn jester's cap, and the 🃏 logo (home, lobby, top bar, favicon) is a drawn card mark.
+- Log: "pose 1 combinaison(s)" is now "1 combinaison" / "2 combinaisons".
+- The chat badge counted your own messages; it counts only the others'.
+- Home and lobby: the background gradient repeated on a long page, leaving a seam (around 1270px on a phone); it is painted once, then plain.
+- Lobby: "Copier le lien" is the main action (gold, unless the host can start) and stays on the code's line on a phone; each copy button confirms its own copy.
+- Règles and Journal tabs no longer show the message field, which belongs to Chat.
+- Rules: "figures et 10 : 10" (two colons) reads "figures et 10 valent 10".
+- Top bar: the table and round tags had their text touching the pill; they have 4px above and below.
+- The card you just drew is marked in your hand for the rest of the turn (a small green pip, and a short settle that reduced motion turns off); screen readers hear "piochée à l'instant".
 - The home page had two equal gold buttons (Créer and Rejoindre, three with Reprendre); it now has one, the likely next step. Its hero line and rules ran 103–109 characters per line on a desktop; they now stay at about 70.
 - A wrong code showed its error under "Votre prénom"; it now sits under the code field, or on the invitation card, as "Table introuvable : vérifiez le code". Server messages say "table" instead of "salle" ("Table introuvable", "Déjà à une table", "Pas à une table").
 - Phone seats: names lost their room to "(vous)" and "posé" ("Od… (vous)", then only "(vous) posé" after a laydown). The pill now holds the name alone (Bérangère, Jean-Pierre whole at 92px), "posé" is a corner chip opposite the mic pip, and your "(vous)" is read out but not shown in the strip. Seat text is 12px at least.

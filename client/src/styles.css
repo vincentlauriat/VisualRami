@@ -36,7 +36,9 @@
 html, body, #root { height: 100%; margin: 0; }
 body {
   font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
-  background: radial-gradient(circle at 30% 0%, #1b2a22, var(--bg) 60%);
+  /* The lift is painted once, then night continues: a repeating tile showed a seam on a long page. */
+  background: var(--bg) radial-gradient(circle at 30% 0%, #1b2a22, var(--bg) 60%) no-repeat;
+  min-height: 100%;
   color: var(--text);
   -webkit-text-size-adjust: 100%;
 }
@@ -110,7 +112,9 @@ input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
 h1, h2 { margin: 0 0 8px; }
 h1 { font-size: 22px; display: flex; align-items: center; gap: 8px; }
 h2 { font-size: 17px; }
-.logo { font-size: 26px; }
+.logo { font-size: 26px; display: inline-flex; }
+.mark { width: 1.15em; height: 1.15em; display: block; }
+.card .center .icon { width: 1.1em; height: 1.1em; stroke-width: 1.6; }
 .hint { color: var(--muted); font-size: 14px; margin: 6px 0; }
 .hint.warn { color: var(--gold); }
 .hint.error { color: var(--danger); }
@@ -125,6 +129,8 @@ h2 { font-size: 17px; }
   font-weight: 500;
 }
 .tag.you { background: var(--gold); color: #1a1500; }
+/* In the bar the tags hold a line of their own: room above and below the text. */
+.topbar h1 .tag { padding: 4px 8px; line-height: 1.2; }
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -182,13 +188,15 @@ button.link {
 }
 .leave-confirm { display: flex; align-items: center; gap: 6px; }
 .leave-ask { font-size: 14px; color: var(--muted); white-space: nowrap; }
-button.leave-yes { border-color: var(--danger); color: #ffc1bd; }
+/* A confirmation that throws something away (leaving, discarding a staging): never the lamp. */
+button.leave-yes, button.confirm-danger { border-color: var(--danger); color: #ffc1bd; }
 
 /* Lobby */
 .lobby { max-width: 900px; margin: 0 auto; padding: 20px; display: grid; gap: 16px; }
 .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .topbar-right { display: flex; gap: 10px; align-items: center; }
 .code-panel p { margin: 0 0 8px; color: var(--muted); }
+.code-panel .code-row + .hint { margin-top: 12px; }
 .code-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .room-code { font-family: monospace; font-size: 34px; letter-spacing: 6px; color: var(--gold); }
 .player-list { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 6px; }
@@ -369,12 +377,17 @@ button.meld { color: inherit; text-align: left; }
   .zone .card.small .center { font-size: 19px; }
   .zone .meld { padding: 4px 5px; }
   .zone .meld .card:not(:last-child) { width: 18px; }
-  /* With side seats the centre narrows: the piles shrink and the turn line goes under them. */
+  /* The piles and the turn line sit together at the centre of the felt, at any player count: with
+     two or three players they used to stand at opposite ends of an empty felt, 900px apart. */
+  .piles { justify-content: center; }
+  .turn-banner { flex: 0 1 280px; margin-left: 10px; justify-items: start; text-align: left; }
+  .felt-center > .hint { text-align: center; }
+  /* With side seats the centre narrows: the piles shrink and the turn line tightens. */
   .table-area.sided .pile .card { --card-w: 46px; --card-h: 64px; }
   .table-area.sided .pile .card .center { font-size: 23px; }
   .table-area.sided .pile-caption { display: none; }
-  .table-area.sided .piles { gap: 12px; justify-content: center; }
-  .table-area.sided .turn-banner { flex: 1 1 150px; max-width: 260px; margin-left: 4px; justify-items: start; text-align: left; font-size: 15px; }
+  .table-area.sided .piles { gap: 12px; }
+  .table-area.sided .turn-banner { flex: 1 1 150px; max-width: 260px; margin-left: 4px; font-size: 15px; }
   .zone { align-content: flex-start; justify-content: center; min-height: 0; }
   .zone.empty { display: flex; padding: 0; }
   .zone-owner { display: none; }
@@ -414,6 +427,14 @@ button.meld { color: inherit; text-align: left; }
 /* Gold already means "selected" on a card, so keyboard focus takes the text colour instead. */
 .card:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
 .card.dimmed { opacity: 0.35; }
+/* The card you just drew: a small felt-green pip in its top-right corner and a short settle into
+   the hand. Not gold, since gold already means "selected". */
+.card.drawn::after {
+  content: ""; position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--felt); box-shadow: inset 0 0 0 1px var(--felt-dark);
+}
+.hand .card.drawn:not(.selected) { animation: card-drawn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes card-drawn { from { transform: translateY(-10px); } }
 .hand .card.selected { z-index: 1; }
 .card .order {
   position: absolute; top: -8px; right: -6px; width: 18px; height: 18px; border-radius: 50%;
@@ -447,7 +468,10 @@ button.meld { color: inherit; text-align: left; }
 .staging-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 14px; }
 .laydown-progress { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
 .gauge { width: 120px; height: 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.35); overflow: hidden; }
-.gauge > span { display: block; height: 100%; border-radius: inherit; background: var(--felt-text); transition: width 0.2s ease-out; }
+.gauge > span {
+  display: block; height: 100%; border-radius: inherit; background: var(--felt-text);
+  transform-origin: left; transition: transform 0.2s ease-out;
+}
 .gauge.full > span { background: var(--felt-accent); }
 .pip { font-size: 13px; color: var(--felt-text); }
 .pip.on { color: var(--felt-accent); }
@@ -498,6 +522,9 @@ button.meld { color: inherit; text-align: left; }
     visibility: hidden; transition: transform 0.2s ease, visibility 0s linear 0.2s;
   }
   .game.side-open .side { transform: translateX(0); visibility: visible; transition: transform 0.2s ease; }
+  /* Fifteen cards and more close up slightly instead of leaving one alone on a second row. */
+  .hand.dense { gap: 0; }
+  .hand.dense .card + .card { margin-left: -4px; }
   .side-close { display: block; flex: none; width: 44px; border-radius: 0; border: none; border-bottom: 1px solid var(--border); background: transparent; }
 }
 
@@ -545,6 +572,9 @@ button.meld { color: inherit; text-align: left; }
   .home-columns { grid-template-columns: 1fr; }
   .home { padding: 20px 16px 40px; }
   .lobby { padding: 12px 16px 24px; }
+  /* The code and its link share one line; copying the code alone can wrap below. */
+  .code-row { gap: 10px; }
+  .code-row .room-code { font-size: 28px; letter-spacing: 4px; }
   .video-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 
   /* Game: one column, natural document flow, sticky action bar. */
@@ -661,6 +691,11 @@ button.meld { color: inherit; text-align: left; }
   .game { background: var(--bg); }
   /* Your seat stays pinned at the head of the strip while the others scroll past it. */
   .self-seat { position: sticky; left: 0; z-index: 2; background: var(--bg); padding-right: 8px; margin-right: -8px; }
+  /* What scrolls under the pinned seat fades into it instead of showing a sliced tile. */
+  .self-seat::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 100%; width: 18px; pointer-events: none;
+    background: linear-gradient(to right, var(--bg), transparent);
+  }
   /* Your own "(vous)": the first, mirrored seat already says it. Still read out. */
   .self-seat .video-suffix { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* Asking to leave takes the whole right side; the buttons' own words carry the question. */
@@ -818,7 +853,16 @@ button.meld { color: inherit; text-align: left; }
     overflow: auto;
   }
   .pile .card { --card-w: 40px; --card-h: 56px; }
-  .pile-caption { font-size: 11px; }
+  .pile-caption { display: none; }
+  /* Height is what landscape lacks: your face joins the rail like on a portrait phone, which gives
+     the felt the row your small tile and score used to take, and the turn line sits beside the
+     piles instead of above them. */
+  .self-seat { display: grid; }
+  .me-side { display: none; }
+  /* As in the portrait strip, the first mirrored seat says "you"; the word is only read out. */
+  .self-seat .video-suffix { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .turn-banner { flex: 1 1 200px; flex-basis: auto; order: 0; margin-left: 6px; justify-items: start; text-align: left; }
+  .felt { gap: 6px; }
   .me { grid-column: 2; grid-row: 2; min-height: 0; }
   .hand-area { min-height: 0; }
   .hand { max-height: 96px; overflow-y: auto; }
@@ -882,4 +926,6 @@ button.meld { color: inherit; text-align: left; }
   /* The first laydown still shows, as a steady highlight for its few seconds instead of a fade. */
   .zone.fresh { animation: none; background-color: rgba(253, 253, 248, 0.14); }
   .zone { transition: none; }
+  .gauge > span { transition: none; }
+  .hand .card.drawn:not(.selected) { animation: none; }
 }

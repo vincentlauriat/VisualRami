@@ -220,7 +220,7 @@ copied exactly: the five-letter table code.
 
 ### Hierarchy
 - **Display** (700, 34px): the product name on the home screen only.
-- **Headline** (700, 22px; 16px on phones): the top bar title with the 🃏 mark.
+- **Headline** (700, 22px; 16px on phones): the top bar title with the drawn mark.
 - **Title** (700, 17px): panel headings and the round-result title.
 - **Body** (400, 16px): forms, rules, chat. Inputs stay at 16px on phones to prevent iOS zoom.
 - **Label** (400, 11–14px, tabular figures): hints, captions, scores, card counts, log lines.
@@ -242,18 +242,20 @@ right edges and the others share the top (six players: one left, three across, o
 at the bottom, your hand below the felt. Each player's melds lie on the felt **in front of their
 own face**, in their zone; yours sit right above your hand. A top column never squeezes a zone
 narrower than its longest meld, and spare width is shared out, so a zone stays under its seat and
-in seat order even when one player has laid much more. With side seats the piles shrink (46×64,
-no captions) and the turn line moves beside them. The felt keeps at least 200px.
+in seat order even when one player has laid much more. The piles and the turn line sit together at the centre of the felt at
+every player count (with two or three players they used to stand 750–900px apart at its two
+ends); with side seats the piles shrink (46×64, no captions). Between 901 and 1365px a hand of 15
+cards or more closes up by 4px a card so it stays on one row. The felt keeps at least 200px.
 
 From 1366px up a 260px log/chat column sits beside the table; below that (901–1365px) the log and
 chat come in as a drawer from the right behind the chat button, so the seats and the felt get the
 whole width.
 
 **Phone portrait** (< 600px wide): the whole table fits one screen and nothing outside the felt
-scrolls. The top bar keeps one row (icons only, the table code without its "table" prefix, no 🃏
-mark, the unread count riding on the chat icon) and holds at 360px with a wide code, the badge
+scrolls. The top bar keeps one row (icons only, the table code without its "table" prefix, no mark, the unread count riding on the chat icon) and holds at 360px with a wide code, the badge
 or an armed Quitter. Your own seat joins the opponents' strip, pinned at its head while the
-others scroll past it, so the strip's turn-following scroll never pushes you off screen; and sort, clear, prepare and discard share a single action
+others scroll past it (an 18px fade to night on its right edge, so a tile passing under it
+dissolves instead of showing sliced), so the strip's turn-following scroll never pushes you off screen; and sort, clear, prepare and discard share a single action
 row; while melds are staged, "Poser" takes the sort buttons' place. The staging tray leads the
 felt, the piles shrink once you have drawn, a 15-card hand fans into two rows of eight, and the
 strip scrolls itself to the seat whose turn it is.
@@ -265,7 +267,9 @@ The log and chat become a bottom sheet behind a 💬 button.
 - **Tablet portrait** (600–900px wide, ≥ 700px tall): the same single column, with near-desktop
   card and tile sizes and the actions back on one row.
 - **Phone landscape** (≤ 900px wide, ≤ 520px tall): a two-column grid, opponents stacked in a
-  narrow left rail and the felt plus hand on the right. The log slides in from the side.
+  narrow left rail and the felt plus hand on the right. Your own face joins the rail (first,
+  "(vous)" read out only) instead of taking a row above the hand, and the turn line sits beside
+  the piles: at 844×390 the felt grows from 139 to 187px. The log slides in from the side.
 - **Coarse pointer, any width:** every button reaches 44px; tabs 48px.
 
 At ≤ 900px the faces stay in the strip and the melds are **grouped by player on the felt**: one row
@@ -320,7 +324,9 @@ Tactile and assertive: a raised control is a chip on its edge.
 - **Tiny:** 32px square minimum (44px on touch), for dismiss and remove. Always ghost.
 - **Off:** danger border on every side, for a muted mic or camera.
 - **Icons:** drawn SVG on a 24-unit grid, 1.75 stroke, `currentColor`, 1.15em, 6px from the label.
-  No emoji in controls; the 🃏 mark is the only emoji and it is the logo.
+  No emoji anywhere. The brand mark is drawn too: an ivory card with a red heart fanned over a
+  card-back-blue card (the blue is a card back, so the Blue Back Rule holds); the favicon is the
+  same drawing.
 - **Hover / Focus / Press:** hover lightens the face (control-face-hover) on pointer devices only;
   focus is a 2px gold outline offset 2px. Press collapses the edge to 1px and drops the face 2px
   with no layout shift. Disabled lies flush the same way, at 45% opacity: available controls
@@ -328,6 +334,11 @@ Tactile and assertive: a raised control is a chip on its edge.
 
 ### Cards / Containers
 - **Panel:** panel fill, 1px border, 12px radius, 18px padding. Home, lobby and the round result.
+- **Lobby:** "Copier le lien" is the gold action (the link is what travels to the others), next
+  to the code on the same line even on a phone; "Copier le code" follows and may wrap. For the
+  host, once a second player is in, "Lancer la partie" takes the lamp and the link goes neutral.
+- **Page background:** the radial lift is painted once at the top, then plain night: it never
+  repeats into a seam on a long page.
 - **Home:** exactly one gold button, the visitor's likely next step: Rejoindre once a full code is
   typed, else Reprendre (the most recent remembered seat) when there is one, else Créer la table.
   The hero line and the rules run at most about 70 characters per line on a desktop.
@@ -364,9 +375,11 @@ Tactile and assertive: a raised control is a chip on its edge.
 - **Code input:** uppercase monospace, 20px, 4px tracking.
 
 ### Navigation
-A single top bar: 🃏 mark and title on the left, table code tag, mic/camera controls and leave
+A single top bar: the drawn mark and title on the left, table code tag (4px 8px: the text never
+touches its pill), mic/camera controls and leave
 button on the right. On phones the brand word hides, buttons reach 44px, and a chat toggle (its
-unread count a small bubble on the icon's corner) opens the log/chat sheet. The side panel has three tabs (Journal, Chat, Règles); the active tab takes
+unread count a small bubble on the icon's corner) opens the log/chat sheet. The side panel has three tabs (Journal, Chat, Règles), the message field only under
+Chat; the unread badge counts the others' messages, never yours; the active tab takes
 panel-2 and gold text. Leaving takes two presses: the first replaces the ghost Quitter with
 "Quitter la table ?", a ghost Quitter with a danger outline and a ghost Rester (never gold:
 leaving is not the lamp's action). The question takes focus, Escape or Rester puts it away, and
@@ -376,7 +389,10 @@ the buttons carry the question.
 ### Playing Card (signature)
 The object the whole system serves. 58 × 82px on desktop, 48 × 68px on phones, 44 × 62px when
 small. Ivory face, rank and suit stacked in the top-left corner, a large suit glyph in the centre.
-Jokers carry a pale tri-colour gradient and violet ink. Selected cards lift and take a gold ring
+Jokers carry a pale tri-colour gradient and violet ink, with a drawn jester's cap (three bells,
+the icon family's stroke) in the centre. The card you just drew carries a small felt-green pip in
+its top-right corner until your turn ends, and settles into the hand from 10px above in 0.35s
+(none under reduced motion). Selected cards lift and take a gold ring
 plus a numbered gold badge giving selection order. Keyboard focus uses a 3px *white* outline,
 because gold already means "selected". In melds, cards overlap by 14–16px.
 
@@ -413,13 +429,15 @@ live region; reduced motion keeps a steady highlight for the same 4 seconds inst
 ### Discard while staging
 Discarding ends the turn and abandons staged melds, so while the tray holds anything Défausser
 is not gold and takes two presses: the first turns it into "Défausser quand même" ("Défausser ?" on
-phones, where the full words stay its accessible name) and says why on the turn banner; changing
+phones, where the full words stay its accessible name), a ghost with a danger outline like the
+armed Quitter, never gold (Poser stays the lamp), and says why on the turn banner; changing
 the selection disarms it. Phone action buttons share the row by their words and never wrap.
 
 ### Staging Tray
 Melds prepared for a laydown wait on the felt, above the table's melds, inside a dashed
 felt-accent tray on a 22% black wash: on the table, not laid yet. For the first laydown it carries
-a gauge toward the threshold (felt-text, turning felt-accent once reached), "N / 51 pts · encore M",
+a gauge toward the threshold (felt-text, turning felt-accent once reached; it fills by
+`scaleX` from the left, not by width, and holds still under reduced motion), "N / 51 pts · encore M",
 and a pure-run marker.
 
 ### Turn Banner

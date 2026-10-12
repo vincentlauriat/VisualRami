@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { DEFAULT_OPTIONS, type GameOptions } from "@visualrami/shared";
 import { forgetSeat, loadName, loadSeats, saveName } from "../lib/socket";
 import { labels } from "../lib/labels";
-import { Icon } from "./Icon";
+import { Icon, Mark } from "./Icon";
 import { Rules } from "./Rules";
 
 interface Props {
@@ -116,7 +116,7 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
       <main className="home invite">
         <header className="home-hero">
           <h1>
-            <span className="logo">🃏</span> VisualRami
+            <span className="logo"><Mark /></span> VisualRami
           </h1>
         </header>
 
@@ -177,7 +177,7 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
     <main className="home">
       <header className="home-hero">
         <h1>
-          <span className="logo">🃏</span> VisualRami
+          <span className="logo"><Mark /></span> VisualRami
         </h1>
         <p>Le Rami 51 entre amis, avec la visio et le son de chaque joueur autour de la table.</p>
       </header>

@@ -36,7 +36,7 @@ export function Rules({ options, home }: Props) {
         <b>Première pose :</b> {firstLaydown(options)}
       </li>
       <li>
-        <b>Valeurs :</b> as 11 (1 en bas de suite), figures et 10 : 10, les autres leur chiffre.
+        <b>Valeurs :</b> l'as vaut 11 (1 en bas de suite), figures et 10 valent 10, les autres leur chiffre.
       </li>
       <li>
         <b>Joker :</b> il vaut la carte qu'il remplace. Une fois posé, on le reprend avec la vraie carte.

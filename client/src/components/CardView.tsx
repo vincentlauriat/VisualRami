@@ -1,6 +1,7 @@
 import { RANK_LABEL, SUIT_SYMBOL, type Card } from "@visualrami/shared";
 import { cardName } from "../lib/cardNames";
 import { labels } from "../lib/labels";
+import { Icon } from "./Icon";
 
 interface Props {
   card: Card;
@@ -11,9 +12,11 @@ interface Props {
   /** Accessible name when the card's role matters more than its face (e.g. "Défausse : 7 de cœur"). */
   spokenName?: string;
   size?: "normal" | "small";
+  /** The card you just drew this turn: a quiet mark, not the lamp's gold. */
+  drawn?: boolean;
 }
 
-export function CardView({ card, selected, dimmed, order, onClick, spokenName, size = "normal" }: Props) {
+export function CardView({ card, selected, dimmed, order, onClick, spokenName, size = "normal", drawn }: Props) {
   const red = card.suit === "hearts" || card.suit === "diamonds";
   const classes = [
     "card",
@@ -23,6 +26,7 @@ export function CardView({ card, selected, dimmed, order, onClick, spokenName, s
     selected ? "selected" : "",
     dimmed ? "dimmed" : "",
     onClick ? "clickable" : "",
+    drawn ? "drawn" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -34,7 +38,7 @@ export function CardView({ card, selected, dimmed, order, onClick, spokenName, s
         <b>{label}</b>
         <i>{card.joker ? "★" : suit}</i>
       </span>
-      <span className="center" aria-hidden>{card.joker ? "🃏" : suit}</span>
+      <span className="center" aria-hidden>{card.joker ? <Icon name="joker" /> : suit}</span>
       {order !== undefined && <span className="order" aria-hidden>{order}</span>}
     </>
   );
@@ -49,7 +53,8 @@ export function CardView({ card, selected, dimmed, order, onClick, spokenName, s
     );
   }
 
-  const name = spokenName ?? (order !== undefined ? labels.selectedCard(card, order) : cardName(card));
+  const base = spokenName ?? (order !== undefined ? labels.selectedCard(card, order) : cardName(card));
+  const name = drawn ? `${base}, ${labels.justDrawn}` : base;
   return (
     <button type="button" className={classes} onClick={onClick} aria-pressed={spokenName ? undefined : selected} aria-label={name}>
       {face}
