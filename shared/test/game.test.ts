@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { seededRng } from "../src/cards.js";
-import { addPlayer, applyAction, autoPlayTurn, createGame, currentPlayer, setConnected, toPublicState } from "../src/game.js";
+import { addPlayer, applyAction, autoPlayTurn, createGame, currentPlayer, removePlayer, setConnected, toPublicState } from "../src/game.js";
 import type { Card, GameState, Rank, Suit } from "../src/types.js";
 
 const rng = seededRng(42);
@@ -223,6 +223,95 @@ describe("absent players", () => {
     const state = setup();
     const next = setConnected(state, "a", false);
     expect(next.hostId).toBe("b");
+  });
+});
+
+/** Play a two-player round to its end: the current player lays everything down and goes out. */
+function finishedRound(): { state: GameState; winner: string; loser: string } {
+  let state = setup();
+  const me = currentPlayer(state)!;
+  const other = state.players.find((p) => p.id !== me.id)!;
+  const hand: Card[] = [
+    card(10, "hearts", "h10"),
+    card(11, "hearts", "h11"),
+    card(12, "hearts", "h12"),
+    card(9, "spades", "s9"),
+    card(9, "clubs", "c9"),
+    card(9, "diamonds", "d9"),
+  ];
+  state = {
+    ...state,
+    players: state.players.map((p) =>
+      p.id === me.id ? { ...p, hand } : { ...p, hand: [card(13, "clubs", "ck"), card(1, "clubs", "ca")] },
+    ),
+  };
+  state = must(applyAction(state, me.id, { type: "draw", source: "stock" }, rng));
+  state = must(applyAction(state, me.id, { type: "layDown", melds: [["h10", "h11", "h12"], ["s9", "c9", "d9"]] }, rng));
+  const last = state.players.find((p) => p.id === me.id)!.hand[0]!;
+  state = must(applyAction(state, me.id, { type: "discard", cardId: last.id }, rng));
+  return { state, winner: me.id, loser: other.id };
+}
+
+describe("end of round", () => {
+  it("never shows another player's hand while the round is played", () => {
+    let state = setup();
+    for (const viewer of ["a", "b"]) {
+      const pub = toPublicState(state, viewer);
+      expect(pub.revealedHands).toBeNull();
+      expect(JSON.stringify(pub.players)).not.toMatch(/"hand"/);
+    }
+    const me = currentPlayer(state)!;
+    state = must(applyAction(state, me.id, { type: "draw", source: "stock" }, rng));
+    expect(state.phase).toBe("play");
+    const watcher = state.players.find((p) => p.id !== me.id)!.id;
+    const pub = toPublicState(state, watcher);
+    expect(pub.revealedHands).toBeNull();
+    // The only cards in the payload are the viewer's own, the discard top and the melds.
+    const mine = new Set(pub.you.hand.map((c) => c.id));
+    const others = state.players.find((p) => p.id === me.id)!.hand.filter((c) => !mine.has(c.id));
+    for (const c of others) expect(JSON.stringify(pub)).not.toContain(`"${c.id}"`);
+  });
+
+  it("turns every losing hand face up for everyone once the round is over", () => {
+    const { state, winner, loser } = finishedRound();
+    for (const viewer of [winner, loser]) {
+      const pub = toPublicState(state, viewer);
+      expect(pub.revealedHands).toEqual({ [loser]: state.players.find((p) => p.id === loser)!.hand });
+      expect(pub.revealedHands![winner]).toBeUndefined();
+    }
+    const next = must(applyAction(state, state.hostId, { type: "newRound" }, rng));
+    expect(toPublicState(next, winner).revealedHands).toBeNull();
+  });
+
+  it("lets the other players say they are ready, and empties readiness at the next deal", () => {
+    const { state } = finishedRound();
+    const guest = state.players.find((p) => p.id !== state.hostId)!.id;
+    expect(state.ready).toEqual([]);
+    expect(applyAction(state, state.hostId, { type: "ready", ready: true }).ok).toBe(false);
+
+    let next = must(applyAction(state, guest, { type: "ready", ready: true }));
+    expect(toPublicState(next, state.hostId).ready).toEqual([guest]);
+    next = must(applyAction(next, guest, { type: "ready", ready: true })); // idempotent
+    expect(next.ready).toEqual([guest]);
+    expect(must(applyAction(next, guest, { type: "ready", ready: false })).ready).toEqual([]);
+
+    const round2 = must(applyAction(next, state.hostId, { type: "newRound" }, rng));
+    expect(round2.ready).toEqual([]);
+    expect(applyAction(round2, guest, { type: "ready", ready: true }).ok).toBe(false);
+  });
+});
+
+describe("leaving a started game", () => {
+  it("keeps the seat, and logs the departure only when the player chose to leave", () => {
+    const state = setup();
+    const dropped = removePlayer(state, "b");
+    expect(dropped.players.find((p) => p.id === "b")!.connected).toBe(false);
+    expect(dropped.log).toEqual(state.log);
+
+    const left = removePlayer(state, "b", true);
+    expect(left.players).toHaveLength(2);
+    expect(left.players.find((p) => p.id === "b")!.connected).toBe(false);
+    expect(left.log.at(-1)).toBe("Bob a quitté la table");
   });
 });
 

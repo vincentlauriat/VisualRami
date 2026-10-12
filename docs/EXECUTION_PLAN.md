@@ -92,6 +92,15 @@ unbounded signalling/chat, discard pile leak, TURN hook, open CORS). See `CHANGE
 - Persistent rooms (Redis or Azure Cache) if the server must scale beyond one instance
   (Socket.IO sticky sessions or adapter).
 
+## Phase 8 — Computer player 📐
+
+Design accepted 2026-10-12, not implemented — see [COMPUTER_PLAYER.md](COMPUTER_PLAYER.md).
+
+1. Meld search and easy bot in `shared/src/bot/`, with unit, property and bot-vs-bot tests (2–3 d).
+2. Server integration: `isBot` seats, add/remove events, per-room bot scheduler, pause without humans (1.5–2 d).
+3. Client: solo entry on Home, add/remove in the lobby, bot seat identity, no WebRTC peer for bots (1–2 d).
+4. Medium bot: hand potential, discard memory, defence against the next player (2–3 d).
+
 ## Risks and mitigations
 
 | Risk | Mitigation |

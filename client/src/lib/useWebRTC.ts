@@ -33,6 +33,8 @@ export interface WebRTCState {
   remoteStreams: Record<string, MediaStream>;
   /** Peers that turned their camera off: their stream still carries (black) video frames. */
   remoteCamOff: Record<string, boolean>;
+  /** Peers that muted their microphone (same channel as the camera flag). */
+  remoteMicOff: Record<string, boolean>;
   mediaStatus: MediaStatus;
   mediaError: string | null;
   micOn: boolean;
@@ -50,6 +52,7 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<Record<string, MediaStream>>({});
   const [remoteCamOff, setRemoteCamOff] = useState<Record<string, boolean>>({});
+  const [remoteMicOff, setRemoteMicOff] = useState<Record<string, boolean>>({});
   const [mediaStatus, setMediaStatus] = useState<MediaStatus>("idle");
   const [mediaError, setMediaError] = useState<string | null>(null);
   const [micOn, setMicOn] = useState(true);
@@ -58,6 +61,7 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
   const wanted = useRef(new Set<string>());
   const localRef = useRef<MediaStream | null>(null);
   const camOnRef = useRef(true);
+  const micOnRef = useRef(true);
   const selfRef = useRef(selfId);
   selfRef.current = selfId;
 
@@ -105,6 +109,7 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
     setMicOn(true);
     setCamOn(true);
     camOnRef.current = true;
+    micOnRef.current = true;
   }, []);
 
   const send = useCallback((to: string, data: unknown) => {
@@ -127,12 +132,14 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
       delete next[peerId];
       return next;
     });
-    setRemoteCamOff((off) => {
+    const forget = (off: Record<string, boolean>) => {
       if (!(peerId in off)) return off;
       const next = { ...off };
       delete next[peerId];
       return next;
-    });
+    };
+    setRemoteCamOff(forget);
+    setRemoteMicOff(forget);
   }, []);
 
   const closeAll = useCallback(() => {
@@ -195,8 +202,10 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
             clearTimeout(entry.watchdog);
             entry.watchdog = null;
           }
-          // A new or rebuilt connection does not know our camera is off.
-          if (!camOnRef.current) send(peerId, { media: { cam: false } });
+          // A new or rebuilt connection does not know our camera or microphone is off.
+          if (!camOnRef.current || !micOnRef.current) {
+            send(peerId, { media: { cam: camOnRef.current, mic: micOnRef.current } });
+          }
         } else if (pc.connectionState === "disconnected") {
           pc.restartIce();
           armWatchdog();
@@ -218,8 +227,9 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
     const onSignal = async ({ from, data }: { from: string; data: Record<string, unknown> }) => {
       if (!selfRef.current || !data || !wanted.current.has(from)) return;
       if (data.media) {
-        const cam = (data.media as { cam?: unknown }).cam;
+        const { cam, mic } = data.media as { cam?: unknown; mic?: unknown };
         if (typeof cam === "boolean") setRemoteCamOff((off) => ({ ...off, [from]: !cam }));
+        if (typeof mic === "boolean") setRemoteMicOff((off) => ({ ...off, [from]: !mic }));
         return;
       }
       const entry = getOrCreatePeer(from);
@@ -324,7 +334,9 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
     const next = !micOn;
     stream.getAudioTracks().forEach((t) => (t.enabled = next));
     setMicOn(next);
-  }, [micOn]);
+    micOnRef.current = next;
+    for (const peerId of peers.current.keys()) send(peerId, { media: { mic: next } });
+  }, [micOn, send]);
 
   const toggleCam = useCallback(() => {
     const stream = localRef.current;
@@ -336,5 +348,5 @@ export function useWebRTC(selfId: string | null, peerIds: string[], epoch: numbe
     for (const peerId of peers.current.keys()) send(peerId, { media: { cam: next } });
   }, [camOn, send]);
 
-  return { localStream, remoteStreams, remoteCamOff, mediaStatus, mediaError, micOn, camOn, toggleMic, toggleCam, startMedia };
+  return { localStream, remoteStreams, remoteCamOff, remoteMicOff, mediaStatus, mediaError, micOn, camOn, toggleMic, toggleCam, startMedia };
 }

@@ -4,6 +4,7 @@ import { useWebRTC } from "./lib/useWebRTC";
 import { Home } from "./components/Home";
 import { Lobby } from "./components/Lobby";
 import { Game } from "./components/Game";
+import { labels } from "./lib/labels";
 
 export function App() {
   const game = useGame();
@@ -36,7 +37,8 @@ export function App() {
   if (game.state.phase === "lobby") {
     return (
       <>
-        <Lobby state={game.state} rtc={rtc} onStart={() => game.act({ type: "start" })} onLeave={game.leave} />
+        <Lobby state={game.state} rtc={rtc} connected={game.connected} onStart={() => game.act({ type: "start" })} onLeave={game.leave} />
+        <div role="status">{!game.connected && <div className="reconnecting">{labels.connectionLost}</div>}</div>
         {game.error && <div className="toast global" role="alert" onClick={game.clearError}>{game.error}</div>}
       </>
     );
@@ -48,6 +50,7 @@ export function App() {
       rtc={rtc}
       chat={game.chat}
       error={game.error}
+      connected={game.connected}
       onAct={game.act}
       onLeave={game.leave}
       onSendChat={game.sendChat}

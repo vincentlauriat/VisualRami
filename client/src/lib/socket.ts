@@ -1,4 +1,5 @@
 import { io, type Socket } from "socket.io-client";
+import { settle } from "./requestError";
 
 export const socket: Socket = io({ autoConnect: true, transports: ["websocket", "polling"] });
 
@@ -88,11 +89,11 @@ export function saveName(name: string): void {
 export function request<T>(event: string, payload?: unknown): Promise<T> {
   return new Promise((resolve, reject) => {
     socket.timeout(8000).emit(event, payload, (err: Error | null, response: T | { error: string }) => {
-      if (err) return reject(new Error("Le serveur ne répond pas"));
-      if (response && typeof response === "object" && "error" in response) {
-        return reject(new Error((response as { error: string }).error));
+      try {
+        resolve(settle(err, response));
+      } catch (e) {
+        reject(e);
       }
-      resolve(response as T);
     });
   });
 }

@@ -11,7 +11,7 @@
   "scripts": {
     "build": "npm run build -w shared && npm run build -w server && npm run build -w client",
     "typecheck": "npm run build:shared && npm run typecheck -w server && npm run typecheck -w client",
-    "test": "npm run build:shared && npm run test -w shared && npm run test -w server",
+    "test": "npm run build:shared && npm run test -w shared && npm run test -w server && npm run test -w client",
     "dev": "npm run dev -w server & npm run dev -w client & wait",
     "start": "npm run start -w server",
     "package:azure": "Scripts/build-azure.sh",

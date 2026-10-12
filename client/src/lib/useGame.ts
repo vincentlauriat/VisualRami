@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GameAction, GameOptions, PublicGameState } from "@visualrami/shared";
+import { isTransportError } from "./requestError";
 import { forgetSeat, loadSeat, loadSession, request, saveSession, socket, type Session } from "./socket";
 
 export interface ChatMessage {
@@ -10,6 +11,10 @@ export interface ChatMessage {
 }
 
 export interface GameConnection {
+  /**
+   * The socket is up and, when we hold a seat, attached to it again. False during a drop: the
+   * state on screen is stale and nothing may be sent (Socket.IO would replay it on reconnect).
+   */
   connected: boolean;
   session: Session | null;
   state: PublicGameState | null;
@@ -25,11 +30,14 @@ export interface GameConnection {
   /** Leave the table. A started game keeps the seat, so the player can come back with the code. */
   leave: () => Promise<void>;
   act: (action: GameAction) => Promise<boolean>;
-  sendChat: (text: string) => void;
+  /** False when offline: the message was not sent and stays in the field. */
+  sendChat: (text: string) => boolean;
 }
 
 export function useGame(): GameConnection {
-  const [connected, setConnected] = useState(socket.connected);
+  const [connected, setConnected] = useState(() => socket.connected && !loadSession());
+  // Read synchronously by act/sendChat: a tap must not slip in before React re-renders.
+  const liveRef = useRef(connected);
   const [session, setSession] = useState<Session | null>(() => loadSession());
   const [state, setState] = useState<PublicGameState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,14 +47,28 @@ export function useGame(): GameConnection {
   sessionRef.current = session;
 
   useEffect(() => {
+    const live = (value: boolean) => {
+      liveRef.current = value;
+      setConnected(value);
+    };
+    let retry: ReturnType<typeof setTimeout> | null = null;
     const onConnect = async () => {
-      setConnected(true);
+      if (retry) clearTimeout(retry);
+      retry = null;
       const s = sessionRef.current;
-      if (!s) return;
+      if (!s) return live(true);
       try {
         await request("room:rejoin", { roomId: s.roomId, playerId: s.playerId, token: s.token });
+        live(true);
         setEpoch((e) => e + 1);
       } catch (err) {
+        // No answer is not a refusal: keep the seat. A dropped socket retries on its next
+        // "connect"; a socket still up but silent (timeout) gets asked again shortly.
+        if (isTransportError(err)) {
+          if (socket.connected) retry = setTimeout(() => void onConnect(), 2000);
+          return;
+        }
+        live(socket.connected);
         saveSession(null);
         forgetSeat(s.roomId);
         setSession(null);
@@ -54,7 +76,13 @@ export function useGame(): GameConnection {
         setError((err as Error).message);
       }
     };
-    const onDisconnect = () => setConnected(false);
+    const onDisconnect = () => live(false);
+    // The OS knows before the socket does: a half-open connection takes ~45 s to emit "disconnect".
+    const onOffline = () => live(false);
+    // Back online with a socket that never dropped: no "connect" will come, so take the seat back now.
+    const onOnline = () => {
+      if (socket.connected && !liveRef.current) void onConnect();
+    };
     const onState = (s: PublicGameState) => setState(s);
     const onChat = (m: ChatMessage) => setChat((c) => [...c.slice(-99), m]);
 
@@ -62,8 +90,13 @@ export function useGame(): GameConnection {
     socket.on("disconnect", onDisconnect);
     socket.on("room:state", onState);
     socket.on("chat:message", onChat);
+    window.addEventListener("offline", onOffline);
+    window.addEventListener("online", onOnline);
     if (socket.connected) void onConnect();
     return () => {
+      if (retry) clearTimeout(retry);
+      window.removeEventListener("offline", onOffline);
+      window.removeEventListener("online", onOnline);
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
       socket.off("room:state", onState);
@@ -107,7 +140,8 @@ export function useGame(): GameConnection {
           setChat([]);
           setEpoch((e) => e + 1);
           return;
-        } catch {
+        } catch (err) {
+          if (isTransportError(err)) throw err; // no answer: the seat may well be fine, keep it
           forgetSeat(roomId); // stale token or vanished table: fall back to code + name
         }
       }
@@ -120,7 +154,8 @@ export function useGame(): GameConnection {
     const roomId = sessionRef.current?.roomId;
     const inProgress = !!state && state.phase !== "lobby";
     try {
-      await request("room:leave");
+      // Offline, the server already holds the seat as absent; a buffered leave would only replay later.
+      if (liveRef.current) await request("room:leave");
     } catch {
       // leaving is best-effort
     }
@@ -132,6 +167,7 @@ export function useGame(): GameConnection {
   }, [state]);
 
   const act = useCallback(async (action: GameAction) => {
+    if (!liveRef.current) return false;
     try {
       await request("game:action", action);
       setError(null);
@@ -142,8 +178,10 @@ export function useGame(): GameConnection {
     }
   }, []);
 
-  const sendChat = useCallback((text: string) => {
+  const sendChat = useCallback((text: string): boolean => {
+    if (!liveRef.current) return false;
     socket.emit("chat:message", text);
+    return true;
   }, []);
 
   const clearError = useCallback(() => setError(null), []);

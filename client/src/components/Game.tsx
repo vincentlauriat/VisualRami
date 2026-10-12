@@ -18,6 +18,7 @@ import { MediaControls } from "./MediaControls";
 import { Chat } from "./Chat";
 import { labels } from "../lib/labels";
 import { Icon } from "./Icon";
+import { RoundResult } from "./RoundResult";
 import { invalidMeldReason, meldFit, type MeldFit } from "../lib/meldHelp";
 
 interface Props {
@@ -25,9 +26,11 @@ interface Props {
   rtc: WebRTCState;
   chat: ChatMessage[];
   error: string | null;
+  /** Live link to the server. False during a drop: the state shown is stale and nothing is sent. */
+  connected: boolean;
   onAct: (action: GameAction) => Promise<boolean>;
   onLeave: () => void;
-  onSendChat: (text: string) => void;
+  onSendChat: (text: string) => boolean;
   onClearError: () => void;
 }
 
@@ -38,7 +41,7 @@ interface Staged {
   kind: "run" | "set";
 }
 
-export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onClearError }: Props) {
+export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSendChat, onClearError }: Props) {
   const me = state.players.find((p) => p.id === state.you.id) ?? {
     id: state.you.id,
     name: "?",
@@ -55,11 +58,17 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
   // Log/chat panel: always visible on wide screens, a bottom sheet toggled from the top bar on phones.
   const [sideOpen, setSideOpen] = useState(false);
   const sideToggle = useRef<HTMLButtonElement>(null);
-  const resultFocus = useRef<HTMLElement>(null);
   const strip = useRef<HTMLElement>(null);
   const handRef = useRef<HTMLDivElement>(null);
   // Discarding while melds are staged throws the staging away, so it takes a second press.
   const [discardArmed, setDiscardArmed] = useState(false);
+  // Leaving takes two presses too: a slip of the thumb would otherwise drop you from the table.
+  const [leaveArmed, setLeaveArmed] = useState(false);
+  const leaveButton = useRef<HTMLButtonElement>(null);
+  const leaveGroup = useRef<HTMLDivElement>(null);
+  const leaveYes = useRef<HTMLButtonElement>(null);
+  // The timer waits while focus is in the question, so a screen reader is not cut off mid-way.
+  const [leaveFocused, setLeaveFocused] = useState(false);
   const finished = state.phase === "finished";
 
   // Keep local hand order stable while syncing with the server's hand content.
@@ -96,10 +105,23 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
     return () => clearTimeout(t);
   }, [notice]);
 
-  // The round result is modal: move focus into it, and the rest of the page goes inert meanwhile.
+
+  function disarmLeave() {
+    const hadFocus = !!leaveGroup.current?.contains(document.activeElement);
+    setLeaveArmed(false);
+    setLeaveFocused(false);
+    if (hadFocus) requestAnimationFrame(() => leaveButton.current?.focus());
+  }
+
+  // Armed, the confirmation takes focus; once focus leaves it, it gives up by itself after a few seconds.
   useEffect(() => {
-    if (finished) resultFocus.current?.focus();
-  }, [finished]);
+    if (leaveArmed) leaveYes.current?.focus();
+  }, [leaveArmed]);
+  useEffect(() => {
+    if (!leaveArmed || leaveFocused) return;
+    const t = setTimeout(disarmLeave, 5000);
+    return () => clearTimeout(t);
+  }, [leaveArmed, leaveFocused]);
 
   function closeSide() {
     setSideOpen(false);
@@ -127,7 +149,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
     : null;
 
   function toggle(card: Card) {
-    if (stagedIds.has(card.id)) return;
+    if (finished || stagedIds.has(card.id)) return;
     setSelected((s) => (s.includes(card.id) ? s.filter((id) => id !== card.id) : [...s, card.id]));
   }
 
@@ -167,8 +189,9 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
     return map;
   }, [state.melds]);
   const topDiscard = state.discardTop;
-  const canDraw = isMyTurn && state.phase === "draw";
-  const canPlay = isMyTurn && state.phase === "play";
+  // Offline, the piles and actions go still: whatever is on screen may already be out of date.
+  const canDraw = connected && isMyTurn && state.phase === "draw";
+  const canPlay = connected && isMyTurn && state.phase === "play";
   // Only melds that will really accept the selection are offered as targets.
   const fits = useMemo(() => {
     const map = new Map<string, MeldFit>();
@@ -187,11 +210,15 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
   const keepDiscard =
     selectedCards.length === 1 && hand.length > 1 && selectedCards[0]!.id === state.drewFromDiscardCardId;
   const canDiscard = canPlay && selectedCards.length === 1 && !keepDiscard;
-  const canLay = staged.length > 0 && (firstLaydown ? !!firstCheck?.ok : true);
+  const canLay = connected && staged.length > 0 && (firstLaydown ? !!firstCheck?.ok : true);
   const minPoints = state.options.firstMeldMinPoints;
-  const hint = !isMyTurn || finished
+  const hint = finished
     ? null
-    : canDraw
+    : !connected
+      ? labels.hintOffline
+      : !isMyTurn
+        ? null
+        : canDraw
       ? labels.hintDraw
       : keepDiscard
         ? labels.hintKeepDiscard
@@ -202,6 +229,12 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
             : fitsLater
               ? labels.hintAfterLaydown
               : labels.hintPlay;
+
+  const turnLine = isMyTurn
+    ? connected
+      ? state.phase === "draw" ? "À vous : piochez une carte" : "À vous : posez ou défaussez"
+      : state.phase === "draw" ? "À vous de piocher" : "À vous de jouer"
+    : labels.turnOf(state.players.find((p) => p.id === state.currentPlayerId)?.name ?? "…");
 
   // A first laydown is a table event: the player's zone lights up with the points they opened with.
   const [fresh, setFresh] = useState<{ id: string; points: number } | null>(null);
@@ -326,7 +359,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
 
   return (
     <div className={`game${sideOpen ? " side-open" : ""}`}>
-      <header className="topbar" inert={finished}>
+      <header className="topbar">
         <h1>
           <span className="logo">🃏</span> <span className="brand">VisualRami</span>
           <span className="tag"><span className="tag-prefix">table </span>{state.roomId}</span>
@@ -345,20 +378,54 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
           >
             <Icon name="chat" />{chat.length > 0 && <span className="tag" aria-hidden>{chat.length}</span>}
           </button>
-          <button
-            type="button"
-            className="ghost"
-            onClick={onLeave}
-            aria-label="Quitter la table"
-            title="Votre place reste réservée : revenez avec le code de la table"
-          >
-            <Icon name="leave" />
-            <span className="btn-label">Quitter</span>
-          </button>
+          {leaveArmed ? (
+            <div
+              ref={leaveGroup}
+              className="leave-confirm"
+              role="group"
+              aria-label={labels.leaveAsk}
+              onKeyDown={(e) => e.key === "Escape" && disarmLeave()}
+              onFocus={() => setLeaveFocused(true)}
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setLeaveFocused(false);
+              }}
+            >
+              <span className="leave-ask" aria-hidden>{labels.leaveAsk}</span>
+              <button ref={leaveYes} type="button" className="ghost leave-yes" onClick={onLeave} title={labels.leaveHint}>
+                <Icon name="leave" />
+                {labels.leaveConfirm}
+              </button>
+              <button type="button" className="ghost" onClick={disarmLeave}>
+                {labels.leaveCancel}
+              </button>
+            </div>
+          ) : (
+            <button
+              ref={leaveButton}
+              type="button"
+              className="ghost"
+              onClick={() => setLeaveArmed(true)}
+              aria-label={labels.leave}
+              title={labels.leaveHint}
+            >
+              <Icon name="leave" />
+              <span className="btn-label">Quitter</span>
+            </button>
+          )}
         </div>
       </header>
 
-      <div className="game-body" inert={finished}>
+      {/* Always mounted, so the drop is announced; empty, it takes no room. */}
+      <div className="net-status" role="status">
+        {!connected && (
+          <p className="net-lost">
+            <Icon name="offline" />
+            {labels.connectionLost}
+          </p>
+        )}
+      </div>
+
+      <div className="game-body">
         <main
           className={`table-area${sided ? " sided" : ""}`}
           style={{ "--top": Math.max(1, topSeats.length) } as CSSProperties}
@@ -366,7 +433,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
           <section className="opponents" ref={strip} style={{ "--seats": state.players.length } as CSSProperties}>
             {/* On a phone your own seat joins the strip, so the hand gets the row it used to take. */}
             <div className={`opponent self-seat${isMyTurn ? " active" : ""}`}>
-              <VideoTile stream={rtc.localStream} name={me.name} suffix="(vous)" muted mirror active={isMyTurn} badge={me.hasLaidDown ? "posé" : undefined} />
+              <VideoTile stream={rtc.localStream} name={me.name} suffix="(vous)" muted mirror micOff={!rtc.micOn} active={isMyTurn} winner={finished && state.winnerId === me.id} badge={me.hasLaidDown ? "posé" : undefined} />
               <div className="opponent-info">
                 <span>{me.score} pts</span>
               </div>
@@ -382,7 +449,11 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                   videoOff={rtc.remoteCamOff[p.id]}
                   name={p.name}
                   active={state.currentPlayerId === p.id}
-                  offline={!p.connected}
+                  winner={finished && state.winnerId === p.id}
+                  // While we are offline nobody's presence is known: a server restart would
+                  // otherwise show every seat as left.
+                  offline={connected && !p.connected}
+                  micOff={rtc.remoteMicOff[p.id]}
                   badge={p.hasLaidDown ? "posé" : undefined}
                   badgeMuted
                 />
@@ -403,6 +474,10 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
 
           <section className={`felt${canPlay ? " playing" : ""}`}>
             <div className="felt-center">
+              {finished ? (
+                <RoundResult state={state} connected={connected} onAct={onAct} />
+              ) : (
+              <>
               <div className="piles">
                 <div className="pile">
                   <CardBack count={state.stockCount} onClick={canDraw ? () => onAct({ type: "draw", source: "stock" }) : undefined} />
@@ -420,14 +495,9 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                   )}
                   <span className="pile-caption" aria-hidden>Défausse</span>
                 </div>
-                <div className="turn-banner" aria-live="polite">
-                  {state.phase === "finished" ? (
-                    <strong>Manche terminée</strong>
-                  ) : isMyTurn ? (
-                    <strong className="mine">{state.phase === "draw" ? "À vous : piochez une carte" : "À vous : posez ou défaussez"}</strong>
-                  ) : (
-                    <span>{labels.turnOf(state.players.find((p) => p.id === state.currentPlayerId)?.name ?? "…")}</span>
-                  )}
+                {/* Announced by the live region below, which outlives the round result. */}
+                <div className="turn-banner" aria-hidden>
+                  {isMyTurn ? <strong className={connected ? "mine" : undefined}>{turnLine}</strong> : <span>{turnLine}</span>}
                   {hint && <span className="turn-hint">{hint}</span>}
                 </div>
               </div>
@@ -471,6 +541,8 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
               )}
 
               {state.melds.length === 0 && <p className="hint">Aucune combinaison posée pour l'instant.</p>}
+              </>
+              )}
             </div>
 
             {/* Each player's melds lie in front of their seat, clockwise from your left; yours sit above your hand. */}
@@ -479,11 +551,12 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
             {rightSeat && renderZone(rightSeat, "right")}
             {renderZone(me, "me")}
             <p className="sr-only" aria-live="polite">{spoken}</p>
+            <p className="sr-only" aria-live="polite">{finished ? "" : hint ? `${turnLine}. ${hint}` : turnLine}</p>
           </section>
 
           <section className="me">
             <div className="me-side">
-              <VideoTile stream={rtc.localStream} name={me.name} muted mirror small active={isMyTurn} badge={me.hasLaidDown ? "posé" : undefined} />
+              <VideoTile stream={rtc.localStream} name={me.name} muted mirror small micOff={!rtc.micOn} active={isMyTurn} winner={finished && state.winnerId === me.id} badge={me.hasLaidDown ? "posé" : undefined} />
               <div className="me-score">{me.score} pts</div>
             </div>
 
@@ -507,12 +580,15 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                       selected={idx >= 0}
                       dimmed={stagedIds.has(card.id)}
                       order={idx >= 0 && selected.length > 1 ? idx + 1 : undefined}
-                      onClick={() => toggle(card)}
+                      // Between rounds the hand is only to look at.
+                      onClick={finished ? undefined : () => toggle(card)}
                     />
                   );
                 })}
               </div>
 
+              {/* Between rounds nothing here applies: Prêt / Nouvelle manche on the felt is the only action. */}
+              {!finished && (
               <div className={`actions${staged.length > 0 ? " staging-on" : ""}`}>
                 <div className="sort">
                   <button type="button" onClick={() => setHand((h) => sortBySuit(h))} aria-label="Trier par couleur">
@@ -548,50 +624,14 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                   </button>
                 </div>
               </div>
+              )}
             </div>
           </section>
         </main>
 
-        <Chat messages={chat} log={state.log} onSend={onSendChat} onClose={closeSide} />
+        <Chat messages={chat} log={state.log} offline={!connected} onSend={onSendChat} onClose={closeSide} />
       </div>
 
-      {finished && (
-        <div className="overlay">
-          <div className="panel result" role="dialog" aria-modal="true" aria-labelledby="result-title">
-            <h2 id="result-title" tabIndex={-1} ref={state.hostId === state.you.id ? undefined : (el) => { resultFocus.current = el; }}>{state.winnerId === state.you.id ? "🏆 Vous remportez la manche !" : `${state.players.find((p) => p.id === state.winnerId)?.name} remporte la manche`}</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Joueur</th>
-                  <th>Cette manche</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {state.players.map((p) => (
-                  <tr key={p.id} className={p.id === state.winnerId ? "winner" : ""}>
-                    <td>{p.name}</td>
-                    <td>+{state.lastRoundPoints?.[p.id] ?? 0}</td>
-                    <td>{p.score}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {state.hostId === state.you.id ? (
-              <button
-                type="button"
-                className="primary"
-                ref={(el) => { resultFocus.current = el; }}
-                onClick={() => onAct({ type: "newRound" })}
-              >
-                Nouvelle manche
-              </button>
-            ) : (
-              <p className="hint">En attente de l'hôte pour la manche suivante…</p>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -62,6 +62,8 @@ export interface GameState {
   round: number;
   /** Last round result, for display. */
   lastRoundPoints: Record<string, number> | null;
+  /** Between rounds: the players who said they are ready for the next one. Emptied at each deal. */
+  ready: string[];
   log: string[];
 }
 
@@ -91,6 +93,12 @@ export interface PublicGameState {
   winnerId: string | null;
   round: number;
   lastRoundPoints: Record<string, number> | null;
+  /**
+   * Once the round is over, and only then: the cards each player was left holding (the winner
+   * holds none). Null while a round is being played, so no hand ever leaks mid-round.
+   */
+  revealedHands: Record<string, Card[]> | null;
+  ready: string[];
   log: string[];
 }
 
@@ -101,7 +109,9 @@ export type GameAction =
   | { type: "extend"; meldId: string; cardIds: string[]; position: "start" | "end" }
   | { type: "swapJoker"; meldId: string; cardId: string }
   | { type: "discard"; cardId: string }
-  | { type: "newRound" };
+  | { type: "newRound" }
+  /** Between rounds, a player other than the host says they are (or are no longer) ready. */
+  | { type: "ready"; ready: boolean };
 
 export type GameError = { ok: false; error: string };
 export type GameOk = { ok: true; state: GameState };

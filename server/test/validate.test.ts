@@ -13,9 +13,12 @@ describe("validateAction", () => {
     expect(validateAction("start")).toBeNull();
     expect(validateAction(null)).toBeNull();
     expect(validateAction({ type: "nope" })).toBeNull();
+    expect(validateAction({ type: "ready" })).toBeNull();
+    expect(validateAction({ type: "ready", ready: "yes" })).toBeNull();
   });
   it("accepts well-formed actions and strips extra fields", () => {
     expect(validateAction({ type: "start", extra: 1 })).toEqual({ type: "start" });
+    expect(validateAction({ type: "ready", ready: true, extra: 1 })).toEqual({ type: "ready", ready: true });
     expect(validateAction({ type: "draw", source: "stock" })).toEqual({ type: "draw", source: "stock" });
     expect(validateAction({ type: "layDown", melds: [["a", "b", "c"]] })).toEqual({
       type: "layDown",

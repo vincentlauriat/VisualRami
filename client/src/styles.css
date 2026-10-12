@@ -10,6 +10,7 @@
   --gold-dark: #b98b23;
   --red: #c8322b;
   --danger: #f0796f;
+  --danger-surface: #3a1f1d;
   /* Borders, and text that sits on the felt rather than on a panel. The panel's --muted and --gold
      drop to 3.8–4.2:1 against the felt's lit centre; these hold ≥5:1 there. */
   --border: #27392f;
@@ -150,6 +151,19 @@ h2 { font-size: 17px; }
   background: var(--panel-2); padding: 10px 18px; border-radius: 999px; border: 1px solid var(--border-strong);
 }
 
+/* Your own connection dropped: a strip under the top bar, in the alert colours, that stays until
+   the seat is back. Empty, the live region leaves the flow so it costs no gap. */
+.net-status { position: sticky; top: 0; z-index: 15; }
+.net-status:empty { position: absolute; }
+.net-lost {
+  margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--danger-surface); border: 1px solid var(--danger); color: #ffd9d6;
+  padding: 8px 14px; border-radius: 8px; font-size: 14px; font-weight: 500;
+}
+.leave-confirm { display: flex; align-items: center; gap: 6px; }
+.leave-ask { font-size: 14px; color: var(--muted); white-space: nowrap; }
+button.leave-yes { border-color: var(--danger); color: #ffc1bd; }
+
 /* Lobby */
 .lobby { max-width: 900px; margin: 0 auto; padding: 20px; display: grid; gap: 16px; }
 .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -170,7 +184,14 @@ h2 { font-size: 17px; }
   border: 2px solid var(--border);
 }
 .video-tile.active { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(230, 184, 79, 0.25); }
-.video-tile.offline { opacity: 0.5; }
+/* An absent player's face dims, but the words saying so stay at full strength. */
+.video-tile.offline > video, .video-tile.offline > .video-placeholder, .video-tile.offline > .video-name { opacity: 0.5; }
+.video-status {
+  position: absolute; left: 6px; right: 6px; top: 6px; margin: 0;
+  font-size: 12px; line-height: 1.3; color: var(--text); text-align: center;
+  background: rgba(0, 0, 0, 0.55); padding: 2px 8px; border-radius: 999px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .video-tile.small { width: 150px; }
 .video-tile video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .video-tile video.mirror { transform: scaleX(-1); }
@@ -183,9 +204,16 @@ h2 { font-size: 17px; }
   background: rgba(0, 0, 0, 0.55); padding: 2px 8px; border-radius: 999px; font-size: 13px;
 }
 /* A long name stays on one line instead of wrapping over the face. */
-.video-name > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.video-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The "(vous)" suffix never goes into the ellipsis: only the name gives way. */
 .video-suffix { flex: none; margin-left: -2px; }
+/* Muted microphone: the button's "off" red, drawn, in the top corner so it never takes width from
+   the name. */
+.video-mic {
+  position: absolute; top: 6px; right: 6px; display: grid; place-items: center;
+  width: 24px; height: 24px; border-radius: 50%; background: rgba(0, 0, 0, 0.55); color: #ffc1bd;
+}
+.video-mic .icon { width: 14px; height: 14px; }
 .video-badge { flex: none; background: var(--gold); color: #1a1500; border-radius: 999px; padding: 0 6px; font-size: 11px; font-weight: 600; }
 /* Another player's "posé": information, not yours, so it does not take the lamp's gold. */
 .video-badge.muted { background: var(--control-face); color: var(--felt-text-strong); }
@@ -437,12 +465,45 @@ button.meld { color: inherit; text-align: left; }
   .side-close { display: block; flex: none; width: 44px; border-radius: 0; border: none; border-bottom: 1px solid var(--border); background: transparent; }
 }
 
-/* Round result */
-.overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); display: grid; place-items: center; z-index: 30; padding: 16px; }
-.result { width: min(360px, 92vw); max-height: 90dvh; overflow: auto; display: grid; gap: 14px; text-align: center; }
-.result table { width: 100%; border-collapse: collapse; }
-.result td, .result th { font-variant-numeric: tabular-nums; padding: 6px 8px; border-bottom: 1px solid var(--border); }
-.result tr.winner td { color: var(--gold); font-weight: 600; }
+/* Round result: the count, laid on the felt as a panel. Not a modal and no scrim: the faces, the log
+   and the chat stay lit while the table talks it over. */
+.round-result {
+  background: var(--panel); border: 1px solid var(--border-strong); border-radius: var(--radius);
+  padding: 14px 16px; display: grid; gap: 12px; color: var(--text); min-width: 0;
+}
+.result-head { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; }
+.result-head h2 { margin: 0; font-size: 17px; }
+.result-action { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.result-status { margin: 0; font-size: 13px; color: var(--muted); }
+.result-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.result-rows li {
+  display: grid; grid-template-columns: minmax(90px, 150px) minmax(0, 1fr) auto minmax(90px, auto);
+  align-items: center; gap: 4px 12px; padding: 6px 10px; border-radius: 8px; background: var(--panel-2);
+}
+.result-rows li.winner { box-shadow: inset 0 0 0 1px var(--gold); }
+.result-rows li.winner .result-name, .result-rows li.winner .result-points b { color: var(--gold); }
+.result-name { display: flex; align-items: center; gap: 2px; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+/* The hand turned face up: whole small cards in a row that scrolls sideways rather than wraps. */
+.result-cards { display: flex; gap: 4px; min-width: 0; overflow-x: auto; padding: 3px 2px 5px; }
+.result-cards .card.small { --card-w: 38px; --card-h: 53px; }
+.result-cards .card.small .center { font-size: 19px; }
+.result-cards.empty { color: var(--muted); font-size: 13px; }
+.result-points { display: grid; justify-items: end; gap: 1px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.result-points b { font-size: 16px; }
+.result-penalty { font-size: 12px; color: var(--danger); }
+.result-total { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.result-name .tag { flex: none; white-space: nowrap; }
+.tag.ready { display: inline-flex; align-items: center; gap: 3px; }
+.tag .icon { width: 11px; height: 11px; }
+.video-tile.winner { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(230, 184, 79, 0.25); }
+/* The winner's face says it, in the lamp's colours: the one gold thing at the table between rounds
+   besides your own next action. */
+.video-status.video-winner {
+  background: var(--gold); color: #1a1500; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.video-winner .icon { width: 13px; height: 13px; }
+.winner-short { display: none; }
 
 @media (max-width: 900px) {
   .home-columns { grid-template-columns: 1fr; }
@@ -540,8 +601,16 @@ button.meld { color: inherit; text-align: left; }
   .table-area { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
   .felt { flex: 1 1 0; min-height: 150px; overflow: auto; }
 
+  /* One row: the title gives way (it clips) rather than pushing the controls to a second line,
+     and the controls never fold among themselves (an unread badge used to stack mic over camera). */
+  .topbar { flex-wrap: nowrap; }
+  .topbar-right, .media-controls.compact { flex: none; flex-wrap: nowrap; }
   .topbar h1 { min-width: 0; overflow: hidden; white-space: nowrap; }
   .tag-prefix, .btn-label { display: none; }
+  /* Asking to leave takes the whole right side; the buttons' own words carry the question. */
+  .topbar-right:has(.leave-confirm) > :not(.leave-confirm), .leave-ask { display: none; }
+  /* A phone seat is 92px wide: "absent" shows, the rest is still read out. */
+  .video-status-more { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
   .self-seat { display: grid; }
   .me-side { display: none; }
@@ -565,6 +634,25 @@ button.meld { color: inherit; text-align: left; }
 
   /* The tray leads the felt, so drawing a 15th card can never push it out of view. */
   .staging { order: -1; }
+  /* The count leads the felt too, its action on the first line: it never scrolls out of reach. */
+  .round-result { order: -1; padding: 10px; gap: 8px; }
+  .result-head h2 { font-size: 15px; }
+  .result-head button { min-height: 44px; }
+  .result-rows li {
+    grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "name total points" "cards cards cards";
+    padding: 6px 8px; gap: 2px 8px;
+  }
+  .result-name { grid-area: name; }
+  .result-cards { grid-area: cards; }
+  .result-points { grid-area: points; }
+  .result-total { grid-area: total; font-size: 12px; }
+  .result-cards .card.small { --card-w: 32px; --card-h: 45px; }
+  .result-cards .card.small .corner b { font-size: 11px; }
+  .result-cards .card.small .center { font-size: 16px; }
+  /* A 92px seat: a crown and "gagne" on one line, the full words still read out. */
+  .video-status.video-winner { font-size: 11px; padding: 1px 6px; left: 4px; right: 4px; top: 4px; }
+  .winner-short { display: inline; }
+  .winner-long { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* Once drawn from, the piles are only a reference: they shrink to give the melds the room. */
   .felt.playing .pile .card { --card-w: 34px; --card-h: 48px; }
   .felt.playing .pile .card .corner b { font-size: 10px; }

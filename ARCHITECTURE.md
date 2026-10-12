@@ -23,9 +23,9 @@ Trois workspaces npm :
 
 ## État de jeu
 
-- Le serveur détient le `GameState` complet ; les clients ne reçoivent que `PublicGameState` (leur main, le nombre de cartes des autres, la taille du talon, le dessus de la défausse et sa profondeur, les combinaisons, le journal).
+- Le serveur détient le `GameState` complet ; les clients ne reçoivent que `PublicGameState` (leur main, le nombre de cartes des autres, la taille du talon, le dessus de la défausse et sa profondeur, les combinaisons, le journal). Les mains des autres ne sont envoyées qu'une fois la manche terminée (`revealedHands`, `null` pendant le jeu), pour afficher le décompte à découvert.
 - Chaque action est validée par le réducteur partagé côté serveur ; le client réutilise les mêmes règles pour le retour immédiat (zone de préparation, cibles de combinaison).
-- Phases d'un tour : `draw` → `play` → joueur suivant. La manche se termine à la dernière défausse ; `newRound` redistribue et fait tourner le premier joueur.
+- Phases d'un tour : `draw` → `play` → joueur suivant. La manche se termine à la dernière défausse ; `newRound` redistribue et fait tourner le premier joueur. Entre deux manches, `{ type: "ready", ready }` (joueurs autres que l'hôte, phase `finished` uniquement) enregistre qui est prêt dans `GameState.ready` (persisté ; un instantané sans ce champ se charge avec `[]`) ; l'hôte distribue toujours, et chaque donne le vide.
 - Chaque charge utile socket passe par `server/src/validate.ts` avant d'atteindre le réducteur ; une exception du réducteur est interceptée et renvoyée comme erreur.
 - Si le joueur courant n'a plus de socket pendant 45 s, le serveur joue un tour minimal pour lui (`autoPlayTurn` : pioche au talon, défausse). Le rôle d'hôte passe à un joueur connecté si l'hôte décroche.
 
@@ -35,10 +35,10 @@ Trois workspaces npm :
 |---|---|---|
 | C→S | `room:create` | `{ name, options }` → ack `{ roomId, playerId, token }` |
 | C→S | `room:join` | `{ roomId, name }` → même ack plus `resumed` (vrai quand un siège déconnecté d'une partie commencée a été repris) |
-| C→S | `room:rejoin` | `{ roomId, playerId, token }` |
-| C→S | `room:leave` | – |
+| C→S | `room:rejoin` | `{ roomId, playerId, token }` — idempotent pour la socket qui tient déjà ce siège (le client le renvoie à l'événement `online` du navigateur). Le client n'oublie son siège que sur une réponse `{ error }`, jamais sur un délai dépassé ou une socket coupée |
+| C→S | `room:leave` | – (le joueur a appuyé sur Quitter : une partie commencée garde le siège et journalise « X a quitté la table » ; une connexion perdue ne journalise rien) |
 | C→S | `game:action` | `GameAction` → ack `{ ok }` ou `{ error }` |
-| C→S | `rtc:signal` | `{ to, data }` — `data` vaut exactement `{ description }` ou `{ candidate }`, ≤ 16 Ko, ≤ 120 par 5 s |
+| C→S | `rtc:signal` | `{ to, data }` — `data` vaut exactement `{ description }`, `{ candidate }` ou `{ media: { cam?, mic? } }` (booléens, au moins un : caméra/micro allumés ou coupés, puisqu'une piste désactivée envoie encore des images noires ou du silence), ≤ 16 Ko, ≤ 120 par 5 s |
 | C→S | `chat:message` | `string` (≤ 300 caractères, ≤ 8 par 5 s) |
 | S→C | `room:state` | `PublicGameState` (par joueur) |
 | S→C | `rtc:signal` | `{ from, data }` |

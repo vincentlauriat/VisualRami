@@ -159,10 +159,11 @@ export class RoomManager {
     return { ok: true, room };
   }
 
-  leave(room: Room, playerId: string, socketId: string): boolean {
+  /** `explicit`: the player chose to leave (Quitter). Only then does a started game log it. */
+  leave(room: Room, playerId: string, socketId: string, explicit = false): boolean {
     if (room.sockets.get(playerId) !== socketId) return false;
     room.sockets.delete(playerId);
-    room.state = removePlayer(room.state, playerId);
+    room.state = removePlayer(room.state, playerId, explicit);
     if (room.state.phase === "lobby") room.tokens.delete(playerId);
     room.lastActivity = Date.now();
     if (room.state.players.length === 0 || (room.sockets.size === 0 && room.state.phase === "lobby")) {
@@ -269,7 +270,8 @@ export class RoomManager {
       const data = JSON.parse(raw) as { version: number; rooms: PersistedRoom[] };
       for (const saved of data.rooms) {
         // Nobody is attached after a restart; players come back by token or by code + name.
-        let state = saved.state;
+        // Snapshots written before readiness existed have no `ready` field.
+        let state: GameState = { ...saved.state, ready: Array.isArray(saved.state.ready) ? saved.state.ready : [] };
         for (const p of state.players) state = setConnected(state, p.id, false);
         this.rooms.set(saved.id, {
           id: saved.id,

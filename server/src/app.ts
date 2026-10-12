@@ -70,9 +70,12 @@ function isValidSignal(data: unknown): boolean {
     return !!c && typeof c === "object" && typeof c.candidate === "string";
   }
   if (keys[0] === "media") {
-    // Camera on/off. A disabled track still sends black frames, so the receiver cannot tell on its own.
+    // Camera and microphone on/off. A disabled track still sends black frames (or silence), so the
+    // receiver cannot tell on its own. Either flag or both, nothing else.
     const m = d.media as Record<string, unknown> | null;
-    return !!m && typeof m === "object" && Object.keys(m).length === 1 && typeof m.cam === "boolean";
+    if (!m || typeof m !== "object") return false;
+    const flags = Object.keys(m);
+    return flags.length > 0 && flags.every((k) => (k === "cam" || k === "mic") && typeof m[k] === "boolean");
   }
   return false;
 }
@@ -161,11 +164,14 @@ export function createApp(options: AppOptions = {}) {
     socket.join(room.id);
   }
 
-  /** Leave whatever room this socket is attached to (no-op when unattached). */
-  function detach(socket: Socket) {
+  /**
+   * Leave whatever room this socket is attached to (no-op when unattached). `explicit` is the
+   * player pressing Quitter, as opposed to a dropped connection or a reload.
+   */
+  function detach(socket: Socket, explicit = false) {
     const ctx = currentRoom(socket);
     if (ctx) {
-      rooms.leave(ctx.room, ctx.playerId, socket.id);
+      rooms.leave(ctx.room, ctx.playerId, socket.id, explicit);
       socket.leave(ctx.room.id);
       socket.to(ctx.room.id).emit("rtc:peer-left", { playerId: ctx.playerId });
       if (rooms.get(ctx.room.id)) broadcast(ctx.room);
@@ -225,7 +231,10 @@ export function createApp(options: AppOptions = {}) {
         const roomId = typeof payload?.roomId === "string" ? payload.roomId : "";
         const playerId = typeof payload?.playerId === "string" ? payload.playerId : "";
         const token = typeof payload?.token === "string" ? payload.token : "";
-        detach(socket);
+        // Rejoining the seat this socket already holds is a refresh, not a move: detaching first
+        // would drop a lobby player and their token, and the rejoin would then be refused.
+        const held = currentRoom(socket);
+        if (!held || held.room.id !== roomId.toUpperCase() || held.playerId !== playerId) detach(socket);
         const result = rooms.rejoin(roomId, playerId, token, socket.id);
         if (!result.ok) return ack({ error: result.error });
         attach(socket, result.room, playerId);
@@ -239,7 +248,7 @@ export function createApp(options: AppOptions = {}) {
     socket.on("room:leave", (...args: unknown[]) => {
       // Clients emit ("room:leave", undefined, ack): the callback is the last function argument.
       const ack = args.find((a): a is Ack<{ ok: true }> => typeof a === "function");
-      detach(socket);
+      detach(socket, true);
       if (ack) ack({ ok: true });
     });
 
