@@ -23,9 +23,9 @@ Trois workspaces npm :
 
 ## État de jeu
 
-- Le serveur détient le `GameState` complet ; les clients ne reçoivent que `PublicGameState` (leur main, le nombre de cartes des autres, la taille du talon, le dessus de la défausse et sa profondeur, les combinaisons, le journal).
+- Le serveur détient le `GameState` complet ; les clients ne reçoivent que `PublicGameState` (leur main, le nombre de cartes des autres, la taille du talon, le dessus de la défausse et sa profondeur, les combinaisons, le journal). Les mains des autres ne sont envoyées qu'une fois la manche terminée (`revealedHands`, `null` pendant le jeu), pour afficher le décompte à découvert.
 - Chaque action est validée par le réducteur partagé côté serveur ; le client réutilise les mêmes règles pour le retour immédiat (zone de préparation, cibles de combinaison).
-- Phases d'un tour : `draw` → `play` → joueur suivant. La manche se termine à la dernière défausse ; `newRound` redistribue et fait tourner le premier joueur.
+- Phases d'un tour : `draw` → `play` → joueur suivant. La manche se termine à la dernière défausse ; `newRound` redistribue et fait tourner le premier joueur. Entre deux manches, `{ type: "ready", ready }` (joueurs autres que l'hôte, phase `finished` uniquement) enregistre qui est prêt dans `GameState.ready` (persisté ; un instantané sans ce champ se charge avec `[]`) ; l'hôte distribue toujours, et chaque donne le vide.
 - Chaque charge utile socket passe par `server/src/validate.ts` avant d'atteindre le réducteur ; une exception du réducteur est interceptée et renvoyée comme erreur.
 - Si le joueur courant n'a plus de socket pendant 45 s, le serveur joue un tour minimal pour lui (`autoPlayTurn` : pioche au talon, défausse). Le rôle d'hôte passe à un joueur connecté si l'hôte décroche.
 

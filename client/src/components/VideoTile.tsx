@@ -16,11 +16,13 @@ interface Props {
   videoOff?: boolean;
   /** The player's microphone is muted (for a peer: as it reported it). */
   micOff?: boolean;
+  /** This player just won the round: their face is the hero of the count. */
+  winner?: boolean;
   /** Another player's badge: neutral, since gold is reserved for what is yours. */
   badgeMuted?: boolean;
 }
 
-export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, active, offline, videoOff, micOff, badgeMuted }: Props) {
+export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, active, offline, videoOff, micOff, winner, badgeMuted }: Props) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -30,12 +32,19 @@ export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, a
   }, [stream]);
   const hasVideo = !videoOff && stream?.getVideoTracks().some((t) => t.enabled && t.readyState === "live");
   return (
-    <div className={`video-tile${small ? " small" : ""}${active ? " active" : ""}${offline ? " offline" : ""}`}>
+    <div className={`video-tile${small ? " small" : ""}${active ? " active" : ""}${offline ? " offline" : ""}${winner ? " winner" : ""}`}>
       <video ref={ref} autoPlay playsInline muted={muted} className={mirror ? "mirror" : ""} />
       {!hasVideo && (
         <div className="video-placeholder" aria-hidden>
           <span>{initials(name)}</span>
         </div>
+      )}
+      {winner && !offline && (
+        <p className="video-status video-winner">
+          <Icon name="crown" />
+          <span className="winner-long">{labels.winnerTile}</span>
+          <span className="winner-short" aria-hidden>{labels.winnerTileShort}</span>
+        </p>
       )}
       {/* Read with the name: "Bruno, absent, sa place est gardée". */}
       {offline && (

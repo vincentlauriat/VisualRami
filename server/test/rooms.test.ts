@@ -1,7 +1,8 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+import { applyAction } from "@visualrami/shared";
 import { RoomManager } from "../src/rooms.js";
 
 const dir = mkdtempSync(path.join(tmpdir(), "visualrami-"));
@@ -53,6 +54,29 @@ describe("persistence", () => {
     expect(again.sockets.size).toBe(0);
     expect(restored.rejoin(room.id, alice, token, "sock-a3").ok).toBe(true);
     expect(restored.join(room.id, "Bob", "sock-b3")).toMatchObject({ ok: true, playerId: bob, resumed: true });
+  });
+
+  it("loads a snapshot written before readiness existed, and readiness then works", () => {
+    const file = path.join(dir, "old-rooms.json");
+    const rooms = new RoomManager({ persistPath: file });
+    const { room, alice, bob } = startedRoom(rooms);
+    rooms.saveNow();
+    // Rewrite the file the way the previous version saved it: no `ready` field anywhere.
+    const data = JSON.parse(readFileSync(file, "utf8"));
+    for (const saved of data.rooms) {
+      delete saved.state.ready;
+      saved.state.phase = "finished";
+      saved.state.winnerId = alice;
+    }
+    writeFileSync(file, JSON.stringify(data));
+
+    const restored = new RoomManager({ persistPath: file }).get(room.id)!;
+    expect(restored.state.ready).toEqual([]);
+    // Straight through the reducer: acting through the manager would schedule a save that could
+    // land after the temporary directory is removed.
+    const guest = restored.state.hostId === alice ? bob : alice;
+    const result = applyAction(restored.state, guest, { type: "ready", ready: true });
+    expect(result.ok && result.state.ready).toEqual([guest]);
   });
 
   it("starts empty when the file is missing or corrupt", () => {

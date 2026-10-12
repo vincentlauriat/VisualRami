@@ -42,6 +42,11 @@ The round ends when a player discards their last card. Each other player adds th
 joker 20, ace 11, faces 10, others face value, **doubled** if they never laid down. The winner scores 0.
 Scores accumulate across rounds; the lowest total wins.
 
+At the end of the round every losing hand is turned face up for the whole table, with its points ("×2 : pas
+posé" when the player never laid down) and each player's running total; the winner shows "0 (gagnant)".
+The other players press **Prêt** when they are ready for the next round, and the host, who sees who is
+ready, deals it with **Nouvelle manche**. Readiness starts empty at every round.
+
 ## Leaving and coming back
 
 A started game stays open for 7 days of inactivity and survives a server restart. A player who closed the

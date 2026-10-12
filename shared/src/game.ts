@@ -36,6 +36,7 @@ export function createGame(
     winnerId: null,
     round: 0,
     lastRoundPoints: null,
+    ready: [],
     log: [],
   };
 }
@@ -153,6 +154,8 @@ export function applyAction(
       return start(state, playerId, rng);
     case "newRound":
       return newRound(state, playerId, rng);
+    case "ready":
+      return setReady(state, playerId, action.ready);
     case "draw":
       return draw(state, playerId, action.source, rng);
     case "layDown":
@@ -182,6 +185,15 @@ function newRound(state: GameState, playerId: string, rng: Rng): GameResult {
   return ok(deal(state, rng, nextDealer));
 }
 
+/** Between rounds, a player tells the host they are ready. The host still starts the round. */
+function setReady(state: GameState, playerId: string, ready: boolean): GameResult {
+  if (state.phase !== "finished") return fail("La manche n'est pas terminée");
+  if (!state.players.some((p) => p.id === playerId)) return fail("Joueur inconnu");
+  if (playerId === state.hostId) return fail("L'hôte lance la manche suivante");
+  const others = state.ready.filter((id) => id !== playerId);
+  return ok({ ...state, ready: ready ? [...others, playerId] : others });
+}
+
 function deal(state: GameState, rng: Rng, firstIndex: number): GameState {
   const deck = shuffle(buildDeck(), rng);
   const players = state.players.map((p) => ({ ...p, hand: [] as Card[], hasLaidDown: false }));
@@ -205,6 +217,7 @@ function deal(state: GameState, rng: Rng, firstIndex: number): GameState {
     winnerId: null,
     round: state.round + 1,
     lastRoundPoints: null,
+    ready: [],
   };
   return log(next, `Manche ${next.round} : ${players[next.currentIndex]!.name} commence`);
 }
@@ -392,7 +405,7 @@ function finishRound(state: GameState, winnerId: string): GameState {
   });
   const winner = state.players.find((p) => p.id === winnerId)!;
   return log(
-    { ...state, players, phase: "finished", winnerId, lastRoundPoints: points },
+    { ...state, players, phase: "finished", winnerId, lastRoundPoints: points, ready: [] },
     `${winner.name} remporte la manche !`,
   );
 }
@@ -422,6 +435,13 @@ export function toPublicState(state: GameState, viewerId: string): PublicGameSta
     winnerId: state.winnerId,
     round: state.round,
     lastRoundPoints: state.lastRoundPoints,
+    // Hands are shown to everyone only once the round is over: that is the moment the table
+    // turns its cards face up to count them.
+    revealedHands:
+      state.phase === "finished"
+        ? Object.fromEntries(state.players.filter((p) => p.id !== state.winnerId).map((p) => [p.id, p.hand]))
+        : null,
+    ready: state.ready,
     log: state.log,
   };
 }

@@ -23,9 +23,9 @@ Three npm workspaces:
 
 ## Game state
 
-- The server holds the full `GameState`; clients only receive `PublicGameState` (own hand, other players' card counts, stock count, top of the discard pile and its depth, melds, log).
+- The server holds the full `GameState`; clients only receive `PublicGameState` (own hand, other players' card counts, stock count, top of the discard pile and its depth, melds, log). Other players' hands are sent only once the round is over (`revealedHands`, `null` during play), so the count can be shown face up.
 - Every action is validated by the shared reducer on the server; the client reuses the same rules for instant feedback (staging area, meld targets).
-- Turn phases: `draw` → `play` → next player. A round ends on the last discard; `newRound` redeals and rotates the first player.
+- Turn phases: `draw` → `play` → next player. A round ends on the last discard; `newRound` redeals and rotates the first player. Between rounds, `{ type: "ready", ready }` (players other than the host, `finished` phase only) records who is ready in `GameState.ready` (persisted; a snapshot without it loads as `[]`); the host still deals, and every deal empties it.
 - Every socket payload goes through `server/src/validate.ts` before reaching the reducer; a reducer exception is caught and answered with an error.
 - If the current player has no socket for 45 s, the server plays a minimal turn for them (`autoPlayTurn`: draw from stock, discard). The host role moves to a connected player when the host drops.
 

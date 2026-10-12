@@ -30,6 +30,33 @@ export const labels = {
   sideToggle: (messages: number) => (messages > 0 ? `Journal et chat, ${messages} messages` : "Journal et chat"),
   dismissMessage: "Fermer le message",
 
+  // End of round: the count, face up on the felt.
+  youWinRound: "Vous remportez la manche",
+  winsRound: (name: string) => `${name} remporte la manche`,
+  winnerTile: "remporte la manche",
+  winnerTileShort: "gagne",
+  newRound: "Nouvelle manche",
+  ready: "Prêt",
+  readyTag: "prêt",
+  host: "hôte",
+  readyPrompt: "Dites à l'hôte que vous êtes prêt pour la suite.",
+  waitingHost: "En attente de l'hôte pour la manche suivante…",
+  readySummary: (ready: string[], waiting: string[], absent: string[]) =>
+    [
+      waiting.length === 0 ? "Tout le monde est prêt" : ready.length > 0 ? `Prêts : ${ready.join(", ")}` : null,
+      waiting.length > 0 ? `en attente : ${waiting.join(", ")}` : null,
+      absent.length > 0 ? `absent : ${absent.join(", ")}` : null,
+    ]
+      .filter(Boolean)
+      .join(" · ")
+      .replace(/^./, (c) => c.toUpperCase()),
+  youName: (name: string) => `${name} (vous)`,
+  handEmpty: "a tout posé",
+  revealedHand: (name: string) => `Cartes restantes ${deName(name)}`,
+  winnerPoints: "0 (gagnant)",
+  doubledPenalty: "×2 : pas posé",
+  total: (score: number) => `${score} pts au total`,
+
   // Presence: your own connection, and the other players'.
   connectionLost: "Connexion perdue — reconnexion…",
   hintOffline: "Hors ligne : la table reprend dès le retour de la connexion.",

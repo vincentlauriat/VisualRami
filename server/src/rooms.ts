@@ -270,7 +270,8 @@ export class RoomManager {
       const data = JSON.parse(raw) as { version: number; rooms: PersistedRoom[] };
       for (const saved of data.rooms) {
         // Nobody is attached after a restart; players come back by token or by code + name.
-        let state = saved.state;
+        // Snapshots written before readiness existed have no `ready` field.
+        let state: GameState = { ...saved.state, ready: Array.isArray(saved.state.ready) ? saved.state.ready : [] };
         for (const p of state.players) state = setConnected(state, p.id, false);
         this.rooms.set(saved.id, {
           id: saved.id,

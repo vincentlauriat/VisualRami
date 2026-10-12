@@ -321,9 +321,20 @@ Tactile and assertive: a raised control is a chip on its edge.
   stand up, unavailable ones do not.
 
 ### Cards / Containers
-- **Panel:** panel fill, 1px border, 12px radius, 18px padding. Home, lobby and result dialog.
+- **Panel:** panel fill, 1px border, 12px radius, 18px padding. Home, lobby and the round result.
 - **Staging area:** panel fill, border-strong, 10px radius, holding melds before a laydown.
-- **Round result:** a centred panel at most 360px wide over a 65% black scrim, as a modal dialog.
+- **Round result:** a panel laid on the felt in place of the piles, never a modal and never a scrim:
+  faces, log and chat stay lit and usable while the table talks the round over. A labelled region
+  whose heading takes focus when it appears ("Bruno remporte la manche", no emoji), with the action
+  on the same line: Nouvelle manche (gold) for the host, a Prêt toggle for the others (gold until
+  pressed, then a raised check "Prêt"), and a status line saying who is ready. One row per player,
+  winner first with a gold outline and "0 (gagnant)"; every other hand face up as whole small cards
+  (38×53, 32×45 on phones) in a row that scrolls sideways, its points, "×2 : pas posé" in danger
+  when doubled, and the running total. On phones it leads the felt and the rows put the cards on
+  their own line. The winner's video tile is the hero: gold frame and a gold pill along its top, a
+  drawn crown and "remporte la manche" (on a 92px phone seat "gagne" on one line, the full words
+  still read out). Between rounds the hand is only to look at and the action bar is gone, so Prêt /
+  Nouvelle manche is the only control asking for a press.
 
 ### Inputs / Fields
 - **Style:** field well, 1px border-strong, 8px radius, 9px 12px padding, gold caret.

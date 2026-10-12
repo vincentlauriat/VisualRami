@@ -12,6 +12,8 @@ export function validateAction(input: unknown): GameAction | null {
     case "start":
     case "newRound":
       return { type: a.type };
+    case "ready":
+      return typeof a.ready === "boolean" ? { type: "ready", ready: a.ready } : null;
     case "draw":
       return a.source === "stock" || a.source === "discard" ? { type: "draw", source: a.source } : null;
     case "discard":
