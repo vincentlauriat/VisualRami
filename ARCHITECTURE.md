@@ -35,10 +35,10 @@ Trois workspaces npm :
 |---|---|---|
 | C→S | `room:create` | `{ name, options }` → ack `{ roomId, playerId, token }` |
 | C→S | `room:join` | `{ roomId, name }` → même ack plus `resumed` (vrai quand un siège déconnecté d'une partie commencée a été repris) |
-| C→S | `room:rejoin` | `{ roomId, playerId, token }` |
-| C→S | `room:leave` | – |
+| C→S | `room:rejoin` | `{ roomId, playerId, token }` — idempotent pour la socket qui tient déjà ce siège (le client le renvoie à l'événement `online` du navigateur). Le client n'oublie son siège que sur une réponse `{ error }`, jamais sur un délai dépassé ou une socket coupée |
+| C→S | `room:leave` | – (le joueur a appuyé sur Quitter : une partie commencée garde le siège et journalise « X a quitté la table » ; une connexion perdue ne journalise rien) |
 | C→S | `game:action` | `GameAction` → ack `{ ok }` ou `{ error }` |
-| C→S | `rtc:signal` | `{ to, data }` — `data` vaut exactement `{ description }` ou `{ candidate }`, ≤ 16 Ko, ≤ 120 par 5 s |
+| C→S | `rtc:signal` | `{ to, data }` — `data` vaut exactement `{ description }`, `{ candidate }` ou `{ media: { cam?, mic? } }` (booléens, au moins un : caméra/micro allumés ou coupés, puisqu'une piste désactivée envoie encore des images noires ou du silence), ≤ 16 Ko, ≤ 120 par 5 s |
 | C→S | `chat:message` | `string` (≤ 300 caractères, ≤ 8 par 5 s) |
 | S→C | `room:state` | `PublicGameState` (par joueur) |
 | S→C | `rtc:signal` | `{ from, data }` |

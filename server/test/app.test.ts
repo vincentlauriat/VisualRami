@@ -122,6 +122,12 @@ describe("socket server", () => {
     a.emit("rtc:signal", { to: joined.playerId, data: { media: { cam: false } } });
     expect((await media).data).toEqual({ media: { cam: false } });
 
+    const mic = new Promise<{ from: string; data: unknown }>((resolve) => b.once("rtc:signal", resolve));
+    a.emit("rtc:signal", { to: joined.playerId, data: { media: { mic: false, volume: 3 } } }); // dropped: unknown flag
+    a.emit("rtc:signal", { to: joined.playerId, data: { media: {} } }); // dropped: no flag
+    a.emit("rtc:signal", { to: joined.playerId, data: { media: { cam: true, mic: false } } });
+    expect((await mic).data).toEqual({ media: { cam: true, mic: false } });
+
     // Rejoin after a reload with the same token
     const peerReset = new Promise<{ playerId: string }>((resolve) => a.once("rtc:peer-reset", resolve));
     b.disconnect();
@@ -184,6 +190,18 @@ describe("socket server", () => {
     stayer.disconnect();
   });
 
+  it("treats a rejoin of the seat the socket already holds as a refresh, in the lobby too", async () => {
+    const a = await client();
+    const created = await emit<{ roomId: string; playerId: string; token: string }>(a, "room:create", { name: "Iris" });
+    const again = await emit<{ roomId?: string; error?: string }>(a, "room:rejoin", created);
+    expect(again.error).toBeUndefined();
+    const refreshed = nextState(a);
+    const third = await emit<{ roomId?: string; error?: string }>(a, "room:rejoin", created);
+    expect(third.roomId).toBe(created.roomId);
+    expect((await refreshed).players.map((p) => p.name)).toEqual(["Iris"]);
+    a.disconnect();
+  });
+
   it("acknowledges room:leave even when emitted with an undefined payload", async () => {
     const s = await client();
     await emit(s, "room:create", { name: "Eve" });
@@ -193,6 +211,30 @@ describe("socket server", () => {
     ]);
     expect(res.ok).toBe(true);
     s.disconnect();
+  });
+
+  it("logs an explicit leave from a started game, but not a dropped connection", async () => {
+    const a = await client();
+    const b = await client();
+    const c = await client();
+    const created = await emit<{ roomId: string }>(a, "room:create", { name: "Alice" });
+    await emit(b, "room:join", { roomId: created.roomId, name: "Bob" });
+    await emit(c, "room:join", { roomId: created.roomId, name: "Carol" });
+    const started = stateWhere(a, (s) => s.phase === "draw");
+    await emit(a, "game:action", { type: "start" });
+    await started;
+
+    const afterDrop = stateWhere(a, (s) => s.players.some((p) => p.name === "Carol" && !p.connected));
+    c.disconnect();
+    expect((await afterDrop).log.some((line) => /Carol a quitté/.test(line))).toBe(false);
+
+    const afterLeave = stateWhere(a, (s) => s.players.some((p) => p.name === "Bob" && !p.connected));
+    await emit(b, "room:leave", undefined);
+    const state = await afterLeave;
+    expect(state.log.at(-1)).toBe("Bob a quitté la table");
+    expect(state.players.map((p) => p.name)).toEqual(["Alice", "Bob", "Carol"]);
+    a.disconnect();
+    b.disconnect();
   });
 
   it("lets a player come back into a started game with the code and their name", async () => {

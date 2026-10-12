@@ -30,6 +30,18 @@ export const labels = {
   sideToggle: (messages: number) => (messages > 0 ? `Journal et chat, ${messages} messages` : "Journal et chat"),
   dismissMessage: "Fermer le message",
 
+  // Presence: your own connection, and the other players'.
+  connectionLost: "Connexion perdue — reconnexion…",
+  hintOffline: "Hors ligne : la table reprend dès le retour de la connexion.",
+  peerAbsent: "absent",
+  peerSeatKept: "sa place est gardée",
+  micOff: (name: string) => `Micro coupé : ${name}`,
+  leave: "Quitter la table",
+  leaveAsk: "Quitter la table ?",
+  leaveConfirm: "Quitter",
+  leaveCancel: "Rester",
+  leaveHint: "Votre place reste réservée : revenez avec le code de la table",
+
   // Table guidance: what to do now, and why an action is not available yet.
   hintDraw: "Touchez le talon ou la défausse.",
   hintPlay: "Préparez une combinaison, ou défaussez une carte.",

@@ -195,7 +195,7 @@ A warm-dark palette built from the materials of a card table: green felt, brass,
 - **Texte** (text, muted): primary and secondary text on panels.
 - **Texte sur feutre** (felt-text, felt-text-strong): captions and the turn banner on the felt,
   calibrated to hold ≥5:1 against its lit centre.
-- **Alerte** (danger, danger-surface): errors and the "off" state of mic and camera buttons.
+- **Alerte** (danger, danger-surface): errors, the "off" state of mic and camera buttons, and the connection-lost strip.
 - **Présence** (presence): the "connected" dot in the lobby. One use.
 
 ### Named Rules
@@ -334,7 +334,11 @@ Tactile and assertive: a raised control is a chip on its edge.
 A single top bar: 🃏 mark and title on the left, table code tag, mic/camera controls and leave
 button on the right. On phones the brand word hides, buttons reach 44px, and a 💬 toggle (with
 an unread badge) opens the log/chat sheet. The log/chat panel has two tabs; the active tab takes
-panel-2 and gold text.
+panel-2 and gold text. Leaving takes two presses: the first replaces the ghost Quitter with
+"Quitter la table ?", a ghost Quitter with a danger outline and a ghost Rester (never gold:
+leaving is not the lamp's action). The question takes focus, Escape or Rester puts it away, and
+it disarms by itself 5 s after focus leaves it. On phones it takes the whole right of the bar and
+the buttons carry the question.
 
 ### Playing Card (signature)
 The object the whole system serves. 58 × 82px on desktop, 48 × 68px on phones, 44 × 62px when
@@ -347,7 +351,12 @@ because gold already means "selected". In melds, cards overlap by 14–16px.
 A 4:3 dark well with the live video, mirrored for yourself, the player's name in a translucent
 one-line pill at the bottom left (a long name ends in an ellipsis; your own "(vous)" never does) and an optional gold "posé" badge. When the camera is off, or the peer
 reports it off, the player's initials replace the video. The tile of the player whose turn it
-is takes a gold border and glow; an offline player's tile drops to 50% opacity.
+is takes a gold border and glow. An absent player's face and name drop to 50% opacity under a
+full-strength pill along the top, "absent · sa place est gardée" (only "absent" shows on a 92px
+phone seat; the rest is still read out). While your own connection is down nobody's presence is
+known, so no tile says absent. A muted microphone shows as the drawn mic-off glyph, in the off
+state's pale red, in a 24px dark pip at the top right, so it never takes width from the name; it
+carries its own label ("Micro coupé : Bruno") and is hidden on an absent tile.
 
 ### Meld
 Cards fanned like a hand held closed, on an 18% black wash: every card but the last shows only its
@@ -377,7 +386,16 @@ and a pure-run marker.
 
 ### Turn Banner
 The current turn in felt-text-strong ("À vous" in felt-accent), with one line of guidance below
-in felt-text that names the next possible move.
+in felt-text that names the next possible move. Offline it loses the accent ("À vous de piocher"
+in felt-text-strong) and the guidance says the table resumes when the connection is back.
+
+### Connection Lost
+When your own link drops, an Alerte strip (danger-surface, 1px danger border, 8px radius, the
+drawn offline glyph) reads "Connexion perdue — reconnexion…" between the top bar and the table,
+sticky on phones. It lives in a polite status region that is always mounted and takes no room
+while empty. Until the seat is back the piles turn back into pictures and every action that
+would reach the server (draw, prepare, lay, discard, chat, new round, start) lies flush and
+disabled; sorting the hand still works. In the lobby the same message is the bottom pill.
 
 ## Do's and Don'ts
 

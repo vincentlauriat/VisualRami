@@ -5,7 +5,10 @@ import { Icon } from "./Icon";
 interface Props {
   messages: ChatMessage[];
   log: string[];
-  onSend: (text: string) => void;
+  /** Returns false when the message could not be sent (offline): the text then stays in the field. */
+  onSend: (text: string) => boolean;
+  /** No connection: sending waits, typing does not. */
+  offline?: boolean;
   /** Closes the panel when it is shown as a bottom sheet (phones). */
   onClose?: () => void;
 }
@@ -13,7 +16,7 @@ interface Props {
 /** One DOM node per game event: a seven-day table would otherwise grow the log without bound. */
 const LOG_LINES = 200;
 
-export function Chat({ messages, log, onSend, onClose }: Props) {
+export function Chat({ messages, log, onSend, offline, onClose }: Props) {
   const [text, setText] = useState("");
   const [tab, setTab] = useState<"log" | "chat">("log");
   const body = useRef<HTMLDivElement>(null);
@@ -28,8 +31,7 @@ export function Chat({ messages, log, onSend, onClose }: Props) {
     e.preventDefault();
     const t = text.trim();
     if (!t) return;
-    onSend(t);
-    setText("");
+    if (onSend(t)) setText("");
   }
 
   return (
@@ -62,7 +64,7 @@ export function Chat({ messages, log, onSend, onClose }: Props) {
       </div>
       <form className="chat-form" onSubmit={submit}>
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Message…" aria-label="Message" maxLength={300} />
-        <button type="submit">Envoyer</button>
+        <button type="submit" disabled={offline}>Envoyer</button>
       </form>
     </aside>
   );

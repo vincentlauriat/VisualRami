@@ -25,9 +25,11 @@ interface Props {
   rtc: WebRTCState;
   chat: ChatMessage[];
   error: string | null;
+  /** Live link to the server. False during a drop: the state shown is stale and nothing is sent. */
+  connected: boolean;
   onAct: (action: GameAction) => Promise<boolean>;
   onLeave: () => void;
-  onSendChat: (text: string) => void;
+  onSendChat: (text: string) => boolean;
   onClearError: () => void;
 }
 
@@ -38,7 +40,7 @@ interface Staged {
   kind: "run" | "set";
 }
 
-export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onClearError }: Props) {
+export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSendChat, onClearError }: Props) {
   const me = state.players.find((p) => p.id === state.you.id) ?? {
     id: state.you.id,
     name: "?",
@@ -60,6 +62,13 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
   const handRef = useRef<HTMLDivElement>(null);
   // Discarding while melds are staged throws the staging away, so it takes a second press.
   const [discardArmed, setDiscardArmed] = useState(false);
+  // Leaving takes two presses too: a slip of the thumb would otherwise drop you from the table.
+  const [leaveArmed, setLeaveArmed] = useState(false);
+  const leaveButton = useRef<HTMLButtonElement>(null);
+  const leaveGroup = useRef<HTMLDivElement>(null);
+  const leaveYes = useRef<HTMLButtonElement>(null);
+  // The timer waits while focus is in the question, so a screen reader is not cut off mid-way.
+  const [leaveFocused, setLeaveFocused] = useState(false);
   const finished = state.phase === "finished";
 
   // Keep local hand order stable while syncing with the server's hand content.
@@ -100,6 +109,23 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
   useEffect(() => {
     if (finished) resultFocus.current?.focus();
   }, [finished]);
+
+  function disarmLeave() {
+    const hadFocus = !!leaveGroup.current?.contains(document.activeElement);
+    setLeaveArmed(false);
+    setLeaveFocused(false);
+    if (hadFocus) requestAnimationFrame(() => leaveButton.current?.focus());
+  }
+
+  // Armed, the confirmation takes focus; once focus leaves it, it gives up by itself after a few seconds.
+  useEffect(() => {
+    if (leaveArmed) leaveYes.current?.focus();
+  }, [leaveArmed]);
+  useEffect(() => {
+    if (!leaveArmed || leaveFocused) return;
+    const t = setTimeout(disarmLeave, 5000);
+    return () => clearTimeout(t);
+  }, [leaveArmed, leaveFocused]);
 
   function closeSide() {
     setSideOpen(false);
@@ -167,8 +193,9 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
     return map;
   }, [state.melds]);
   const topDiscard = state.discardTop;
-  const canDraw = isMyTurn && state.phase === "draw";
-  const canPlay = isMyTurn && state.phase === "play";
+  // Offline, the piles and actions go still: whatever is on screen may already be out of date.
+  const canDraw = connected && isMyTurn && state.phase === "draw";
+  const canPlay = connected && isMyTurn && state.phase === "play";
   // Only melds that will really accept the selection are offered as targets.
   const fits = useMemo(() => {
     const map = new Map<string, MeldFit>();
@@ -187,11 +214,15 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
   const keepDiscard =
     selectedCards.length === 1 && hand.length > 1 && selectedCards[0]!.id === state.drewFromDiscardCardId;
   const canDiscard = canPlay && selectedCards.length === 1 && !keepDiscard;
-  const canLay = staged.length > 0 && (firstLaydown ? !!firstCheck?.ok : true);
+  const canLay = connected && staged.length > 0 && (firstLaydown ? !!firstCheck?.ok : true);
   const minPoints = state.options.firstMeldMinPoints;
-  const hint = !isMyTurn || finished
+  const hint = finished
     ? null
-    : canDraw
+    : !connected
+      ? labels.hintOffline
+      : !isMyTurn
+        ? null
+        : canDraw
       ? labels.hintDraw
       : keepDiscard
         ? labels.hintKeepDiscard
@@ -345,18 +376,52 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
           >
             <Icon name="chat" />{chat.length > 0 && <span className="tag" aria-hidden>{chat.length}</span>}
           </button>
-          <button
-            type="button"
-            className="ghost"
-            onClick={onLeave}
-            aria-label="Quitter la table"
-            title="Votre place reste réservée : revenez avec le code de la table"
-          >
-            <Icon name="leave" />
-            <span className="btn-label">Quitter</span>
-          </button>
+          {leaveArmed ? (
+            <div
+              ref={leaveGroup}
+              className="leave-confirm"
+              role="group"
+              aria-label={labels.leaveAsk}
+              onKeyDown={(e) => e.key === "Escape" && disarmLeave()}
+              onFocus={() => setLeaveFocused(true)}
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setLeaveFocused(false);
+              }}
+            >
+              <span className="leave-ask" aria-hidden>{labels.leaveAsk}</span>
+              <button ref={leaveYes} type="button" className="ghost leave-yes" onClick={onLeave} title={labels.leaveHint}>
+                <Icon name="leave" />
+                {labels.leaveConfirm}
+              </button>
+              <button type="button" className="ghost" onClick={disarmLeave}>
+                {labels.leaveCancel}
+              </button>
+            </div>
+          ) : (
+            <button
+              ref={leaveButton}
+              type="button"
+              className="ghost"
+              onClick={() => setLeaveArmed(true)}
+              aria-label={labels.leave}
+              title={labels.leaveHint}
+            >
+              <Icon name="leave" />
+              <span className="btn-label">Quitter</span>
+            </button>
+          )}
         </div>
       </header>
+
+      {/* Always mounted, so the drop is announced; empty, it takes no room. */}
+      <div className="net-status" role="status">
+        {!connected && (
+          <p className="net-lost">
+            <Icon name="offline" />
+            {labels.connectionLost}
+          </p>
+        )}
+      </div>
 
       <div className="game-body" inert={finished}>
         <main
@@ -366,7 +431,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
           <section className="opponents" ref={strip} style={{ "--seats": state.players.length } as CSSProperties}>
             {/* On a phone your own seat joins the strip, so the hand gets the row it used to take. */}
             <div className={`opponent self-seat${isMyTurn ? " active" : ""}`}>
-              <VideoTile stream={rtc.localStream} name={me.name} suffix="(vous)" muted mirror active={isMyTurn} badge={me.hasLaidDown ? "posé" : undefined} />
+              <VideoTile stream={rtc.localStream} name={me.name} suffix="(vous)" muted mirror micOff={!rtc.micOn} active={isMyTurn} badge={me.hasLaidDown ? "posé" : undefined} />
               <div className="opponent-info">
                 <span>{me.score} pts</span>
               </div>
@@ -382,7 +447,10 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                   videoOff={rtc.remoteCamOff[p.id]}
                   name={p.name}
                   active={state.currentPlayerId === p.id}
-                  offline={!p.connected}
+                  // While we are offline nobody's presence is known: a server restart would
+                  // otherwise show every seat as left.
+                  offline={connected && !p.connected}
+                  micOff={rtc.remoteMicOff[p.id]}
                   badge={p.hasLaidDown ? "posé" : undefined}
                   badgeMuted
                 />
@@ -423,6 +491,8 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                 <div className="turn-banner" aria-live="polite">
                   {state.phase === "finished" ? (
                     <strong>Manche terminée</strong>
+                  ) : isMyTurn && !connected ? (
+                    <strong>{state.phase === "draw" ? "À vous de piocher" : "À vous de jouer"}</strong>
                   ) : isMyTurn ? (
                     <strong className="mine">{state.phase === "draw" ? "À vous : piochez une carte" : "À vous : posez ou défaussez"}</strong>
                   ) : (
@@ -483,7 +553,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
 
           <section className="me">
             <div className="me-side">
-              <VideoTile stream={rtc.localStream} name={me.name} muted mirror small active={isMyTurn} badge={me.hasLaidDown ? "posé" : undefined} />
+              <VideoTile stream={rtc.localStream} name={me.name} muted mirror small micOff={!rtc.micOn} active={isMyTurn} badge={me.hasLaidDown ? "posé" : undefined} />
               <div className="me-score">{me.score} pts</div>
             </div>
 
@@ -552,7 +622,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
           </section>
         </main>
 
-        <Chat messages={chat} log={state.log} onSend={onSendChat} onClose={closeSide} />
+        <Chat messages={chat} log={state.log} offline={!connected} onSend={onSendChat} onClose={closeSide} />
       </div>
 
       {finished && (
@@ -582,6 +652,7 @@ export function Game({ state, rtc, chat, error, onAct, onLeave, onSendChat, onCl
                 type="button"
                 className="primary"
                 ref={(el) => { resultFocus.current = el; }}
+                disabled={!connected}
                 onClick={() => onAct({ type: "newRound" })}
               >
                 Nouvelle manche

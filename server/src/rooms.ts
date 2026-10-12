@@ -159,10 +159,11 @@ export class RoomManager {
     return { ok: true, room };
   }
 
-  leave(room: Room, playerId: string, socketId: string): boolean {
+  /** `explicit`: the player chose to leave (Quitter). Only then does a started game log it. */
+  leave(room: Room, playerId: string, socketId: string, explicit = false): boolean {
     if (room.sockets.get(playerId) !== socketId) return false;
     room.sockets.delete(playerId);
-    room.state = removePlayer(room.state, playerId);
+    room.state = removePlayer(room.state, playerId, explicit);
     if (room.state.phase === "lobby") room.tokens.delete(playerId);
     room.lastActivity = Date.now();
     if (room.state.players.length === 0 || (room.sockets.size === 0 && room.state.phase === "lobby")) {

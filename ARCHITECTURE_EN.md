@@ -35,10 +35,10 @@ Three npm workspaces:
 |---|---|---|
 | C→S | `room:create` | `{ name, options }` → ack `{ roomId, playerId, token }` |
 | C→S | `room:join` | `{ roomId, name }` → same ack plus `resumed` (true when a disconnected seat of a started game was taken back) |
-| C→S | `room:rejoin` | `{ roomId, playerId, token }` |
-| C→S | `room:leave` | – |
+| C→S | `room:rejoin` | `{ roomId, playerId, token }` — idempotent for the socket already holding that seat (the client re-sends it on the browser's `online` event). The client clears its seat only on an `{ error }` reply, never on a timeout or a dropped socket |
+| C→S | `room:leave` | – (the player pressed Quitter: a started game keeps the seat and logs "X a quitté la table"; a dropped connection logs nothing) |
 | C→S | `game:action` | `GameAction` → ack `{ ok }` or `{ error }` |
-| C→S | `rtc:signal` | `{ to, data }` — `data` is exactly `{ description }` or `{ candidate }`, ≤ 16 KB, ≤ 120 per 5 s |
+| C→S | `rtc:signal` | `{ to, data }` — `data` is exactly `{ description }`, `{ candidate }` or `{ media: { cam?, mic? } }` (booleans, at least one: camera/microphone on or off, since a disabled track still sends black frames or silence), ≤ 16 KB, ≤ 120 per 5 s |
 | C→S | `chat:message` | `string` (≤ 300 chars, ≤ 8 per 5 s) |
 | S→C | `room:state` | `PublicGameState` (per player) |
 | S→C | `rtc:signal` | `{ from, data }` |

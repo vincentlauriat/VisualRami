@@ -51,9 +51,15 @@ export function addPlayer(state: GameState, player: { id: string; name: string }
   return ok({ ...state, players: [...state.players, makePlayer(player.id, player.name)] });
 }
 
-export function removePlayer(state: GameState, playerId: string): GameState {
+/**
+ * A player leaves. In a started game the seat is kept (they can come back); `announce` logs the
+ * departure, for an explicit leave only: a dropped connection or a reload is not news.
+ */
+export function removePlayer(state: GameState, playerId: string, announce = false): GameState {
   if (state.phase !== "lobby") {
-    return setConnected(state, playerId, false);
+    const player = state.players.find((p) => p.id === playerId);
+    const next = setConnected(state, playerId, false);
+    return announce && player ? log(next, `${player.name} a quitté la table`) : next;
   }
   const players = state.players.filter((p) => p.id !== playerId);
   const hostId = state.hostId === playerId && players[0] ? players[0].id : state.hostId;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { seededRng } from "../src/cards.js";
-import { addPlayer, applyAction, autoPlayTurn, createGame, currentPlayer, setConnected, toPublicState } from "../src/game.js";
+import { addPlayer, applyAction, autoPlayTurn, createGame, currentPlayer, removePlayer, setConnected, toPublicState } from "../src/game.js";
 import type { Card, GameState, Rank, Suit } from "../src/types.js";
 
 const rng = seededRng(42);
@@ -223,6 +223,20 @@ describe("absent players", () => {
     const state = setup();
     const next = setConnected(state, "a", false);
     expect(next.hostId).toBe("b");
+  });
+});
+
+describe("leaving a started game", () => {
+  it("keeps the seat, and logs the departure only when the player chose to leave", () => {
+    const state = setup();
+    const dropped = removePlayer(state, "b");
+    expect(dropped.players.find((p) => p.id === "b")!.connected).toBe(false);
+    expect(dropped.log).toEqual(state.log);
+
+    const left = removePlayer(state, "b", true);
+    expect(left.players).toHaveLength(2);
+    expect(left.players.find((p) => p.id === "b")!.connected).toBe(false);
+    expect(left.log.at(-1)).toBe("Bob a quitté la table");
   });
 });
 

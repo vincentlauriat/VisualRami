@@ -7,11 +7,13 @@ import { MediaControls } from "./MediaControls";
 interface Props {
   state: PublicGameState;
   rtc: WebRTCState;
+  /** Live link to the server: starting needs it. */
+  connected: boolean;
   onStart: () => void;
   onLeave: () => void;
 }
 
-export function Lobby({ state, rtc, onStart, onLeave }: Props) {
+export function Lobby({ state, rtc, connected, onStart, onLeave }: Props) {
   const [copied, setCopied] = useState(false);
   const isHost = state.hostId === state.you.id;
   const me = state.players.find((p) => p.id === state.you.id);
@@ -56,11 +58,11 @@ export function Lobby({ state, rtc, onStart, onLeave }: Props) {
       </section>
 
       <section className="video-grid">
-        <VideoTile stream={rtc.localStream} name={me?.name ?? "Vous"} suffix="(vous)" muted mirror />
+        <VideoTile stream={rtc.localStream} name={me?.name ?? "Vous"} suffix="(vous)" muted mirror micOff={!rtc.micOn} />
         {state.players
           .filter((p) => p.id !== state.you.id)
           .map((p) => (
-            <VideoTile key={p.id} stream={rtc.remoteStreams[p.id] ?? null} videoOff={rtc.remoteCamOff[p.id]} name={p.name} offline={!p.connected} />
+            <VideoTile key={p.id} stream={rtc.remoteStreams[p.id] ?? null} videoOff={rtc.remoteCamOff[p.id]} micOff={rtc.remoteMicOff[p.id]} name={p.name} offline={!p.connected} />
           ))}
       </section>
 
@@ -79,7 +81,7 @@ export function Lobby({ state, rtc, onStart, onLeave }: Props) {
           ))}
         </ul>
         {isHost ? (
-          <button type="button" className="primary" disabled={state.players.length < 2} onClick={onStart}>
+          <button type="button" className="primary" disabled={state.players.length < 2 || !connected} onClick={onStart}>
             {state.players.length < 2 ? "En attente d'un second joueur…" : "Lancer la partie"}
           </button>
         ) : (

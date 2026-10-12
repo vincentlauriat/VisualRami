@@ -6,12 +6,18 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 
 ### Added
 - Device-aware layout beyond the phone: a tablet-portrait tier (real card and opponent sizes instead of phone sizing), a landscape tier that moves opponents to a left rail and pins the game to the viewport so the hand never falls below the fold, and touch-sized controls on any coarse pointer regardless of viewport width.
+- Presence at the table: losing your own connection shows a "Connexion perdue — reconnexion…" strip (a polite live region) and stills the piles, play buttons, chat and "Nouvelle manche" until the seat is back; nothing tapped offline is sent later. An absent player's tile reads "absent · sa place est gardée", a muted microphone shows a drawn glyph on that player's tile for everyone (sent over the same `media` signal as the camera), and pressing Quitter logs "X a quitté la table".
+- Quitter asks first: one press arms "Quitter la table ?" with Quitter / Rester, which disarms by itself after 5 s or on Escape.
 - Product record (`PRODUCT.md`) and a UI technical audit (`docs/AUDIT_UI.md`).
 - Design system record (`DESIGN.md`, with the `.impeccable/design.json` sidecar): tokens, layout tiers, elevation and component rules extracted from the shipped client.
 - Public repository under the MIT license; landing page on lauriat.fr, listed on vincentlauriat.github.io and the GitHub profile.
 - Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
 
 ### Fixed
+- A reconnection whose `room:rejoin` got no answer (the socket dropped again mid-request, or the 8 s timeout) threw the player back to the home page and forgot the remembered seat, as if the server had refused it. Only a real refusal ("Session invalide", "Salle introuvable") clears the seat now; no answer keeps it and asks again. Resuming from the home page keeps the seat the same way, and a `room:rejoin` from the socket that already holds the seat is now a refresh (it used to drop a lobby player).
+- The browser's `offline` event now shows the connection loss at once, instead of after the ~45 s a half-open socket takes to notice.
+- A tap made while the connection was down was buffered by Socket.IO and replayed on reconnect: an action when the link came back within 8 s (it then landed late, on a table the player had stopped watching), a chat message whenever it came back. Actions, chat and leave are now sent only while the seat is attached.
+- Phone top bar wrapped to two rows when the table code was wide (e.g. "MUWVR"): the title now clips instead.
 - Laptop with five opponents: the seat row wrapped to two lines and crushed the felt to 44px at 1280×720; seats now stay on one row sized by player count and the felt keeps at least 200px.
 - Phone with 15 cards: the staging tray slid out of the felt. The tray now leads the felt, the piles shrink once you have drawn, and a 15-card hand fans into two rows of eight.
 - Discarding while melds were staged silently threw the staging away with Défausser lit gold; it now stays neutral and asks for a second press ("Défausser quand même").
