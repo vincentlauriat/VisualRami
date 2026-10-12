@@ -79,6 +79,41 @@ describe("persistence", () => {
     expect(result.ok && result.state.ready).toEqual([guest]);
   });
 
+  it("loads a snapshot written before the reshuffle count, keeping a first-laydown threshold above today's cap", () => {
+    const file = path.join(dir, "no-reshuffles.json");
+    const rooms = new RoomManager({ persistPath: file });
+    const { room } = startedRoom(rooms);
+    rooms.saveNow();
+    const data = JSON.parse(readFileSync(file, "utf8"));
+    for (const saved of data.rooms) {
+      delete saved.state.reshuffles;
+      saved.state.options.firstMeldMinPoints = 150;
+    }
+    writeFileSync(file, JSON.stringify(data));
+
+    const restored = new RoomManager({ persistPath: file }).get(room.id)!.state;
+    expect(restored.reshuffles).toBe(0);
+    expect(restored.options.firstMeldMinPoints).toBe(150);
+    // The count starts from zero rather than NaN: the next reshuffle makes it 1.
+    const empty = { ...restored, discard: [...restored.discard, ...restored.stock], stock: [] };
+    const player = empty.players[empty.currentIndex]!.id;
+    const drawn = applyAction(empty, player, { type: "draw", source: "stock" });
+    expect(drawn.ok && drawn.state.reshuffles).toBe(1);
+  });
+
+  it("keeps a saved reshuffle count only when it is a whole number, zero or more", () => {
+    const file = path.join(dir, "bad-reshuffles.json");
+    const rooms = new RoomManager({ persistPath: file });
+    const tables = [startedRoom(rooms), startedRoom(rooms), startedRoom(rooms), startedRoom(rooms), startedRoom(rooms)];
+    rooms.saveNow();
+    const values: unknown[] = [2, -1, 2.5, "3", null];
+    const data = JSON.parse(readFileSync(file, "utf8"));
+    for (const saved of data.rooms) saved.state.reshuffles = values[tables.findIndex((t) => t.room.id === saved.id)];
+    writeFileSync(file, JSON.stringify(data));
+    const restored = new RoomManager({ persistPath: file });
+    expect(tables.map((t) => restored.get(t.room.id)!.state.reshuffles)).toEqual([2, 0, 0, 0, 0]);
+  });
+
   it("starts empty when the file is missing or corrupt", () => {
     expect(new RoomManager({ persistPath: path.join(dir, "missing.json") }).size).toBe(0);
   });

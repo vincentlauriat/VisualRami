@@ -8,12 +8,18 @@ import { applyAction, toPublicState } from "../src/game.js";
 import { analyzeMeld, arrangeMeld, checkFirstLaydown } from "../src/rules.js";
 import { DEFAULT_OPTIONS, type Card, type GameState, type Meld } from "../src/types.js";
 import { assertConserved, botTable, playRound } from "./botSim.js";
+import "./fcSeed.js";
 
 const DECK = buildDeck();
 const byId = (id: string) => DECK.find((c) => c.id === id)!;
 /** A dense pool, so random hands actually hold melds: three suits, ranks around the ace, jokers. */
 const POOL = DECK.filter((c) => c.joker || ([1, 2, 3, 11, 12, 13].includes(c.rank!) && c.suit !== "diamonds"));
-const handOf = (max: number) => fc.shuffledSubarray(POOL, { minLength: 1, maxLength: max });
+/** Five consecutive ranks in all four suits, both decks and the jokers; the ace joins a window that reaches the king. */
+const windowPool = (low: number) =>
+  DECK.filter((c) => c.joker || (c.rank! >= low && c.rank! <= low + 4) || (c.rank === 1 && low + 4 >= 13));
+/** Where random hands come from: the dense pool, a random window of ranks, or the whole deck. */
+const pools = fc.oneof(fc.constant(POOL), fc.integer({ min: 1, max: 9 }).map(windowPool), fc.constant(DECK));
+const handOf = (max: number) => pools.chain((pool) => fc.shuffledSubarray(pool, { minLength: 1, maxLength: max }));
 const multiset = (cards: Card[]) => cards.map((c) => (c.joker ? "joker" : `${c.suit}-${c.rank}`)).sort().join(",");
 
 /** A two-player state at p1's draw, with the given hands and table; the rest is the stock. */
@@ -33,6 +39,7 @@ function tableState(hand: Card[], other: Card[], melds: Meld[], hasLaidDown: boo
     currentIndex: 0,
     phase: "draw",
     drewFromDiscardCardId: null,
+    reshuffles: 0,
     winnerId: null,
     round: 1,
     lastRoundPoints: null,
@@ -46,7 +53,8 @@ function botTurn(start: GameState, seed = 1): GameState {
   const rng = seededRng(seed);
   let state = start;
   for (let call = 0; call < 2 && state.currentIndex === 0 && state.phase !== "finished"; call++) {
-    for (const action of planTurn(toPublicState(state, "p1"))) {
+    // No time budget: a property failure must replay from its seed, whatever the machine's load.
+    for (const action of planTurn(toPublicState(state, "p1"), undefined, { budgetMs: Infinity })) {
       const r = applyAction(state, "p1", action, rng);
       if (!r.ok) throw new Error(`${JSON.stringify(action)}: ${r.error}`);
       state = r.state;
@@ -92,19 +100,17 @@ describe("fairness", () => {
 });
 
 describe("turn planning", () => {
-  it("takes the discard pile's only card when the stock is empty", () => {
+  it("plays the draw that ends a round whose stock ran out once too often", () => {
     const hand = ["hearts-2-0", "clubs-7-0", "spades-9-0"].map(byId);
-    const other = ["hearts-5-0"].map(byId);
-    let state = tableState(hand, other, [], false, [byId("diamonds-13-0")]);
-    // Move the whole stock into the other hand: the stock is empty and the discard pile holds
-    // one card, so the engine has nothing to reshuffle.
-    state = { ...state, players: state.players.map((p) => (p.id === "p2" ? { ...p, hand: [...p.hand, ...state.stock] } : p)), stock: [] };
+    const start = tableState(hand, [], [], false, [byId("diamonds-13-0")]);
+    // The stock goes back into the discard pile, already reshuffled three times.
+    const state: GameState = { ...start, stock: [], discard: [...start.stock, ...start.discard], reshuffles: 3 };
     assertConserved(state);
-    expect(applyAction(state, "p1", { type: "draw", source: "stock" }).ok).toBe(false);
-    expect(planTurn(toPublicState(state, "p1"))).toEqual([{ type: "draw", source: "discard" }]);
+    expect(planTurn(toPublicState(state, "p1"))).toEqual([{ type: "draw", source: "stock" }]);
     const after = botTurn(state);
-    expect(after.currentIndex).toBe(1);
-    expect(after.discard.map((c) => c.id)).not.toContain("diamonds-13-0");
+    assertConserved(after);
+    expect(after).toMatchObject({ phase: "finished", winnerId: null });
+    expect(planTurn(toPublicState(after, "p1"))).toEqual([]);
   });
 
   it("takes the discard only when it goes on the table this turn", () => {
@@ -118,6 +124,31 @@ describe("turn planning", () => {
     // Not laid down: a card that only makes a meld too small to open stays in the pile.
     const small = tableState(["hearts-2-0", "hearts-3-0", "clubs-9-0"].map(byId), [], [], false, [byId("hearts-4-0")]);
     expect(planTurn(toPublicState(small, "p1"))).toEqual([{ type: "draw", source: "stock" }]);
+  });
+
+  it("draws from the stock when the draw decision ran out of time, rather than trust a partial plan", () => {
+    // Same situation as above (the 4♠ extends the table's run), with a hand of its own so no
+    // earlier plan is cached for it.
+    const opened = ["hearts-11-1", "hearts-12-1", "clubs-4-1", "spades-8-1"].map(byId);
+    const run: Meld = { id: "r2", kind: "run", cards: ["spades-5-1", "spades-6-1", "spades-7-1"].map(byId), ownerId: "p2" };
+    const state = tableState(opened, [], [run], true, [byId("spades-4-1")]);
+    const view = toPublicState(state, "p1");
+    const stats = { budgetHits: 0 };
+    expect(planTurn(view, undefined, { budgetMs: 0, stats })).toEqual([{ type: "draw", source: "stock" }]);
+    expect(stats.budgetHits).toBe(1);
+    expect(planTurn(view, undefined, { budgetMs: Infinity })).toEqual([{ type: "draw", source: "discard" }]);
+  });
+
+  it("hands out its own copy of a cached plan", () => {
+    const hand = ["hearts-10-0", "hearts-11-0", "hearts-12-0", "spades-9-0", "clubs-9-0", "diamonds-9-0", "clubs-2-0", "diamonds-5-0"].map(byId);
+    const state: GameState = { ...tableState(hand, [], [], false, [byId("diamonds-2-0")]), phase: "play" };
+    const view = toPublicState(state, "p1");
+    const first = planTurn(view, undefined, { budgetMs: Infinity });
+    const expected = structuredClone(first);
+    const lay = first.find((a) => a.type === "layDown") as { melds: string[][] };
+    lay.melds[0]!.push("tampered");
+    first.length = 0;
+    expect(planTurn(view, undefined, { budgetMs: Infinity })).toEqual(expected);
   });
 
   it("opens, takes a joker back with its last real card and goes out on the joker", () => {
@@ -187,7 +218,7 @@ describe("properties", () => {
   it("the bot's turn is accepted by the reducer, whatever the hand and the table", () => {
     fc.assert(
       fc.property(
-        fc.shuffledSubarray(POOL, { minLength: 20, maxLength: 34 }),
+        pools.chain((pool) => fc.shuffledSubarray(pool, { minLength: 20, maxLength: 34 })),
         fc.integer({ min: 1, max: 14 }),
         fc.boolean(),
         fc.integer(),
@@ -225,7 +256,7 @@ describe("properties", () => {
     fc.assert(
       fc.property(fc.integer(), fc.integer({ min: 2, max: 6 }), (seed, players) => {
         const { state, act } = botTable(seed, players);
-        playRound(act(state, "p1", { type: "start" }), act, 600);
+        playRound(act(state, "p1", { type: "start" }), act, 1000, { budgetMs: Infinity });
       }),
       { numRuns: 40 },
     );

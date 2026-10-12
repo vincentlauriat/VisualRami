@@ -62,9 +62,10 @@ export function CardView({ card, selected, dimmed, order, onClick, spokenName, s
   );
 }
 
-export function CardBack({ count, onClick }: { count: number; onClick?: () => void }) {
-  const name = labels.stock(count, !!onClick);
-  const classes = `card back${onClick ? " clickable" : ""}`;
+/** The stock. `endsRound`: empty with no reshuffle left, so drawing there ends the round. */
+export function CardBack({ count, onClick, endsRound = false }: { count: number; onClick?: () => void; endsRound?: boolean }) {
+  const name = labels.stock(count, !!onClick, endsRound);
+  const classes = `card back${onClick ? " clickable" : ""}${endsRound ? " ends-round" : ""}`;
   const inner = (
     <>
       <span className="back-pattern" />

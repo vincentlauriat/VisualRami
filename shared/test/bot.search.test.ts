@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { chooseDiscard, enumerateMelds, findExtensions, findJokerSwaps, findOpening } from "../src/bot/index.js";
+import fc from "fast-check";
+import {
+  bestPacking,
+  bestPackings,
+  chooseDiscard,
+  enumerateMelds,
+  findExtensions,
+  findJokerSwaps,
+  findOpening,
+  KEEP_GOAL,
+  LAYDOWN_GOAL,
+  openingGoal,
+  type PackingGoal,
+  type PackingShape,
+} from "../src/bot/index.js";
+import { buildDeck, handCardPoints } from "../src/cards.js";
+import "./fcSeed.js";
 import { analyzeMeld, checkFirstLaydown } from "../src/rules.js";
 import type { Card, Meld, Rank, Suit } from "../src/types.js";
 
@@ -152,5 +168,109 @@ describe("chooseDiscard", () => {
     const hand = [joker(), c(13, "spades"), c(2, "clubs")];
     expect(chooseDiscard(hand, "spades-13-0").id).toBe("clubs-2-0");
     expect(chooseDiscard([c(13, "spades")], "spades-13-0").id).toBe("spades-13-0");
+  });
+});
+
+describe("packing search", () => {
+  const DECK = buildDeck();
+  const byId = (id: string) => DECK.find((x) => x.id === id)!;
+  // The reviewer's slow hands: a long heart run with twins, two queens, four jokers.
+  const H1 = ["hearts-9-0", "hearts-10-0", "hearts-11-0", "hearts-12-0", "hearts-13-0", "hearts-1-0", "hearts-10-1", "hearts-11-1", "hearts-12-1", "spades-12-0", "clubs-12-0", "joker-0", "joker-1", "joker-2", "joker-3"].map(byId);
+  const H2 = [9, 10, 11, 12, 13].flatMap((r) => [`hearts-${r}-0`, `hearts-${r}-1`]).concat(["hearts-1-0", "joker-0", "joker-1", "joker-2", "joker-3"]).map(byId);
+  const shapeId = (s: PackingShape) =>
+    s.melds.map((m) => `${m.kind}:${[...m.keys].sort().join(",")}`).sort().join("|") + "#" + [...s.restKeys].sort().join(",");
+
+  it("visits every packing once, and all of them, twins and jokers included", () => {
+    // Distinct packings counted with the search as first written, exhaustive and without a ceiling
+    // (it visited 25,936 and 35,434 leaves to find them).
+    for (const [hand, distinct] of [[H1, 14_137], [H2, 18_022]] as const) {
+      const seen: string[] = [];
+      bestPacking(hand, {}, { onLeaf: (s) => seen.push(shapeId(s)) });
+      expect(new Set(seen).size).toBe(seen.length);
+      expect(seen.length).toBe(distinct);
+    }
+  });
+
+  /** What a card left in hand costs: its points, then one per card. */
+  const cost = (rest: Card[]) => rest.reduce((s, x) => s + handCardPoints(x) * 100 + 1, 0);
+
+  /** The search as first written: exhaustive, no pruning, twins tried in every order. */
+  function oracle(hand: Card[], goal: PackingGoal): number | null {
+    const candidates = enumerateMelds(hand);
+    const counts = new Map<string, number>();
+    const key = (x: Card) => (x.joker ? "joker" : `${x.suit}-${x.rank}`);
+    for (const x of hand) counts.set(key(x), (counts.get(key(x)) ?? 0) + 1);
+    const order = [...counts.keys()].sort((a, b) => (a === "joker" ? 1 : b === "joker" ? -1 : a < b ? -1 : 1));
+    const restCards: Card[] = [];
+    let points = 0, pure = 0, melds = 0, best: number | null = null;
+    const pick = (k: string) => hand.find((x) => key(x) === k)!;
+    const visit = () => {
+      const i = order.findIndex((k) => counts.get(k)! > 0);
+      if (i < 0) {
+        const stats = { points, hasPureRun: pure > 0, melds, rest: restCards.length };
+        if (goal.accept && !goal.accept(stats)) return;
+        const c = cost(restCards);
+        if (best === null || c < best) best = c;
+        return;
+      }
+      const k = order[i]!;
+      for (const m of candidates) {
+        const ks = m.cards.map(key);
+        if (!ks.includes(k)) continue;
+        const need = new Map<string, number>();
+        for (const x of ks) need.set(x, (need.get(x) ?? 0) + 1);
+        if ([...need].some(([x, n]) => (counts.get(x) ?? 0) < n)) continue;
+        for (const [x, n] of need) counts.set(x, counts.get(x)! - n);
+        points += m.points; melds++; if (m.kind === "run" && m.pure) pure++;
+        visit();
+        points -= m.points; melds--; if (m.kind === "run" && m.pure) pure--;
+        for (const [x, n] of need) counts.set(x, counts.get(x)! + n);
+      }
+      counts.set(k, counts.get(k)! - 1);
+      restCards.push(pick(k));
+      visit();
+      restCards.pop();
+      counts.set(k, counts.get(k)! + 1);
+    };
+    visit();
+    return best;
+  }
+
+  it("finds the same best packing as an exhaustive search, for the opening, a laydown and the discard", () => {
+    const pool = DECK.filter((x) => x.joker || [1, 2, 3, 11, 12, 13].includes(x.rank!));
+    const window = (low: number) => DECK.filter((x) => x.joker || (x.rank! >= low && x.rank! <= low + 4));
+    const hands = fc.oneof(fc.constant(pool), fc.integer({ min: 1, max: 9 }).map(window), fc.constant(DECK)).chain((p) =>
+      fc.shuffledSubarray(p, { minLength: 3, maxLength: 11 }),
+    );
+    const rules = fc.record({ firstMeldMinPoints: fc.constantFrom(0, 30, 51, 71, 100), requirePureRun: fc.boolean() });
+    fc.assert(
+      fc.property(hands, rules, (hand, r) => {
+        const goals = [openingGoal(r), LAYDOWN_GOAL, KEEP_GOAL];
+        const found = bestPackings(hand, goals);
+        goals.forEach((goal, g) => {
+          const packing = found[g]!;
+          expect(packing ? cost(packing.rest) : null).toBe(oracle(hand, goal));
+        });
+      }),
+      { numRuns: 150 },
+    );
+  });
+
+  it("returns at once on the reviewer's slow hands, even at thresholds nobody can reach", () => {
+    for (const hand of [H1, H2]) {
+      for (const min of [51, 120, 200]) {
+        const t0 = performance.now();
+        bestPackings(hand, [openingGoal({ firstMeldMinPoints: min, requirePureRun: true }), KEEP_GOAL]);
+        // Measured at 1 to 3 ms; the margin is for a loaded CI machine.
+        expect(performance.now() - t0).toBeLessThan(100);
+      }
+    }
+  });
+
+  it("an exhausted budget still gives a legal answer: nothing, or an accepted packing", () => {
+    const budget = { deadline: 0, exceeded: false };
+    const opening = findOpening(H1, RULES, budget);
+    expect(budget.exceeded).toBe(true);
+    if (opening) expect(checkFirstLaydown(opening.melds, 51, true).ok).toBe(true);
   });
 });

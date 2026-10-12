@@ -7,6 +7,7 @@ import {
   handCardPoints,
   sortByRank,
   sortBySuit,
+  stockDrawEndsRound,
   type Card,
   type GameAction,
   type Meld,
@@ -270,6 +271,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
   const keepsACard = leavesACard(hand, stagedIds);
   const canLay = connected && staged.length > 0 && keepsACard && (firstLaydown ? !!firstCheck?.ok : true);
   const minPoints = state.options.firstMeldMinPoints;
+  const stockEnds = stockDrawEndsRound(state);
   const hint = finished
     ? null
     : !connected
@@ -277,7 +279,9 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
       : !isMyTurn
         ? null
         : canDraw
-      ? labels.hintDraw
+      ? stockEnds
+        ? labels.hintDrawEndsRound
+        : labels.hintDraw
       : staged.length > 0 && !keepsACard
         ? labels.hintKeepOne
       : keepDiscard
@@ -545,8 +549,14 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
               <>
               <div className="piles">
                 <div className="pile">
-                  <CardBack count={state.stockCount} onClick={canDraw ? () => onAct({ type: "draw", source: "stock" }) : undefined} />
+                  <CardBack
+                    count={state.stockCount}
+                    endsRound={stockEnds}
+                    onClick={canDraw ? () => onAct({ type: "draw", source: "stock" }) : undefined}
+                  />
                   <span className="pile-caption" aria-hidden>Talon</span>
+                  {/* Spoken as part of the stock's name; shown here for everyone at the table. */}
+                  {stockEnds && <span className="pile-warning" aria-hidden>{labels.stockEndsRound}</span>}
                 </div>
                 <div className="pile">
                   {topDiscard ? (

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { seededRng } from "../src/cards.js";
-import { addPlayer, applyAction, autoPlayTurn, createGame, currentPlayer, removePlayer, setConnected, toPublicState } from "../src/game.js";
+import { addPlayer, applyAction, autoPlayTurn, createGame, currentPlayer, removePlayer, setConnected, stockDrawEndsRound, toPublicState } from "../src/game.js";
 import type { Card, GameState, Rank, Suit } from "../src/types.js";
 
 const rng = seededRng(42);
@@ -384,5 +384,79 @@ describe("meld ids", () => {
     const first = play();
     expect(first.melds.map((m) => m.id)).toEqual(["id1", "id2"]);
     expect(play().melds).toEqual(first.melds);
+  });
+});
+
+describe("drawn round", () => {
+  /** The current player must draw, the stock is empty and the discard pile can be reshuffled. */
+  function emptyStock(reshuffles: number): GameState {
+    const state = setup();
+    const p1 = state.players[state.currentIndex]!;
+    return {
+      ...state,
+      stock: [],
+      discard: [card(9, "diamonds", "d9"), card(8, "diamonds", "d8"), card(7, "diamonds", "d7")],
+      reshuffles,
+      players: state.players.map((p) =>
+        p.id === p1.id
+          ? { ...p, hand: [card(13, "spades", "sk"), card(5, "hearts", "h5")], hasLaidDown: false }
+          : { ...p, hand: [card(1, "clubs", "ca"), card(3, "clubs", "c3")], hasLaidDown: true },
+      ),
+    };
+  }
+
+  it("counts the reshuffles of the stock, from zero at each deal", () => {
+    expect(setup().reshuffles).toBe(0);
+    expect(createGame("R", { id: "a", name: "A" }).reshuffles).toBe(0);
+    const state = emptyStock(2);
+    const drawn = must(applyAction(state, currentPlayer(state)!.id, { type: "draw", source: "stock" }, rng));
+    expect(drawn.phase).toBe("play");
+    expect(drawn.reshuffles).toBe(3);
+    expect(drawn.discard).toHaveLength(1);
+    expect(drawn.log).toContain("La pioche est vide : la défausse est mélangée (3/3)");
+  });
+
+  it("tells every player how many reshuffles are left, and when a draw from the stock would end the round", () => {
+    const fresh = setup();
+    const pub = toPublicState(fresh, "a");
+    expect(pub.reshufflesLeft).toBe(3);
+    expect(stockDrawEndsRound(pub)).toBe(false);
+    const last = emptyStock(3);
+    const view = toPublicState(last, "b");
+    expect(view.reshufflesLeft).toBe(0);
+    expect(stockDrawEndsRound(view)).toBe(true);
+    // One reshuffle left: the empty stock can still be refilled.
+    expect(stockDrawEndsRound(toPublicState(emptyStock(2), "a"))).toBe(false);
+  });
+
+  it("draws the round when the stock would be reshuffled a fourth time", () => {
+    const state = emptyStock(3);
+    const p1 = currentPlayer(state)!.id;
+    const other = state.players.find((p) => p.id !== p1)!.id;
+    const done = must(applyAction(state, p1, { type: "draw", source: "stock" }, rng));
+    expect(done.phase).toBe("finished");
+    expect(done.winnerId).toBeNull();
+    expect(done.log.at(-1)).toBe("Talon épuisé 3 fois : manche nulle");
+    // Everyone counts their hand; doubled for the player who never laid down.
+    expect(done.lastRoundPoints).toEqual({ [p1]: 30, [other]: 14 });
+    expect(done.players.find((p) => p.id === p1)!.score).toBe(30);
+    const pub = toPublicState(done, other);
+    expect(Object.keys(pub.revealedHands!).sort()).toEqual([p1, other].sort());
+    expect(pub.currentPlayerId).toBeNull();
+    // Taking the discard pile's top is still a draw, not a reshuffle.
+    expect(must(applyAction(state, p1, { type: "draw", source: "discard" }, rng)).phase).toBe("play");
+
+    const next = must(applyAction(done, done.hostId, { type: "newRound" }, rng));
+    expect(next.phase).toBe("draw");
+    expect(next.reshuffles).toBe(0);
+    expect(next.winnerId).toBeNull();
+    expect(next.players.every((p) => p.hand.length === 14)).toBe(true);
+  });
+
+  it("ends a drawn round for an absent player too", () => {
+    const state = emptyStock(3);
+    const done = autoPlayTurn(state, currentPlayer(state)!.id, rng);
+    expect(done.ok && done.state.phase).toBe("finished");
+    expect(done.ok && done.state.log.at(-1)).toBe("Talon épuisé 3 fois : manche nulle");
   });
 });

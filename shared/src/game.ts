@@ -14,6 +14,8 @@ import {
 
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
+/** Reshuffles of the stock allowed in a round; the next one would draw the round instead. */
+export const MAX_RESHUFFLES = 3;
 
 let meldCounter = 0;
 
@@ -45,6 +47,7 @@ export function createGame(
     currentIndex: 0,
     phase: "lobby",
     drewFromDiscardCardId: null,
+    reshuffles: 0,
     winnerId: null,
     round: 0,
     lastRoundPoints: null,
@@ -102,6 +105,8 @@ export function autoPlayTurn(state: GameState, playerId: string, rng: Rng = Math
   if (next.phase === "draw") {
     const drawn = draw(next, playerId, "stock", rng);
     if (!drawn.ok) return drawn;
+    // The draw itself may end the round (a drawn round): nothing left to play.
+    if (drawn.state.phase === "finished") return drawn;
     next = drawn.state;
   }
   if (next.phase !== "play") return fail("Aucun tour à jouer");
@@ -227,6 +232,7 @@ function deal(state: GameState, rng: Rng, firstIndex: number): GameState {
     currentIndex: firstIndex % players.length,
     phase: "draw",
     drewFromDiscardCardId: null,
+    reshuffles: 0,
     winnerId: null,
     round: state.round + 1,
     lastRoundPoints: null,
@@ -259,6 +265,8 @@ function draw(state: GameState, playerId: string, source: "stock" | "discard", r
     next = log(next, `${player.name} prend ${cardLabel(card)} dans la défausse`);
   } else {
     if (state.stock.length === 0) {
+      // A round where nobody can go out would recycle the discard pile forever: it is drawn.
+      if (state.reshuffles >= MAX_RESHUFFLES) return ok(finishRound(state, null));
       next = reshuffleStock(next, rng);
       if (next.stock.length === 0) return fail("Plus aucune carte à piocher");
     }
@@ -274,9 +282,10 @@ function reshuffleStock(state: GameState, rng: Rng): GameState {
   if (state.discard.length <= 1) return state;
   const top = state.discard[state.discard.length - 1]!;
   const rest = state.discard.slice(0, -1);
+  const reshuffles = state.reshuffles + 1;
   return log(
-    { ...state, stock: shuffle(rest, rng), discard: [top] },
-    "La pioche est vide : la défausse est mélangée",
+    { ...state, stock: shuffle(rest, rng), discard: [top], reshuffles },
+    `La pioche est vide : la défausse est mélangée (${reshuffles}/${MAX_RESHUFFLES})`,
   );
 }
 
@@ -402,7 +411,11 @@ function discard(state: GameState, playerId: string, cardId: string): GameResult
   });
 }
 
-function finishRound(state: GameState, winnerId: string): GameState {
+/**
+ * Ends the round. `winnerId` null is a drawn round (the stock ran out once too often): nobody is
+ * exempt from counting, and the doubling still applies.
+ */
+function finishRound(state: GameState, winnerId: string | null): GameState {
   const points: Record<string, number> = {};
   const players = state.players.map((p) => {
     if (p.id === winnerId) {
@@ -414,10 +427,10 @@ function finishRound(state: GameState, winnerId: string): GameState {
     points[p.id] = total;
     return { ...p, score: p.score + total };
   });
-  const winner = state.players.find((p) => p.id === winnerId)!;
+  const winner = state.players.find((p) => p.id === winnerId);
   return log(
     { ...state, players, phase: "finished", winnerId, lastRoundPoints: points, ready: [] },
-    `${winner.name} remporte la manche !`,
+    winner ? `${winner.name} remporte la manche !` : `Talon épuisé ${MAX_RESHUFFLES} fois : manche nulle`,
   );
 }
 
@@ -443,6 +456,7 @@ export function toPublicState(state: GameState, viewerId: string): PublicGameSta
     currentPlayerId: state.phase === "draw" || state.phase === "play" ? currentPlayer(state)?.id ?? null : null,
     phase: state.phase,
     drewFromDiscardCardId: state.drewFromDiscardCardId,
+    reshufflesLeft: Math.max(0, MAX_RESHUFFLES - state.reshuffles),
     winnerId: state.winnerId,
     round: state.round,
     lastRoundPoints: state.lastRoundPoints,
@@ -455,4 +469,12 @@ export function toPublicState(state: GameState, viewerId: string): PublicGameSta
     ready: state.ready,
     log: state.log,
   };
+}
+
+/**
+ * Whether a draw from the stock would end the round as drawn: the stock is empty and no reshuffle
+ * is left. The client warns on the stock before anyone draws there.
+ */
+export function stockDrawEndsRound(view: Pick<PublicGameState, "stockCount" | "reshufflesLeft">): boolean {
+  return view.stockCount === 0 && view.reshufflesLeft === 0;
 }

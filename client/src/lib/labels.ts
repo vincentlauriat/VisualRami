@@ -11,7 +11,10 @@ export function deName(name: string): string {
 
 export const labels = {
   turnOf: (name: string) => `Tour ${deName(name)}`,
-  stock: (count: number, canDraw: boolean) => (canDraw ? `Piocher dans le talon, ${count} cartes` : `Talon, ${count} cartes`),
+  stock: (count: number, canDraw: boolean, endsRound = false) =>
+    `${canDraw ? `Piocher dans le talon, ${count} cartes` : `Talon, ${count} cartes`}${endsRound ? ". Piocher ici termine la manche (manche nulle)" : ""}`,
+  // The stock is empty and already reshuffled three times: drawing there draws the round.
+  stockEndsRound: "Piocher ici termine la manche (manche nulle)",
   discard: (card: Card, canDraw: boolean) =>
     canDraw ? `Prendre dans la défausse : ${cardName(card)}` : `Défausse : ${cardName(card)}`,
   emptyDiscard: "Défausse vide",
@@ -39,6 +42,7 @@ export const labels = {
   // End of round: the count, face up on the felt.
   youWinRound: "Vous remportez la manche",
   winsRound: (name: string) => `${name} remporte la manche`,
+  drawnRound: "Manche nulle : talon épuisé",
   winnerTile: "remporte la manche",
   winnerTileShort: "gagne",
   newRound: "Nouvelle manche",
@@ -78,6 +82,7 @@ export const labels = {
 
   // Table guidance: what to do now, and why an action is not available yet.
   hintDraw: "Touchez le talon ou la défausse.",
+  hintDrawEndsRound: "Talon épuisé : piocher au talon termine la manche (manche nulle). La défausse reste possible.",
   hintPlay: "Préparez une combinaison, ou défaussez une carte.",
   hintTargets: "Touchez une combinaison dorée pour y ajouter la sélection.",
   hintKeepDiscard: "Carte prise dans la défausse : gardez-la ce tour-ci.",

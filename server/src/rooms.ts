@@ -270,8 +270,12 @@ export class RoomManager {
       const data = JSON.parse(raw) as { version: number; rooms: PersistedRoom[] };
       for (const saved of data.rooms) {
         // Nobody is attached after a restart; players come back by token or by code + name.
-        // Snapshots written before readiness existed have no `ready` field.
-        let state: GameState = { ...saved.state, ready: Array.isArray(saved.state.ready) ? saved.state.ready : [] };
+        // Snapshots written before readiness or the reshuffle count existed lack those fields.
+        let state: GameState = {
+          ...saved.state,
+          ready: Array.isArray(saved.state.ready) ? saved.state.ready : [],
+          reshuffles: Number.isInteger(saved.state.reshuffles) && saved.state.reshuffles >= 0 ? saved.state.reshuffles : 0,
+        };
         for (const p of state.players) state = setConnected(state, p.id, false);
         this.rooms.set(saved.id, {
           id: saved.id,

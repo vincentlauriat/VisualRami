@@ -58,6 +58,9 @@ export interface GameState {
   phase: Phase;
   /** Card id taken from the discard pile this turn (cannot be discarded again). */
   drewFromDiscardCardId: string | null;
+  /** Times the discard pile was shuffled into a new stock this round. Reset at each deal. */
+  reshuffles: number;
+  /** The round's winner; null while it is played, and for a drawn round once it is finished. */
   winnerId: string | null;
   round: number;
   /** Last round result, for display. */
@@ -90,6 +93,8 @@ export interface PublicGameState {
   currentPlayerId: string | null;
   phase: Phase;
   drewFromDiscardCardId: string | null;
+  /** Reshuffles of the stock still allowed this round; at 0 with an empty stock, drawing from it ends the round. */
+  reshufflesLeft: number;
   winnerId: string | null;
   round: number;
   lastRoundPoints: Record<string, number> | null;

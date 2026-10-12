@@ -1,7 +1,8 @@
 import { buildDeck, seededRng } from "../src/cards.js";
 import { planTurn } from "../src/bot/index.js";
 import { addPlayer, applyAction, createGame, currentPlayer, toPublicState } from "../src/game.js";
-import type { GameAction, GameState } from "../src/types.js";
+import type { GameAction, GameOptions, GameState } from "../src/types.js";
+import type { PlanOptions } from "../src/bot/index.js";
 
 const DECK_IDS = buildDeck().map((c) => c.id).sort().join(",");
 
@@ -23,19 +24,23 @@ export interface RoundStats {
   decisions: number;
   decisionMs: number;
   slowestMs: number;
-  /** Draws where the stock was empty and the discard pile held one card: only that card was left. */
-  forcedDiscardDraws: number;
+  budgetHits: number;
+  /** Null for a drawn round: the stock ran out once too often. */
   winnerId: string | null;
 }
 
+/** The reducer refused a planned action, or the plan could not end the turn: a bot bug. */
 export class IllegalAction extends Error {}
 
+/** A round outlasted the turn cap: a dead end in the rules or a bot that never ends anything. */
+export class TurnLimitExceeded extends Error {}
+
 /** A table of `players` bots, dealt with a fixed seed, ready for its first round. */
-export function botTable(seed: number, players: number) {
+export function botTable(seed: number, players: number, options: Partial<GameOptions> = {}) {
   const rng = seededRng(seed);
   let n = 0;
   const ids = { meldId: () => `m${++n}` };
-  let state = createGame("SIM", { id: "p1", name: "P1" });
+  let state = createGame("SIM", { id: "p1", name: "P1" }, options);
   for (let i = 2; i <= players; i++) {
     const r = addPlayer(state, { id: `p${i}`, name: `P${i}` });
     if (!r.ok) throw new Error(r.error);
@@ -58,6 +63,7 @@ export function playRound(
   start: GameState,
   act: (s: GameState, playerId: string, action: GameAction) => GameState,
   maxTurns: number,
+  plan: PlanOptions = {},
 ): { state: GameState; stats: RoundStats } {
   let state = start;
   const stats: RoundStats = {
@@ -65,12 +71,12 @@ export function playRound(
     decisions: 0,
     decisionMs: 0,
     slowestMs: 0,
-    forcedDiscardDraws: 0,
+    budgetHits: 0,
     winnerId: null,
   };
   while (state.phase !== "finished") {
     if (++stats.turns > maxTurns) {
-      throw new Error(
+      throw new TurnLimitExceeded(
         `Round did not end in ${maxTurns} turns: stock ${state.stock.length}, discard ${state.discard.length}, ` +
           `hands ${state.players.map((p) => `${p.hand.length}${p.hasLaidDown ? "*" : ""}`).join("/")}`,
       );
@@ -80,11 +86,17 @@ export function playRound(
     for (let call = 0; call < 2 && state.phase !== "finished" && currentPlayer(state)!.id === playerId; call++) {
       const view = toPublicState(state, playerId);
       const t0 = performance.now();
-      const actions = planTurn(view);
+      const budget = { budgetHits: 0 };
+      const actions = planTurn(view, undefined, { ...plan, stats: budget });
+      stats.budgetHits += budget.budgetHits;
       const ms = performance.now() - t0;
       stats.decisionMs += ms;
       stats.slowestMs = Math.max(stats.slowestMs, ms);
-      if (view.phase === "draw" && view.stockCount === 0 && view.discardCount === 1) stats.forcedDiscardDraws++;
+      // Defensive: every turn ends on a discard, so an empty stock always leaves two cards or more
+      // in the discard pile to reshuffle. A draw with nothing to draw would be an engine bug.
+      if (view.phase === "draw" && view.stockCount === 0 && view.discardCount <= 1) {
+        throw new Error(`${playerId}: a draw with nothing to draw`);
+      }
       stats.decisions++;
       if (actions.length === 0) throw new IllegalAction(`${playerId}: empty plan in phase ${state.phase}`);
       for (const action of actions) {

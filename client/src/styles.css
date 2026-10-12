@@ -334,6 +334,15 @@ button.meld { color: inherit; text-align: left; }
 .meld.staged { background: rgba(230, 184, 79, 0.12); align-items: center; gap: 6px; padding-bottom: 8px; }
 /* While it is your turn to draw, the two piles carry the lamp: that is where your hand goes next. */
 .pile .card.clickable { box-shadow: 0 0 0 3px var(--gold), 0 2px 4px rgba(0, 0, 0, 0.35); }
+/* An exhausted stock (drawing there draws the round) is a warning, never the lamp: an Alerte ring. */
+.pile .card.back.ends-round { box-shadow: 0 0 0 2px var(--danger), 0 2px 4px rgba(0, 0, 0, 0.35); }
+.pile .card.back.ends-round.clickable { box-shadow: 0 0 0 3px var(--danger), 0 2px 4px rgba(0, 0, 0, 0.35); }
+/* The words sit on an Alerte pill: danger on danger-surface holds 5.5:1, danger on the felt only 2.9:1. */
+.pile-warning {
+  max-width: 10em; padding: 3px 7px; border: 1px solid var(--danger); border-radius: 8px;
+  background: var(--danger-surface); color: var(--danger);
+  font-size: 12px; line-height: 1.25; text-align: center;
+}
 .meld.staged .tiny { margin-left: 8px; }
 
 /* ---------------------------------------------------------------------------

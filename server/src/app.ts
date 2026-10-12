@@ -5,9 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import { Server, type Socket } from "socket.io";
-import type { GameOptions } from "@visualrami/shared";
 import { RoomManager, type Room } from "./rooms.js";
-import { validateAction } from "./validate.js";
+import { sanitizeOptions, validateAction } from "./validate.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -145,17 +144,6 @@ export function createApp(options: AppOptions = {}) {
   function sanitizeName(name: unknown): string {
     const value = typeof name === "string" ? name.trim().slice(0, 24) : "";
     return value || "Joueur";
-  }
-
-  function sanitizeOptions(input: unknown): Partial<GameOptions> {
-    if (!input || typeof input !== "object") return {};
-    const o = input as Record<string, unknown>;
-    const out: Partial<GameOptions> = {};
-    if (typeof o.firstMeldMinPoints === "number" && o.firstMeldMinPoints >= 0 && o.firstMeldMinPoints <= 200) {
-      out.firstMeldMinPoints = Math.floor(o.firstMeldMinPoints);
-    }
-    if (typeof o.requirePureRun === "boolean") out.requirePureRun = o.requirePureRun;
-    return out;
   }
 
   function attach(socket: Socket, room: Room, playerId: string) {
