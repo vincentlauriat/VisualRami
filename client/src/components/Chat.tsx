@@ -4,9 +4,16 @@ import type { ChatMessage } from "../lib/useGame";
 import { Icon } from "./Icon";
 import { Rules } from "./Rules";
 
+export type SideTab = "log" | "chat" | "rules";
+
 interface Props {
   messages: ChatMessage[];
   log: string[];
+  /** The open tab, owned by the table so it knows when the chat is actually being read. */
+  tab: SideTab;
+  onTab: (tab: SideTab) => void;
+  /** Messages from the others not seen yet: the same count as the table's chat button. */
+  unread: number;
   /** This table's options: the Règles tab states them as they apply here. */
   options: GameOptions;
   /** Returns false when the message could not be sent (offline): the text then stays in the field. */
@@ -20,9 +27,8 @@ interface Props {
 /** One DOM node per game event: a seven-day table would otherwise grow the log without bound. */
 const LOG_LINES = 200;
 
-export function Chat({ messages, log, options, onSend, offline, onClose }: Props) {
+export function Chat({ messages, log, tab, onTab: setTab, unread, options, onSend, offline, onClose }: Props) {
   const [text, setText] = useState("");
-  const [tab, setTab] = useState<"log" | "chat" | "rules">("log");
   const body = useRef<HTMLDivElement>(null);
 
   // Scroll the panel itself. scrollIntoView would also scroll every ancestor, the window included.
@@ -46,7 +52,7 @@ export function Chat({ messages, log, options, onSend, offline, onClose }: Props
           Journal
         </button>
         <button type="button" className={tab === "chat" ? "on" : ""} aria-pressed={tab === "chat"} onClick={() => setTab("chat")}>
-          Chat {messages.length > 0 && <span className="tag">{messages.length}</span>}
+          Chat {unread > 0 && <span className="tag">{unread}</span>}
         </button>
         <button type="button" className={tab === "rules" ? "on" : ""} aria-pressed={tab === "rules"} onClick={() => setTab("rules")}>
           Règles

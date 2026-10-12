@@ -255,7 +255,8 @@ whole width.
 scrolls. The top bar keeps one row (icons only, the table code without its "table" prefix, no mark, the unread count riding on the chat icon) and holds at 360px with a wide code, the badge
 or an armed Quitter. Your own seat joins the opponents' strip, pinned at its head while the
 others scroll past it (an 18px fade to night on its right edge, so a tile passing under it
-dissolves instead of showing sliced), so the strip's turn-following scroll never pushes you off screen; and sort, clear, prepare and discard share a single action
+dissolves instead of showing sliced; at rest the strip starts 18px further so no name or count
+sits under the fade), so the strip's turn-following scroll never pushes you off screen; and sort, clear, prepare and discard share a single action
 row; while melds are staged, "Poser" takes the sort buttons' place. The staging tray leads the
 felt, the piles shrink once you have drawn, a 15-card hand fans into two rows of eight, and the
 strip scrolls itself to the seat whose turn it is.
@@ -379,7 +380,9 @@ A single top bar: the drawn mark and title on the left, table code tag (4px 8px:
 touches its pill), mic/camera controls and leave
 button on the right. On phones the brand word hides, buttons reach 44px, and a chat toggle (its
 unread count a small bubble on the icon's corner) opens the log/chat sheet. The side panel has three tabs (Journal, Chat, Règles), the message field only under
-Chat; the unread badge counts the others' messages, never yours; the active tab takes
+Chat; one unread count, the others' messages that arrived since the Chat tab was last in view
+(open on a wide screen, or in the drawer or sheet), shown on the Chat tab, the button, its phone
+bubble and its spoken label, and back to zero as soon as you read; the active tab takes
 panel-2 and gold text. Leaving takes two presses: the first replaces the ghost Quitter with
 "Quitter la table ?", a ghost Quitter with a danger outline and a ghost Rester (never gold:
 leaving is not the lamp's action). The question takes focus, Escape or Rester puts it away, and
@@ -409,7 +412,8 @@ full-strength pill along the top, "absent · sa place est gardée" (only "absent
 phone seat; the rest is still read out). While your own connection is down nobody's presence is
 known, so no tile says absent. A muted microphone shows as the drawn mic-off glyph, in the off
 state's pale red, in a 24px dark pip at the top right, so it never takes width from the name; it
-carries its own label ("Micro coupé : Bruno") and is hidden on an absent tile.
+carries its own label ("Micro coupé : Bruno") and is hidden on an absent tile. On a 92px phone
+seat an absent tile shows the pill, a smaller initial between it and the name, and no "posé".
 
 ### Meld
 Cards fanned like a hand held closed, on an 18% black wash: every card but the last shows only its
@@ -438,7 +442,11 @@ Melds prepared for a laydown wait on the felt, above the table's melds, inside a
 felt-accent tray on a 22% black wash: on the table, not laid yet. For the first laydown it carries
 a gauge toward the threshold (felt-text, turning felt-accent once reached; it fills by
 `scaleX` from the left, not by width, and holds still under reduced motion), "N / 51 pts · encore M",
-and a pure-run marker.
+and a pure-run marker. Its button reads "Poser sur la table" where it fits and "Poser" on phones
+(the same words, the tail hidden). A laydown must leave one card to discard: when everything in
+hand is prepared, Poser lies flush and not gold, and the turn line says "Gardez une carte pour
+défausser : retirez-en une de la préparation". Touching a prepared (dimmed) card in the hand takes
+that card back: its combination keeps the rest if they still form one, and is undone otherwise.
 
 ### Turn Banner
 The current turn in felt-text-strong ("À vous" in felt-accent), with one line of guidance below

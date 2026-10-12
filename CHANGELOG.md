@@ -18,6 +18,12 @@ All notable changes to VisualRami. Format inspired by Keep a Changelog; versions
 - Games survive a server restart (`DATA_DIR/rooms.json`) and stay open 7 days; a player comes back with the table code and the same name, or with one click from the remembered seats on the home page.
 
 ### Fixed
+- End-of-hand trap: with every card in hand prepared, Poser was gold, the laydown failed with "Vous devez garder une carte à défausser", and the only way out was the tray's ×. Poser now stays neutral and disabled while no card would be left, the turn line says "Gardez une carte pour défausser : retirez-en une de la préparation", and touching a prepared card in the hand takes it back (its combination keeps the rest when they still form one). Client and server share the rule (`leavesACard`).
+- The "1re pose · N pts" tag never went away once anyone played after the laydown: its 4 s timer was cancelled by every state update. It now fades after about 4 s.
+- Phone: at rest, the fade beside your pinned seat covered the neighbour's name and card count ("ximilien", "rtes · 0 pts"); the strip now starts after the fade.
+- Chat counts: the Chat tab counted every message and the button never fell back. One unread count (the others' messages since you last looked at the Chat tab) now drives the tab, the button, the phone bubble and its label, and drops to zero when you read.
+- End of round: "Tout le monde est prêt · absent : Bruno" when the only guest was away now reads "Absent : Bruno"; an absent phone seat no longer piles "absent", "posé" and the initial on each other.
+- "Poser sur la table" (desktop) and "Poser" (phone) are one label, shortened where it does not fit; seat counts read "1 carte".
 - Desktop and laptop with two or three players: the piles stood at the far left and the turn line at the far right of an empty felt, 750–900px apart; they now sit together at its centre, as with side seats.
 - At 1100px a 15-card hand left one card alone on a second row; from 15 cards the hand closes up and stays on one row (901–1365px).
 - Phone landscape (844×390): the felt was 139px tall and "Aucune combinaison…" was cut off. Your face joins the left rail and the turn line sits beside the piles; the felt is 187px and the line shows.

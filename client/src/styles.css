@@ -605,6 +605,10 @@ button.meld { color: inherit; text-align: left; }
   .opponent .video-badge { top: 3px; left: 3px; padding: 0 6px; }
   .opponent .video-mic { top: 3px; right: 3px; width: 22px; height: 22px; }
   .opponent .video-tile:has(> .video-status) > .video-badge, .opponent .video-tile:has(> .video-status) > .video-mic { top: 24px; }
+  /* An absent 92px seat has room for its pill, the initial and the name, not for "posé" too; the
+     initial shrinks to sit between them. */
+  .opponent .video-tile.offline > .video-badge { display: none; }
+  .opponent .video-tile.offline .video-placeholder { font-size: 20px; padding-top: 12px; }
   .opponent-info { font-size: 12px; gap: 4px; }
   .mini-hand { display: none; }
 
@@ -691,6 +695,8 @@ button.meld { color: inherit; text-align: left; }
   .game { background: var(--bg); }
   /* Your seat stays pinned at the head of the strip while the others scroll past it. */
   .self-seat { position: sticky; left: 0; z-index: 2; background: var(--bg); padding-right: 8px; margin-right: -8px; }
+  /* At rest the first neighbour starts past the fade, so no name or count sits under it. */
+  .self-seat + .opponent { margin-left: 18px; }
   /* What scrolls under the pinned seat fades into it instead of showing a sliced tile. */
   .self-seat::after {
     content: ""; position: absolute; top: 0; bottom: 0; left: 100%; width: 18px; pointer-events: none;

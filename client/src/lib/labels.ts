@@ -30,6 +30,7 @@ export const labels = {
   sideToggle: (messages: number) =>
     messages > 0 ? `Journal, chat et règles, ${messages} messages` : "Journal, chat et règles",
   dismissMessage: "Fermer le message",
+  seatInfo: (cards: number, score: number) => `${cards} carte${cards > 1 ? "s" : ""} · ${score} pts`,
   justDrawn: "piochée à l'instant",
 
   // Arriving and finding a table.
@@ -48,7 +49,8 @@ export const labels = {
   waitingHost: "En attente de l'hôte pour la manche suivante…",
   readySummary: (ready: string[], waiting: string[], absent: string[]) =>
     [
-      waiting.length === 0 ? "Tout le monde est prêt" : ready.length > 0 ? `Prêts : ${ready.join(", ")}` : null,
+      // "Tout le monde" only when someone is actually there to be ready.
+      waiting.length === 0 && ready.length > 0 ? "Tout le monde est prêt" : ready.length > 0 ? `Prêts : ${ready.join(", ")}` : null,
       waiting.length > 0 ? `en attente : ${waiting.join(", ")}` : null,
       absent.length > 0 ? `absent : ${absent.join(", ")}` : null,
     ]
@@ -81,6 +83,8 @@ export const labels = {
   hintKeepDiscard: "Carte prise dans la défausse : gardez-la ce tour-ci.",
   hintAfterLaydown: "Cette carte ira sur la table après votre première pose.",
   hintDiscardStaged: "Défausser maintenant abandonne la préparation.",
+  hintKeepOne: "Gardez une carte pour défausser : retirez-en une de la préparation.",
+  stagedCard: (card: Card) => `${cardName(card)}, préparée : toucher pour la retirer`,
   discardAnyway: "Défausser quand même",
   discardAnywayShort: "Défausser ?",
   laydownProgress: (points: number, min: number) =>

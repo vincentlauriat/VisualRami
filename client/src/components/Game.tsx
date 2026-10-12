@@ -3,6 +3,7 @@ import {
   analyzeMeld,
   arrangeMeld,
   checkFirstLaydown,
+  leavesACard,
   handCardPoints,
   sortByRank,
   sortBySuit,
@@ -16,7 +17,7 @@ import type { ChatMessage } from "../lib/useGame";
 import { CardBack, CardView } from "./CardView";
 import { VideoTile } from "./VideoTile";
 import { MediaControls } from "./MediaControls";
-import { Chat } from "./Chat";
+import { Chat, type SideTab } from "./Chat";
 import { labels } from "../lib/labels";
 import { Icon, Mark } from "./Icon";
 import { RoundResult } from "./RoundResult";
@@ -71,8 +72,17 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
   // The timer waits while focus is in the question, so a screen reader is not cut off mid-way.
   const [leaveFocused, setLeaveFocused] = useState(false);
   const finished = state.phase === "finished";
-  // Your own messages are not news to you: the badge counts the others'.
+  // One unread count everywhere (chat tab, button, phone bubble, its label): the others' messages
+  // that arrived since the Chat tab was last in view. Your own are never news to you.
+  const [sideTab, setSideTab] = useState<SideTab>("log");
+  const wide = useMediaQuery("(min-width: 1366px)");
   const othersMessages = chat.filter((m) => m.from !== state.you.id).length;
+  const [seenMessages, setSeenMessages] = useState(0);
+  const chatInView = sideTab === "chat" && (sideOpen || wide);
+  useEffect(() => {
+    if (chatInView || othersMessages < seenMessages) setSeenMessages(othersMessages);
+  }, [chatInView, othersMessages, seenMessages]);
+  const unread = Math.max(0, othersMessages - seenMessages);
   // The card you just drew, marked quietly in the hand until your turn ends.
   const [drawnId, setDrawnId] = useState<string | null>(null);
   const handBefore = useRef(state.you.hand.map((c) => c.id));
@@ -165,7 +175,8 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
     : null;
 
   function toggle(card: Card) {
-    if (finished || stagedIds.has(card.id)) return;
+    if (finished) return;
+    if (stagedIds.has(card.id)) return release(card.id);
     setSelected((s) => (s.includes(card.id) ? s.filter((id) => id !== card.id) : [...s, card.id]));
   }
 
@@ -179,6 +190,23 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
     }
     setStaged((st) => [...st, { cards, points: analysis.points, pure: analysis.pure, kind: analysis.kind }]);
     setSelected([]);
+    setNotice(null);
+  }
+
+  /**
+   * Touching a prepared card in the hand takes that card, and only that card, back: its
+   * combination keeps the rest when they still form one, and is undone when they no longer do.
+   */
+  function release(cardId: string) {
+    setStaged((st) =>
+      st.flatMap((m) => {
+        if (!m.cards.some((c) => c.id === cardId)) return [m];
+        const rest = m.cards.filter((c) => c.id !== cardId);
+        const cards = rest.length >= 3 ? arrangeMeld(rest) : null;
+        const analysis = cards ? analyzeMeld(cards) : null;
+        return cards && analysis ? [{ cards, points: analysis.points, pure: analysis.pure, kind: analysis.kind }] : [];
+      }),
+    );
     setNotice(null);
   }
 
@@ -238,7 +266,9 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
     const toGo = meld && !me.hasLaidDown && min > 0 ? min - stagedTotal - points : null;
     return labels.selection(selectedCards.length, points, toGo, min);
   }, [finished, selectedCards, state.options.firstMeldMinPoints, me.hasLaidDown, stagedTotal]);
-  const canLay = connected && staged.length > 0 && (firstLaydown ? !!firstCheck?.ok : true);
+  // The turn ends on a discard, so a laydown must leave one card in hand (the server refuses it too).
+  const keepsACard = leavesACard(hand, stagedIds);
+  const canLay = connected && staged.length > 0 && keepsACard && (firstLaydown ? !!firstCheck?.ok : true);
   const minPoints = state.options.firstMeldMinPoints;
   const hint = finished
     ? null
@@ -248,6 +278,8 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
         ? null
         : canDraw
       ? labels.hintDraw
+      : staged.length > 0 && !keepsACard
+        ? labels.hintKeepOne
       : keepDiscard
         ? labels.hintKeepDiscard
         : discardArmed
@@ -276,9 +308,14 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
     const points = (meldsBy.get(opener.id) ?? []).reduce((sum, m) => sum + (analyzeMeld(m.cards)?.points ?? 0), 0);
     setFresh({ id: opener.id, points });
     setSpoken(labels.firstLaydownSpoken(opener.name, points, opener.id === state.you.id));
+  }, [state.players, meldsBy, state.you.id]);
+  // Its own timer, keyed on the event alone: the next state update (someone discards) used to
+  // cancel it in the effect above, and the tag never left.
+  useEffect(() => {
+    if (!fresh) return;
     const t = setTimeout(() => setFresh(null), 4000);
     return () => clearTimeout(t);
-  }, [state.players, meldsBy, state.you.id]);
+  }, [fresh]);
 
   // On a phone the faces stay in the strip: touching one brings that player's melds into view.
   const [pinged, setPinged] = useState<string | null>(null);
@@ -402,9 +439,9 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
             onClick={() => setSideOpen((v) => !v)}
             aria-expanded={sideOpen}
             aria-controls="side-panel"
-            aria-label={labels.sideToggle(othersMessages)}
+            aria-label={labels.sideToggle(unread)}
           >
-            <Icon name="chat" />{othersMessages > 0 && <span className="tag unread" aria-hidden>{othersMessages}</span>}
+            <Icon name="chat" />{unread > 0 && <span className="tag unread" aria-hidden>{unread}</span>}
           </button>
           {leaveArmed ? (
             <div
@@ -491,7 +528,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                       <i key={i} />
                     ))}
                   </span>
-                  <span>{p.handCount} cartes · {p.score} pts</span>
+                  <span>{labels.seatInfo(p.handCount, p.score)}</span>
                 </div>
                 {meldsBy.has(p.id) && (
                   <button type="button" className="seat-jump" onClick={() => jumpTo(p.id)} aria-label={labels.seatJump(p.name)} />
@@ -550,7 +587,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                       <span className="laydown-points">{labels.laydownPoints(stagedTotal)}</span>
                     )}
                     <button type="button" className={canLay ? "primary" : undefined} disabled={!canLay} onClick={layDown}>
-                      Poser sur la table
+                      Poser<span className="btn-label"> sur la table</span>
                     </button>
                   </div>
                   <div className="staging-melds">
@@ -612,6 +649,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                       card={card}
                       selected={idx >= 0}
                       dimmed={stagedIds.has(card.id)}
+                      spokenName={stagedIds.has(card.id) ? labels.stagedCard(card) : undefined}
                       order={idx >= 0 && selected.length > 1 ? idx + 1 : undefined}
                       drawn={card.id === drawnId}
                       // Between rounds the hand is only to look at.
@@ -673,9 +711,20 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
           </section>
         </main>
 
-        <Chat messages={chat} log={state.log} options={state.options} offline={!connected} onSend={onSendChat} onClose={closeSide} />
+        <Chat messages={chat} log={state.log} tab={sideTab} onTab={setSideTab} unread={unread} options={state.options} offline={!connected} onSend={onSendChat} onClose={closeSide} />
       </div>
 
     </div>
   );
+}
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const list = window.matchMedia(query);
+    const onChange = () => setMatches(list.matches);
+    list.addEventListener("change", onChange);
+    return () => list.removeEventListener("change", onChange);
+  }, [query]);
+  return matches;
 }
