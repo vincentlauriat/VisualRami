@@ -5,8 +5,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import { Server, type Socket } from "socket.io";
-import { RoomManager, type Room } from "./rooms.js";
-import { sanitizeOptions, validateAction } from "./validate.js";
+import { BotScheduler, type BotPacing } from "./botScheduler.js";
+import { isReservedName, RoomManager, type Room } from "./rooms.js";
+import { sanitizeOptions, validateAction, validateAddBot, validateRemoveBot } from "./validate.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,6 +32,10 @@ export interface AppOptions {
   corsOrigin?: string | string[];
   /** JSON file where rooms are persisted across restarts. Unset = memory only. */
   persistPath?: string;
+  /** Override of the computer players' pace (tests). */
+  botPacing?: BotPacing;
+  /** Randomness for the computer players' pace (tests). */
+  random?: () => number;
 }
 
 /** Sliding-window rate limiter, one bucket per socket and event. */
@@ -109,13 +114,20 @@ export function createApp(options: AppOptions = {}) {
   const rooms = new RoomManager({ persistPath: options.persistPath });
   const signalLimiter = new RateLimiter(120, 5000);
   const chatLimiter = new RateLimiter(8, 5000);
+  // Creating tables and seating computers, together, per socket: each one costs a room or a seat.
+  const roomLimiter = new RateLimiter(10, 10_000);
+  const TOO_MANY = "Trop de demandes : réessayez dans quelques secondes";
 
   function broadcast(room: Room) {
     for (const [playerId, socketId] of room.sockets) {
       io.to(socketId).emit("room:state", rooms.publicStateFor(room, playerId));
     }
     scheduleAbsentTurn(room);
+    bots.schedule(room);
   }
+
+  // Restored tables wait for a human: the timer stays off until one comes back and is broadcast to.
+  const bots = new BotScheduler(rooms, broadcast, { pacing: options.botPacing, random: options.random });
 
   const absentTimers = new Map<string, ReturnType<typeof setTimeout>>();
   const absentDelay = options.absentTurnDelayMs ?? ABSENT_TURN_DELAY_MS;
@@ -130,7 +142,9 @@ export function createApp(options: AppOptions = {}) {
     const state = room.state;
     if (state.phase !== "draw" && state.phase !== "play") return;
     const current = state.players[state.currentIndex];
-    if (!current || current.connected) return;
+    if (!current || current.connected || current.isBot) return;
+    // An interrupted game is not a lost game: with nobody at the table, nobody is played for.
+    if (!rooms.hasHumanPresent(room)) return;
     const timer = setTimeout(() => {
       absentTimers.delete(room.id);
       const live = rooms.get(room.id);
@@ -182,7 +196,9 @@ export function createApp(options: AppOptions = {}) {
       "room:create",
       (payload: { name?: string; options?: unknown }, ack: Ack<{ roomId: string; playerId: string; token: string }>) => {
         if (typeof ack !== "function") return;
+        if (!roomLimiter.allow(socket.id)) return ack({ error: TOO_MANY });
         if (currentRoom(socket)) return ack({ error: "Déjà à une table" });
+        if (isReservedName(sanitizeName(payload?.name))) return ack({ error: "Ce prénom est réservé à l'ordinateur" });
         const { room, playerId, token } = rooms.create(
           sanitizeName(payload?.name),
           socket.id,
@@ -232,6 +248,32 @@ export function createApp(options: AppOptions = {}) {
         broadcast(result.room);
       },
     );
+
+    socket.on("room:addBot", (payload: unknown, ack?: Ack<{ ok: true; playerId: string }>) => {
+      if (typeof ack !== "function") return;
+      if (!roomLimiter.allow(socket.id)) return ack({ error: TOO_MANY });
+      const ctx = currentRoom(socket);
+      if (!ctx) return ack({ error: "Pas à une table" });
+      const request = validateAddBot(payload);
+      if (!request) return ack({ error: "Niveau inconnu" });
+      const result = rooms.addBot(ctx.room, ctx.playerId, request.level);
+      if (!result.ok) return ack({ error: result.error });
+      ack({ ok: true, playerId: result.botId });
+      broadcast(ctx.room);
+    });
+
+    socket.on("room:removeBot", (payload: unknown, ack?: Ack<{ ok: true }>) => {
+      if (typeof ack !== "function") return;
+      if (!roomLimiter.allow(socket.id)) return ack({ error: TOO_MANY });
+      const ctx = currentRoom(socket);
+      if (!ctx) return ack({ error: "Pas à une table" });
+      const request = validateRemoveBot(payload);
+      if (!request) return ack({ error: "Ordinateur introuvable" });
+      const result = rooms.removeBot(ctx.room, ctx.playerId, request.playerId);
+      if (!result.ok) return ack({ error: result.error });
+      ack({ ok: true });
+      broadcast(ctx.room);
+    });
 
     socket.on("room:leave", (...args: unknown[]) => {
       // Clients emit ("room:leave", undefined, ack): the callback is the last function argument.
@@ -295,6 +337,7 @@ export function createApp(options: AppOptions = {}) {
     socket.on("disconnect", () => {
       signalLimiter.forget(socket.id);
       chatLimiter.forget(socket.id);
+      roomLimiter.forget(socket.id);
       detach(socket);
     });
   });
@@ -304,6 +347,7 @@ export function createApp(options: AppOptions = {}) {
   // Graceful stop: persist the rooms, close the listener, then exit. Installing a signal
   // handler replaces Node's default exit, so the handler MUST terminate the process itself.
   const shutdown = () => {
+    bots.stop();
     rooms.saveNow();
     io.close();
     server.close(() => process.exit(0));
@@ -312,5 +356,5 @@ export function createApp(options: AppOptions = {}) {
   process.once("SIGTERM", shutdown);
   process.once("SIGINT", shutdown);
 
-  return { app, server, io, rooms };
+  return { app, server, io, rooms, bots };
 }

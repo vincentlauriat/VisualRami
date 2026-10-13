@@ -2,14 +2,17 @@ import { randomBytes } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
+  addBot,
   addPlayer,
   applyAction,
   autoPlayTurn,
   currentPlayer,
   createGame,
+  removeBot,
   removePlayer,
   setConnected,
   toPublicState,
+  type BotLevel,
   type GameAction,
   type GameOptions,
   type GameState,
@@ -53,6 +56,23 @@ const HOUR = 60 * 60 * 1000;
 function normalizeName(name: string): string {
   return name.trim().toLocaleLowerCase("fr");
 }
+
+/** Names handed to computer players, in order: card suits, then the joker. Five at most join a human. */
+export const BOT_NAMES = ["Ordi Trèfle", "Ordi Carreau", "Ordi Cœur", "Ordi Pique", "Ordi Joker"];
+
+/**
+ * A name only a computer player may carry: "Ordi" or "Ordinateur" as its first word, whatever
+ * the case, the accents, invisible format characters (a zero-width space) or the separator
+ * ("Ordi-Trèfle"). A leading zero reads as an O: "0rdi" looks the same on a seat. Other digit
+ * look-alikes are not chased; the "ordi" tag on a real computer's seat stays the honest signal.
+ */
+export function isReservedName(name: string): boolean {
+  const plain = name.normalize("NFD").replace(/[\p{M}\p{Cf}]/gu, "").trim().toLowerCase().replace(/^0/, "o");
+  const first = plain.split(/[\s\-_.'’]+/)[0] ?? "";
+  return first === "ordi" || first === "ordinateur";
+}
+
+const RESERVED_NAME_ERROR = "Ce prénom est réservé à l'ordinateur";
 
 export class RoomManager {
   private rooms = new Map<string, Room>();
@@ -114,12 +134,17 @@ export class RoomManager {
     const room = this.get(roomId);
     if (!room) return { ok: false, error: "Table introuvable" };
     if (room.state.phase !== "lobby") {
+      // Only a human seat can be taken back, even one whose name predates the reserved names.
       const wanted = normalizeName(name);
-      const seat = room.state.players.find((p) => normalizeName(p.name) === wanted);
+      const seat = room.state.players.find((p) => !p.isBot && normalizeName(p.name) === wanted);
+      if (!seat && isReservedName(name)) return { ok: false, error: RESERVED_NAME_ERROR };
       if (!seat) {
         return {
           ok: false,
-          error: `Partie en cours : entrez le prénom d'un joueur de la table (${room.state.players.map((p) => p.name).join(", ")})`,
+          error: `Partie en cours : entrez le prénom d'un joueur de la table (${room.state.players
+            .filter((p) => !p.isBot)
+            .map((p) => p.name)
+            .join(", ")})`,
         };
       }
       if (seat.connected && room.sockets.has(seat.id)) {
@@ -133,6 +158,7 @@ export class RoomManager {
       this.scheduleSave();
       return { ok: true, room, playerId: seat.id, token, resumed: true };
     }
+    if (isReservedName(name)) return { ok: false, error: RESERVED_NAME_ERROR };
     const playerId = this.makeId();
     const result = addPlayer(room.state, { id: playerId, name });
     if (!result.ok) return { ok: false, error: result.error };
@@ -159,6 +185,50 @@ export class RoomManager {
     return { ok: true, room };
   }
 
+  /** The host seats a computer player, in the lobby. It gets the first computer name still free. */
+  addBot(room: Room, hostId: string, level: BotLevel): { ok: true; botId: string } | { ok: false; error: string } {
+    if (room.state.hostId !== hostId) return { ok: false, error: "Seul l'hôte peut ajouter l'ordinateur" };
+    const taken = new Set(room.state.players.map((p) => p.name));
+    const name = BOT_NAMES.find((n) => !taken.has(n));
+    if (!name) return { ok: false, error: "La table est pleine" };
+    const botId = this.makeId();
+    const result = addBot(room.state, { id: botId, name, level });
+    if (!result.ok) return { ok: false, error: result.error };
+    room.state = result.state;
+    room.lastActivity = Date.now();
+    this.scheduleSave();
+    return { ok: true, botId };
+  }
+
+  /** The host takes a computer player off the table, in the lobby. */
+  removeBot(room: Room, hostId: string, botId: string): { ok: true } | { ok: false; error: string } {
+    if (room.state.hostId !== hostId) return { ok: false, error: "Seul l'hôte peut retirer l'ordinateur" };
+    const result = removeBot(room.state, botId);
+    if (!result.ok) return { ok: false, error: result.error };
+    room.state = result.state;
+    room.lastActivity = Date.now();
+    this.scheduleSave();
+    return { ok: true };
+  }
+
+  /**
+   * A computer player's last resort, when its move and the plainest one were both refused: the
+   * same minimal turn as for an absent player, without the absence line.
+   */
+  playBotLastResort(room: Room, botId: string): boolean {
+    const result = autoPlayTurn(room.state, botId, Math.random, null);
+    if (!result.ok) return false;
+    room.state = result.state;
+    room.lastActivity = Date.now();
+    this.scheduleSave();
+    return true;
+  }
+
+  /** Whether a human is at the table right now: computer players only play while one is. */
+  hasHumanPresent(room: Room): boolean {
+    return room.state.players.some((p) => !p.isBot && p.connected && room.sockets.has(p.id));
+  }
+
   /** `explicit`: the player chose to leave (Quitter). Only then does a started game log it. */
   leave(room: Room, playerId: string, socketId: string, explicit = false): boolean {
     if (room.sockets.get(playerId) !== socketId) return false;
@@ -176,7 +246,8 @@ export class RoomManager {
   /** If the current player is still disconnected, play their turn for them. Returns true when the state changed. */
   autoPlayIfAbsent(room: Room, playerId: string): boolean {
     const current = currentPlayer(room.state);
-    if (!current || current.id !== playerId || current.connected) return false;
+    // A computer player is played by the bot scheduler, never by the absence timer.
+    if (!current || current.id !== playerId || current.connected || current.isBot) return false;
     if (room.state.phase !== "draw" && room.state.phase !== "play") return false;
     const result = autoPlayTurn(room.state, playerId);
     if (!result.ok) return false;
@@ -276,7 +347,9 @@ export class RoomManager {
           ready: Array.isArray(saved.state.ready) ? saved.state.ready : [],
           reshuffles: Number.isInteger(saved.state.reshuffles) && saved.state.reshuffles >= 0 ? saved.state.reshuffles : 0,
         };
-        for (const p of state.players) state = setConnected(state, p.id, false);
+        // Computer players have no socket and stay connected: they would otherwise look absent.
+        state = { ...state, players: state.players.map((p) => (p.isBot ? { ...p, connected: true } : p)) };
+        for (const p of state.players) if (!p.isBot) state = setConnected(state, p.id, false);
         this.rooms.set(saved.id, {
           id: saved.id,
           state,

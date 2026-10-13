@@ -1,6 +1,6 @@
 # Computer player — design
 
-**Status:** Design accepted 2026-10-12. Phase 1 (meld search and easy level, `shared/src/bot/`) done 2026-10-13, see [Phase 1 as built](#phase-1-as-built-2026-10-13); phases 2 to 4 not started.
+**Status:** Design accepted 2026-10-12. Phase 1 (meld search and easy level, `shared/src/bot/`) done 2026-10-13, see [Phase 1 as built](#phase-1-as-built-2026-10-13); phases 2 (server) and 3 (client) done 2026-10-13, see [Phases 2 and 3 as built](#phases-2-and-3-as-built-2026-10-13); phase 4 (medium level) not started.
 
 ## Summary
 
@@ -90,8 +90,8 @@ The bot runs **on the server**, as a full player in the room. It goes through th
 | Phase | Content | Size | Risks |
 |---|---|---|---|
 | **1. Meld search** (`shared/src/bot/`) — **done 2026-10-13** | Points 1 to 6 of section 2, easy bot, unit and property tests, simulations | 2 to 3 d | Joker and ace edge cases; duplicates across the two decks |
-| **2. Server integration** | `isBot` and `difficulty` in `Player` / `PublicPlayer`, `room:addBot` / `room:removeBot`, `BotScheduler`, exclusions (host, seat by first name), pause without humans, re-arm on restore, tests | 1.5 to 2 d | Races between timers and human actions: one timer per room, cancelled on every `broadcast` |
-| **3. Client** | Solo button on Home, add and remove in the lobby, difficulty choice, seat without video, bots excluded from `peerIds`, strings ready for i18n (bilingual constraint of `PRODUCT.md`) | 1 to 2 d | Seat layout on phones |
+| **2. Server integration** — **done 2026-10-13** | `isBot` and `difficulty` in `Player` / `PublicPlayer`, `room:addBot` / `room:removeBot`, `BotScheduler`, exclusions (host, seat by first name), pause without humans, re-arm on restore, tests | 1.5 to 2 d | Races between timers and human actions: one timer per room, cancelled on every `broadcast` |
+| **3. Client** — **done 2026-10-13** | Solo button on Home, add and remove in the lobby, difficulty choice, seat without video, bots excluded from `peerIds`, strings ready for i18n (bilingual constraint of `PRODUCT.md`) | 1 to 2 d | Seat layout on phones |
 | **4. Medium bot** | Potential evaluation, memory, defence against the next player, tuning by simulation | 2 to 3 d | Subjective tuning: plan a test game with real players |
 | 5. Later | Hard level in `worker_threads` or client side; offline mode; replacing an absent human with a bot instead of the minimal `autoPlayTurn` | 1 to 2 weeks | B1 CPU; second code path |
 
@@ -191,6 +191,69 @@ Decision of the product owner: both rules.
    - The log reads "Talon épuisé 3 fois : manche nulle", and the panel "Manche nulle : talon épuisé".
    - `autoPlayTurn` returns that finished state.
    - The bot needs nothing special: its draw ends the round, and its next plan is empty.
+
+## Phases 2 and 3 as built (2026-10-13)
+
+**Model** (`shared`)
+- `Player.isBot?` and `level?` (persisted; absent in older snapshots, read as a human). `PublicPlayer.isBot` and `level?`. `BotLevel` moved to `types.ts`, "easy" only.
+- `addBot` and `removeBot` (lobby only, 6 seats at most).
+- A computer player has no socket and is **always `connected: true`**, restores included. The host role never goes to it: `setConnected` and the lobby's `removePlayer` both skip bots. A table with only computers connected keeps its absent human as host.
+
+**Server**
+- **Socket events.** `room:addBot { level? }` (host only, lobby, "easy" by default) and `room:removeBot { playerId }`, both validated in `validate.ts` and acknowledged with `{ ok }` or `{ error }`.
+- **Names.** "Ordi Trèfle", "Ordi Carreau", "Ordi Cœur", "Ordi Pique", "Ordi Joker"; the first free one is given.
+  - A new human seat cannot take a name whose first word is "Ordi" or "Ordinateur" (`isReservedName`). Case, accents and format characters (a zero-width space) are ignored, the first word ends at a space, dash, underscore, dot or apostrophe, and a leading 0 reads as an O. Other digit look-alikes are not chased: the "ordi" tag on a real computer's seat stays the honest signal.
+  - Taking a seat back by name only ever matches a human seat, so a computer's name finds nothing and is refused. A human seat saved with such a name before the rule existed can still be taken back by it.
+- **`BotScheduler`** (`server/src/botScheduler.ts`), one timer per table (revised after review, 2026-10-13):
+  - **A broadcast only re-arms the timer**, which is cheap: no search happens there. The move is planned when the timer fires, on the table as it is then, from `toPublicState(state, botId)` only (the fallback move too). Restored tables stay paused until a human comes back; there is no start-up loop.
+  - **Stale plans.** Planning at fire time removed the stale-plan question for every move but one: the discard. It waits a beat more after being planned, so its second timer keeps the guard. The planned discard is applied only if `room.state` is still the same object, otherwise it is dropped, and the broadcast that changed the table has already re-armed the timer.
+  - **One action per firing**, through `applyAction` via `rooms.act`, then a broadcast.
+  - **Pace**: 0.8 to 1.2 s before each action, 1.5 s (±15%) in all before the discard, 1.2 s before a computer says it is ready for the next round. The pace, the randomness and the planner are injectable.
+  - **Pause**: no move while no human is at the table (`hasHumanPresent`: a human with a socket attached).
+  - **Failures never reach the broadcast.**
+    - A planner that throws falls back to the plainest move: draw from the stock, or discard a card that may go back.
+    - A refused move falls back to that plainest move, then to `playBotLastResort`: `autoPlayTurn` with no log line, since "est absent" would be false for a computer.
+    - If nothing could be played, the server logs it and tries again after 2 s, 4 s, … up to 30 s.
+  - **`stop()`** marks the scheduler stopped, so a later `schedule` does nothing. It is called on shutdown and in tests.
+- **Absence**: the absence timer and `autoPlayIfAbsent` never play for a computer. *Changed in review:* the absence timer also waits for a human at the table, at every table. A table whose humans all left now pauses instead of being played automatically, turn after turn, until the round is drawn ("an interrupted game is not a lost game", `PRODUCT.md`).
+- **Rate limit**: `room:create`, `room:addBot` and `room:removeBot` share a limit of 10 requests per 10 s per socket ("Trop de demandes : réessayez dans quelques secondes").
+- **Plan cache**: the one-entry cache became a 32-entry LRU (`LruCache`, a read counts as a use), shared by every table of the process, rather than one Map per seat. `planPlay` is pure in its inputs and the key covers everything it reads, so sharing cannot change a decision. Only the hit rate mattered: bots at several tables, playing in turn, must not evict each other's plan between their draw and their play.
+
+**Client**
+- **Home**: a "Seul ? Jouez contre l'ordinateur" panel below Create and Join.
+  - A choice of 1, 2 or 3 computers (pills, 1 by default, the chosen one outlined, never gold) and a neutral "Jouer contre l'ordinateur" button. It uses the rules set in the Create panel.
+  - `useGame.playSolo` creates the table, seats the computers one acknowledgement at a time, then starts. A failure after the table exists leaves the player in its lobby with the error.
+- **Lobby**: the host has a neutral "Ajouter l'ordinateur" (hidden at 6 seats) and a × on each computer's row ("Retirer Ordi Trèfle"). "Lancer la partie" keeps the lamp and accepts 1 human + 1 computer. While alone, the hint reads "Invitez un ami avec le lien, ou ajoutez l'ordinateur."
+- **Computer seat** (`VideoTile bot`):
+  - A drawn card back (the `bot` glyph of `Icon.tsx`) in the card-back blue, never initials. No `<video>`, no microphone pip, never "absent".
+  - On the seat, the name without its "Ordi" prefix ("Trèfle") followed by an "ordi" tag. The full name is read out with ", ordinateur".
+  - The player list shows the glyph and an "ordi" tag.
+- **WebRTC**: `mediaPeers` leaves computers out of `peerIds`, which ends the 8 s rebuild loop towards a peer with no socket.
+- **Log**: the existing lines read naturally ("Ordi Trèfle pioche une carte", "Ordi Trèfle pose 3 combinaisons", "Ordi Trèfle défausse R♦").
+- **Accessibility**: the turn line read by the polite live region says "Tour d'Ordi Trèfle, l'ordinateur", once per turn; the computer's three or four moves do not each speak.
+
+**Checks** (2026-10-13)
+- Server tests (`server/test/bots.test.ts`):
+  - adding and removing a computer;
+  - whole turns, and a human + computer round to its end;
+  - pause without a human, then resume;
+  - resume after a restart;
+  - never host, seat refused by name;
+  - a stale plan is not applied.
+- Browser run: system Chrome driven by `playwright-core` 1.58.2 from the local npx cache, fake media, server on port 3100 with a scratch `DATA_DIR`.
+  - **Solo games to the end of a round**: one computer on a 1440px desktop, two on a 390px phone.
+  - **Lobby**: two humans and one computer.
+  - **Server restart mid-game**: the table reconnects and the computer plays on.
+  - **No rebuild loop**: 0 `RTCPeerConnection` in solo; 1, stable over 20 s, at the table with two humans.
+  - **Console**: no error beyond the socket refusals during the restart.
+
+**Compatibility limits**
+- **Old client bundle**: a client opened before this release, and not reloaded, does not know `isBot`. It puts the computers in its WebRTC mesh and rebuilds those connections every 8 s, until the page is reloaded. The game itself works.
+- **Server rollback**: a server rolled back to an earlier release would read the computers as humans. They have no socket, so it would mark them absent and auto-play their turns every 45 s, and anyone could take their seat by typing their name.
+
+**Deviations**
+- The computers say "ready" by themselves between rounds, through the same timer and the same pause rule. The design did not mention it, but the host's "who is ready" line would otherwise wait for them.
+- The seat shows the short name; the design asked for a badge, the badge carries the "ordi".
 
 ## 7. Decisions (2026-10-12)
 

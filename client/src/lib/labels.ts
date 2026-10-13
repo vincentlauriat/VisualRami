@@ -11,6 +11,22 @@ export function deName(name: string): string {
 
 export const labels = {
   turnOf: (name: string) => `Tour ${deName(name)}`,
+  /** Spoken: the seat's name already says "Ordi", the words say what it is. */
+  turnOfBot: (name: string) => `Tour ${deName(name)}, l'ordinateur`,
+
+  // Computer players.
+  botTag: "ordi",
+  /** On a seat the "ordi" tag says what it is: "Ordi Trèfle" shows as "Trèfle". */
+  botShortName: (name: string) => name.replace(/^Ordi\s+/, ""),
+  botSpoken: "ordinateur",
+  addBot: "Ajouter l'ordinateur",
+  removeBot: (name: string) => `Retirer ${name}`,
+  soloTitle: "Seul ? Jouez contre l'ordinateur",
+  soloStart: "Jouer contre l'ordinateur",
+  soloLegend: "Adversaires",
+  soloOpponents: (n: number) => `${n} ordinateur${n > 1 ? "s" : ""}`,
+  waitSecondPlayer: "En attente d'un second joueur…",
+  waitOrAddBot: "Invitez un ami avec le lien, ou ajoutez l'ordinateur.",
   stock: (count: number, canDraw: boolean, endsRound = false) =>
     `${canDraw ? `Piocher dans le talon, ${count} cartes` : `Talon, ${count} cartes`}${endsRound ? ". Piocher ici termine la manche (manche nulle)" : ""}`,
   // The stock is empty and already reshuffled three times: drawing there draws the round.

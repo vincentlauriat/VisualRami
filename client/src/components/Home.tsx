@@ -10,6 +10,7 @@ interface Props {
   connected: boolean;
   initialCode?: string;
   onCreate: (name: string, options: Partial<GameOptions>) => Promise<void>;
+  onSolo: (name: string, bots: number, options: Partial<GameOptions>) => Promise<void>;
   onJoin: (roomId: string, name: string) => Promise<void>;
   onResume: (roomId: string, name: string) => Promise<void>;
 }
@@ -23,9 +24,9 @@ function formatAge(ts: number): string {
   return `il y a ${Math.round(hours / 24)} j`;
 }
 
-type Where = "invite" | "resume" | "create" | "join";
+type Where = "invite" | "resume" | "create" | "join" | "solo";
 
-export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Props) {
+export function Home({ connected, initialCode, onCreate, onSolo, onJoin, onResume }: Props) {
   const [name, setName] = useState(loadName());
   const [code, setCode] = useState(initialCode?.toUpperCase() ?? "");
   const [seats, setSeats] = useState(() => loadSeats());
@@ -33,6 +34,7 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
   // What the field shows while typing; `minPoints` is the last valid value, the one sent.
   const [minPointsText, setMinPointsText] = useState(String(DEFAULT_OPTIONS.firstMeldMinPoints));
   const [pureRun, setPureRun] = useState(DEFAULT_OPTIONS.requirePureRun);
+  const [soloBots, setSoloBots] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ where: Where; text: string } | null>(null);
   // Arriving by an invitation link shows that one table; the full home is a click away.
@@ -255,6 +257,32 @@ export function Home({ connected, initialCode, onCreate, onJoin, onResume }: Pro
           </button>
         </form>
       </div>
+
+      {/* Discreet on purpose: one gold button on the page (The Lamp Rule). The table rules set
+          above apply here too. */}
+      <section className="panel solo" aria-labelledby="solo-title">
+        <h2 id="solo-title">{labels.soloTitle}</h2>
+        <fieldset className="choice">
+          <legend>{labels.soloLegend}</legend>
+          {[1, 2, 3].map((n) => (
+            <label key={n} className={soloBots === n ? "on" : undefined}>
+              <input type="radio" name="solo-bots" value={n} checked={soloBots === n} onChange={() => setSoloBots(n)} />
+              {labels.soloOpponents(n)}
+            </label>
+          ))}
+        </fieldset>
+        <button
+          type="button"
+          disabled={!ready}
+          onClick={() =>
+            run("solo", () => onSolo(name.trim(), soloBots, { firstMeldMinPoints: minPoints, requirePureRun: pureRun }))
+          }
+        >
+          <Icon name="bot" />
+          {labels.soloStart}
+        </button>
+        {errorAt("solo")}
+      </section>
 
       <section className="panel rules">
         <h2>Règles en bref</h2>

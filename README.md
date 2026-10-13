@@ -24,7 +24,7 @@ Landing page: https://lauriat.fr/outils/visualrami/ · More apps: https://vincen
 | Device-aware table layout: phone, tablet portrait, landscape, touch-sized controls | ✅ |
 | Azure App Service packaging + remote probe | ✅ |
 | TURN relay for restrictive networks | ⚙️ configurable, bring your own server |
-| Computer player (play alone or fill a seat; easy and medium levels) | 📐 designed — [docs/COMPUTER_PLAYER.md](docs/COMPUTER_PLAYER.md) |
+| Computer player: play alone against 1 to 3 computers, or fill a seat at a table of friends (easy level) | ✅ — medium level designed, [docs/COMPUTER_PLAYER.md](docs/COMPUTER_PLAYER.md) |
 | Drag-and-drop hand, spectator mode, game history | ⏳ roadmap |
 
 ## Quick start

@@ -2,6 +2,7 @@ import { buildDeck, cardLabel, handCardPoints, shuffle, type Rng } from "./cards
 import { analyzeMeld, checkFirstLaydown, isValidMeld, leavesACard } from "./rules.js";
 import {
   DEFAULT_OPTIONS,
+  type BotLevel,
   type Card,
   type GameAction,
   type GameOptions,
@@ -67,6 +68,23 @@ export function addPlayer(state: GameState, player: { id: string; name: string }
   return ok({ ...state, players: [...state.players, makePlayer(player.id, player.name)] });
 }
 
+/** Seat a computer player at the table, in the lobby only. It has no socket and is always connected. */
+export function addBot(state: GameState, bot: { id: string; name: string; level: BotLevel }): GameResult {
+  const added = addPlayer(state, bot);
+  if (!added.ok) return added;
+  return ok({
+    ...added.state,
+    players: added.state.players.map((p) => (p.id === bot.id ? { ...p, isBot: true, level: bot.level } : p)),
+  });
+}
+
+/** Take a computer player off the table, in the lobby only. */
+export function removeBot(state: GameState, botId: string): GameResult {
+  if (state.phase !== "lobby") return fail("La partie a déjà commencé");
+  if (!state.players.some((p) => p.id === botId && p.isBot)) return fail("Ordinateur introuvable");
+  return ok({ ...state, players: state.players.filter((p) => p.id !== botId) });
+}
+
 /**
  * A player leaves. In a started game the seat is kept (they can come back); `announce` logs the
  * departure, for an explicit leave only: a dropped connection or a reload is not news.
@@ -78,7 +96,8 @@ export function removePlayer(state: GameState, playerId: string, announce = fals
     return announce && player ? log(next, `${player.name} a quitté la table`) : next;
   }
   const players = state.players.filter((p) => p.id !== playerId);
-  const hostId = state.hostId === playerId && players[0] ? players[0].id : state.hostId;
+  const heir = players.find((p) => !p.isBot);
+  const hostId = state.hostId === playerId && heir ? heir.id : state.hostId;
   return { ...state, players, hostId };
 }
 
@@ -86,9 +105,10 @@ export function setConnected(state: GameState, playerId: string, connected: bool
   const players = state.players.map((p) => (p.id === playerId ? { ...p, connected } : p));
   let hostId = state.hostId;
   const host = players.find((p) => p.id === hostId);
-  // Never leave the table without a connected host: start/newRound would be stuck.
+  // Never leave the table without a connected host: start/newRound would be stuck. A computer
+  // player is always connected but cannot press anything, so it is never a candidate.
   if (!host || !host.connected) {
-    const candidate = players.find((p) => p.connected);
+    const candidate = players.find((p) => p.connected && !p.isBot);
     if (candidate) hostId = candidate.id;
   }
   return { ...state, players, hostId };
@@ -96,9 +116,16 @@ export function setConnected(state: GameState, playerId: string, connected: bool
 
 /**
  * Play a minimal turn on behalf of a player who is absent: draw from the stock if needed,
- * then discard. Used by the server when the current player stays disconnected.
+ * then discard. Used by the server when the current player stays disconnected, and as a
+ * computer player's last resort. `note` is the log line added at the end; null adds none (a
+ * computer is not absent, and the draw and the discard already have their lines).
  */
-export function autoPlayTurn(state: GameState, playerId: string, rng: Rng = Math.random): GameResult {
+export function autoPlayTurn(
+  state: GameState,
+  playerId: string,
+  rng: Rng = Math.random,
+  note: string | null = `${currentPlayer(state)?.name ?? "?"} est absent : tour joué automatiquement`,
+): GameResult {
   const player = currentPlayer(state);
   if (!player || player.id !== playerId) return fail("Ce n'est pas le tour de ce joueur");
   let next = state;
@@ -115,7 +142,7 @@ export function autoPlayTurn(state: GameState, playerId: string, rng: Rng = Math
   if (!card) return fail("Main vide");
   const result = discard(next, playerId, card.id);
   if (!result.ok) return result;
-  return ok(log(result.state, `${player.name} est absent : tour joué automatiquement`));
+  return ok(note === null ? result.state : log(result.state, note));
 }
 
 function fail(error: string): GameResult {
@@ -447,6 +474,8 @@ export function toPublicState(state: GameState, viewerId: string): PublicGameSta
       hasLaidDown: p.hasLaidDown,
       score: p.score,
       connected: p.connected,
+      isBot: p.isBot === true,
+      ...(p.isBot && p.level ? { level: p.level } : {}),
     })),
     you: { id: viewerId, hand: you ? you.hand : [] },
     stockCount: state.stock.length,

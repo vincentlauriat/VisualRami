@@ -1,4 +1,4 @@
-import type { GameAction, GameOptions } from "@visualrami/shared";
+import type { BotLevel, GameAction, GameOptions } from "@visualrami/shared";
 
 const isString = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= 64;
 const isStringArray = (v: unknown): v is string[] =>
@@ -52,4 +52,20 @@ export function sanitizeOptions(input: unknown): Partial<GameOptions> {
   }
   if (typeof o.requirePureRun === "boolean") out.requirePureRun = o.requirePureRun;
   return out;
+}
+
+/** `room:addBot`: the level of the computer player to seat, "easy" when omitted. */
+export function validateAddBot(input: unknown): { level: BotLevel } | null {
+  if (input === undefined || input === null) return { level: "easy" };
+  if (typeof input !== "object") return null;
+  const level = (input as Record<string, unknown>).level;
+  if (level === undefined) return { level: "easy" };
+  return level === "easy" ? { level } : null;
+}
+
+/** `room:removeBot`: the computer player to take off the table. */
+export function validateRemoveBot(input: unknown): { playerId: string } | null {
+  if (!input || typeof input !== "object") return null;
+  const playerId = (input as Record<string, unknown>).playerId;
+  return isString(playerId) ? { playerId } : null;
 }

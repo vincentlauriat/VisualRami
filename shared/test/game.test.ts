@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { seededRng } from "../src/cards.js";
-import { addPlayer, applyAction, autoPlayTurn, createGame, currentPlayer, removePlayer, setConnected, stockDrawEndsRound, toPublicState } from "../src/game.js";
+import { addBot, addPlayer, applyAction, autoPlayTurn, createGame, removeBot, currentPlayer, removePlayer, setConnected, stockDrawEndsRound, toPublicState } from "../src/game.js";
 import type { Card, GameState, Rank, Suit } from "../src/types.js";
 
 const rng = seededRng(42);
@@ -217,6 +217,14 @@ describe("absent players", () => {
     expect(currentPlayer(state)!.id).not.toBe(me.id);
     expect(state.log.at(-1)).toMatch(/absent/);
     expect(autoPlayTurn(state, me.id, rng).ok).toBe(false);
+  });
+
+  it("plays the same minimal turn without the absence line, for a computer player's last resort", () => {
+    const state = setup();
+    const me = currentPlayer(state)!;
+    const auto = autoPlayTurn(state, me.id, rng, null);
+    expect(auto.ok && auto.state.log.at(-1)).toMatch(new RegExp(`^${me.name} défausse `));
+    expect(auto.ok && auto.state.log.some((l) => /absent/.test(l))).toBe(false);
   });
 
   it("hands the host role to a connected player", () => {
@@ -458,5 +466,54 @@ describe("drawn round", () => {
     const done = autoPlayTurn(state, currentPlayer(state)!.id, rng);
     expect(done.ok && done.state.phase).toBe("finished");
     expect(done.ok && done.state.log.at(-1)).toBe("Talon épuisé 3 fois : manche nulle");
+  });
+});
+
+describe("computer players", () => {
+  function lobbyWithBot(): GameState {
+    let state = createGame("R", { id: "a", name: "Alice" });
+    state = (addBot(state, { id: "bot1", name: "Ordi Trèfle", level: "easy" }) as { ok: true; state: GameState }).state;
+    return state;
+  }
+
+  it("seats a computer player in the lobby, connected and marked as such in every view", () => {
+    const state = lobbyWithBot();
+    const bot = state.players.find((p) => p.id === "bot1")!;
+    expect(bot).toMatchObject({ isBot: true, level: "easy", connected: true });
+    const pub = toPublicState(state, "a");
+    expect(pub.players.find((p) => p.id === "bot1")).toMatchObject({ isBot: true, level: "easy" });
+    expect(pub.players.find((p) => p.id === "a")).toMatchObject({ isBot: false });
+    // One human and one computer may start.
+    expect(applyAction(state, "a", { type: "start" }, rng).ok).toBe(true);
+  });
+
+  it("only in the lobby, and never beyond six seats", () => {
+    let state = lobbyWithBot();
+    for (let i = 2; i <= 5; i++) state = (addBot(state, { id: `bot${i}`, name: `B${i}`, level: "easy" }) as { ok: true; state: GameState }).state;
+    expect(state.players).toHaveLength(6);
+    expect(addBot(state, { id: "bot7", name: "B7", level: "easy" }).ok).toBe(false);
+    const started = must(applyAction(lobbyWithBot(), "a", { type: "start" }, rng));
+    expect(addBot(started, { id: "late", name: "Late", level: "easy" }).ok).toBe(false);
+  });
+
+  it("removes a computer player from the lobby, and only a computer player", () => {
+    const state = lobbyWithBot();
+    const removed = removeBot(state, "bot1");
+    expect(removed.ok && removed.state.players.map((p) => p.id)).toEqual(["a"]);
+    expect(removeBot(state, "a").ok).toBe(false);
+    expect(removeBot(must(applyAction(state, "a", { type: "start" }, rng)), "bot1").ok).toBe(false);
+  });
+
+  it("never hands the host role to a computer player", () => {
+    // Lobby: the host leaves after adding a computer, before the second human came.
+    let lobby = lobbyWithBot();
+    lobby = (addPlayer(lobby, { id: "b", name: "Bob" }) as { ok: true; state: GameState }).state;
+    expect(removePlayer(lobby, "a").hostId).toBe("b");
+    // Started game: the computer is always connected, the host role still goes to a human.
+    const started = must(applyAction(lobby, "a", { type: "start" }, rng));
+    expect(setConnected(started, "a", false).hostId).toBe("b");
+    // With no human connected, the host stays the (absent) human.
+    const alone = must(applyAction(lobbyWithBot(), "a", { type: "start" }, rng));
+    expect(setConnected(alone, "a", false).hostId).toBe("a");
   });
 });

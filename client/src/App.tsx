@@ -5,10 +5,11 @@ import { Home } from "./components/Home";
 import { Lobby } from "./components/Lobby";
 import { Game } from "./components/Game";
 import { labels } from "./lib/labels";
+import { mediaPeers } from "./lib/peers";
 
 export function App() {
   const game = useGame();
-  const peerIds = useMemo(() => game.state?.players.map((p) => p.id) ?? [], [game.state?.players]);
+  const peerIds = useMemo(() => mediaPeers(game.state?.players ?? []), [game.state?.players]);
   const rtc = useWebRTC(game.session?.playerId ?? null, peerIds, game.epoch);
   const initialCode = useMemo(() => new URLSearchParams(location.search).get("table") ?? undefined, []);
 
@@ -25,6 +26,7 @@ export function App() {
           connected={game.connected}
           initialCode={initialCode}
           onCreate={game.create}
+          onSolo={game.playSolo}
           onJoin={game.join}
           onResume={game.resume}
         />
@@ -37,7 +39,15 @@ export function App() {
   if (game.state.phase === "lobby") {
     return (
       <>
-        <Lobby state={game.state} rtc={rtc} connected={game.connected} onStart={() => game.act({ type: "start" })} onLeave={game.leave} />
+        <Lobby
+          state={game.state}
+          rtc={rtc}
+          connected={game.connected}
+          onStart={() => game.act({ type: "start" })}
+          onAddBot={game.addBot}
+          onRemoveBot={game.removeBot}
+          onLeave={game.leave}
+        />
         <div role="status">{!game.connected && <div className="reconnecting">{labels.connectionLost}</div>}</div>
         {game.error && <div className="toast global" role="alert" onClick={game.clearError}>{game.error}</div>}
       </>

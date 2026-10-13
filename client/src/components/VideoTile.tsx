@@ -20,9 +20,11 @@ interface Props {
   winner?: boolean;
   /** Another player's badge: neutral, since gold is reserved for what is yours. */
   badgeMuted?: boolean;
+  /** A computer player: a drawn card back and an "ordi" tag, no video, no microphone. */
+  bot?: boolean;
 }
 
-export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, active, offline, videoOff, micOff, winner, badgeMuted }: Props) {
+export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, active, offline, videoOff, micOff, winner, badgeMuted, bot }: Props) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -30,13 +32,13 @@ export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, a
     el.srcObject = stream;
     if (stream) el.play().catch(() => undefined);
   }, [stream]);
-  const hasVideo = !videoOff && stream?.getVideoTracks().some((t) => t.enabled && t.readyState === "live");
+  const hasVideo = !bot && !videoOff && stream?.getVideoTracks().some((t) => t.enabled && t.readyState === "live");
   return (
-    <div className={`video-tile${small ? " small" : ""}${active ? " active" : ""}${offline ? " offline" : ""}${winner ? " winner" : ""}`}>
-      <video ref={ref} autoPlay playsInline muted={muted} className={mirror ? "mirror" : ""} />
+    <div className={`video-tile${small ? " small" : ""}${active ? " active" : ""}${offline ? " offline" : ""}${winner ? " winner" : ""}${bot ? " bot" : ""}`}>
+      {!bot && <video ref={ref} autoPlay playsInline muted={muted} className={mirror ? "mirror" : ""} />}
       {!hasVideo && (
         <div className="video-placeholder" aria-hidden>
-          <span>{initials(name)}</span>
+          {bot ? <Icon name="bot" /> : <span>{initials(name)}</span>}
         </div>
       )}
       {winner && !offline && (
@@ -53,15 +55,29 @@ export function VideoTile({ stream, name, suffix, muted, mirror, small, badge, a
           <span className="video-status-more"> · {labels.peerSeatKept}</span>
         </p>
       )}
-      {micOff && !offline && (
+      {micOff && !offline && !bot && (
         <span className="video-mic" role="img" aria-label={labels.micOff(name)}>
           <Icon name="micOff" />
         </span>
       )}
       {/* The name pill holds the name only; "posé" is a corner chip so it never takes the name's room. */}
       <div className="video-name">
-        <span className="video-label">{name}</span>
+        {bot ? (
+          <>
+            <span className="video-label" aria-hidden>{labels.botShortName(name)}</span>
+            <span className="sr-only">{name}</span>
+          </>
+        ) : (
+          <span className="video-label">{name}</span>
+        )}
         {suffix && <span className="video-suffix">{suffix}</span>}
+        {/* Read with the name: "Ordi Trèfle, ordinateur". */}
+        {bot && (
+          <span className="video-suffix bot-tag">
+            <span aria-hidden>{labels.botTag}</span>
+            <span className="sr-only">, {labels.botSpoken}</span>
+          </span>
+        )}
       </div>
       {badge && <span className={`video-badge${badgeMuted ? " muted" : ""}`}>{badge}</span>}
     </div>

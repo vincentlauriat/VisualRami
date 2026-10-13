@@ -30,6 +30,14 @@ export interface GameConnection {
   /** Leave the table. A started game keeps the seat, so the player can come back with the code. */
   leave: () => Promise<void>;
   act: (action: GameAction) => Promise<boolean>;
+  /** The host seats a computer player in the lobby. */
+  addBot: () => Promise<boolean>;
+  removeBot: (playerId: string) => Promise<boolean>;
+  /**
+   * Create a table, seat `bots` computer players and start. A failure after the table exists
+   * leaves the player in its lobby with the error, never on a table half set up.
+   */
+  playSolo: (name: string, bots: number, options: Partial<GameOptions>) => Promise<void>;
   /** False when offline: the message was not sent and stays in the field. */
   sendChat: (text: string) => boolean;
 }
@@ -178,6 +186,43 @@ export function useGame(): GameConnection {
     }
   }, []);
 
+  const addBot = useCallback(async () => {
+    if (!liveRef.current) return false;
+    try {
+      await request("room:addBot", { level: "easy" });
+      setError(null);
+      return true;
+    } catch (err) {
+      setError((err as Error).message);
+      return false;
+    }
+  }, []);
+
+  const removeBot = useCallback(async (playerId: string) => {
+    if (!liveRef.current) return false;
+    try {
+      await request("room:removeBot", { playerId });
+      setError(null);
+      return true;
+    } catch (err) {
+      setError((err as Error).message);
+      return false;
+    }
+  }, []);
+
+  const playSolo = useCallback(
+    async (name: string, bots: number, options: Partial<GameOptions>) => {
+      await create(name, options);
+      try {
+        for (let i = 0; i < bots; i++) await request("room:addBot", { level: "easy" });
+        await request("game:action", { type: "start" });
+      } catch (err) {
+        setError((err as Error).message);
+      }
+    },
+    [create],
+  );
+
   const sendChat = useCallback((text: string): boolean => {
     if (!liveRef.current) return false;
     socket.emit("chat:message", text);
@@ -186,5 +231,22 @@ export function useGame(): GameConnection {
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { connected, session, state, error, chat, epoch, clearError, create, join, resume, leave, act, sendChat };
+  return {
+    connected,
+    session,
+    state,
+    error,
+    chat,
+    epoch,
+    clearError,
+    create,
+    join,
+    resume,
+    leave,
+    act,
+    addBot,
+    removeBot,
+    playSolo,
+    sendChat,
+  };
 }
