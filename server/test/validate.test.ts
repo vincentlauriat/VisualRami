@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeOptions, validateAction } from "../src/validate.js";
+import { sanitizeOptions, validateAction, validateAddBot, validateRemoveBot } from "../src/validate.js";
 
 describe("validateAction", () => {
   it("rejects malformed payloads that used to crash the reducer", () => {
@@ -51,5 +51,22 @@ describe("sanitizeOptions", () => {
     expect(sanitizeOptions({ firstMeldMinPoints: Number.NaN })).toEqual({});
     expect(sanitizeOptions(null)).toEqual({});
     expect(sanitizeOptions({ requirePureRun: false })).toEqual({ requirePureRun: false });
+  });
+});
+
+describe("computer player payloads", () => {
+  it("reads the level to add, easy by default, and nothing else", () => {
+    expect(validateAddBot(undefined)).toEqual({ level: "easy" });
+    expect(validateAddBot({})).toEqual({ level: "easy" });
+    expect(validateAddBot({ level: "easy" })).toEqual({ level: "easy" });
+    expect(validateAddBot({ level: "hard" })).toBeNull();
+    expect(validateAddBot({ level: 1 })).toBeNull();
+  });
+
+  it("reads the computer player to remove", () => {
+    expect(validateRemoveBot({ playerId: "abc123" })).toEqual({ playerId: "abc123" });
+    expect(validateRemoveBot({ playerId: "" })).toBeNull();
+    expect(validateRemoveBot({ playerId: 3 })).toBeNull();
+    expect(validateRemoveBot("abc")).toBeNull();
   });
 });

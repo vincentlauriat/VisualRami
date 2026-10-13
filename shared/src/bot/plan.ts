@@ -10,9 +10,10 @@ import {
   type Packing,
   type SearchBudget,
 } from "./packing.js";
+import { LruCache } from "./lru.js";
 import { findExtensions, findJokerSwaps, swapResult } from "./table.js";
 
-export type BotLevel = "easy";
+export type { BotLevel } from "../types.js";
 
 /**
  * What a bot carries from one decision to the next. The easy level needs nothing; the medium
@@ -135,18 +136,21 @@ function playKey(context: PlayContext): string {
 }
 
 /**
- * The last play phase planned. Deciding the draw plans the play phase with the discard pile's
- * top in hand; when the bot takes it, the engine puts that card at the end of the hand and the
- * next call asks for exactly that plan. Pure in its inputs, so the cache cannot change a decision.
+ * Recent play phases planned. Deciding the draw plans the play phase with the discard pile's top
+ * in hand; when the bot takes it, the engine puts that card at the end of the hand and the next
+ * call asks for exactly that plan. Pure in its inputs, so the cache cannot change a decision and
+ * may be shared by every table of the process; it holds a few entries so bots at several tables,
+ * playing in turn, do not evict each other's plan between their draw and their play.
  */
-let lastPlay: { key: string; plan: { actions: GameAction[]; hand: Card[] } } | null = null;
+const recentPlays = new LruCache<string, { actions: GameAction[]; hand: Card[] }>(32);
 
 function planPlayOnce(context: PlayContext, budget: SearchBudget): { actions: GameAction[]; hand: Card[] } {
   const key = playKey(context);
-  if (lastPlay?.key === key) return lastPlay.plan;
+  const cached = recentPlays.get(key);
+  if (cached) return cached;
   const plan = planPlay(context, budget);
   // A plan cut short by the budget is not kept: the next call may have the time to do better.
-  if (!budget.exceeded) lastPlay = { key, plan };
+  if (!budget.exceeded) recentPlays.set(key, plan);
   return plan;
 }
 

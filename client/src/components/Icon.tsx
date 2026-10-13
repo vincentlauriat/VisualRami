@@ -38,6 +38,14 @@ const PATHS = {
       <circle cx="21.4" cy="8.6" r="1.3" />
     </>
   ),
+  // A card back, for a computer player's seat: an honest object rather than a face's initials.
+  bot: (
+    <>
+      <rect x="5" y="2.5" width="14" height="19" rx="2.5" />
+      <rect x="7.75" y="5.25" width="8.5" height="13.5" rx="1" />
+      <path d="M12 8l3 4-3 4-3-4z" />
+    </>
+  ),
   crown: <path d="M4 17.5h16M4.5 15l-1-8.5 4.8 3.8L12 4.5l3.7 5.8 4.8-3.8-1 8.5z" />,
   check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,

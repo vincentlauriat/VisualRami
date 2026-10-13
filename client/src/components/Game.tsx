@@ -299,6 +299,9 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
       ? state.phase === "draw" ? "À vous : piochez une carte" : "À vous : posez ou défaussez"
       : state.phase === "draw" ? "À vous de piocher" : "À vous de jouer"
     : labels.turnOf(state.players.find((p) => p.id === state.currentPlayerId)?.name ?? "…");
+  // Announced: a computer's turn says it is the computer's. One line per turn, not one per move.
+  const currentSeat = state.players.find((p) => p.id === state.currentPlayerId);
+  const spokenTurn = !isMyTurn && currentSeat?.isBot ? labels.turnOfBot(currentSeat.name) : turnLine;
 
   // A first laydown is a table event: the player's zone lights up with the points they opened with.
   const [fresh, setFresh] = useState<{ id: string; points: number } | null>(null);
@@ -514,9 +517,10 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                 style={seatOf(p.id) === "top" ? { gridColumn: String(topSeats.indexOf(p) + 2) } : undefined}
               >
                 <VideoTile
-                  stream={rtc.remoteStreams[p.id] ?? null}
+                  stream={p.isBot ? null : rtc.remoteStreams[p.id] ?? null}
                   videoOff={rtc.remoteCamOff[p.id]}
                   name={p.name}
+                  bot={p.isBot}
                   active={state.currentPlayerId === p.id}
                   winner={finished && state.winnerId === p.id}
                   // While we are offline nobody's presence is known: a server restart would
@@ -626,7 +630,7 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
             {rightSeat && renderZone(rightSeat, "right")}
             {renderZone(me, "me")}
             <p className="sr-only" aria-live="polite">{spoken}</p>
-            <p className="sr-only" aria-live="polite">{finished ? "" : hint ? `${turnLine}. ${hint}` : turnLine}</p>
+            <p className="sr-only" aria-live="polite">{finished ? "" : hint ? `${spokenTurn}. ${hint}` : spokenTurn}</p>
           </section>
 
           <section className="me">

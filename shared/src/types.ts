@@ -36,6 +36,9 @@ export const DEFAULT_OPTIONS: GameOptions = {
 
 export type Phase = "lobby" | "draw" | "play" | "finished";
 
+/** How a computer player plays. Only "easy" exists for now. */
+export type BotLevel = "easy";
+
 export interface Player {
   id: string;
   name: string;
@@ -44,6 +47,9 @@ export interface Player {
   /** Cumulative score across rounds (lower is better). */
   score: number;
   connected: boolean;
+  /** A computer player: no socket, always connected, never host. Absent in older snapshots. */
+  isBot?: boolean;
+  level?: BotLevel;
 }
 
 export interface GameState {
@@ -78,6 +84,8 @@ export interface PublicPlayer {
   hasLaidDown: boolean;
   score: number;
   connected: boolean;
+  isBot: boolean;
+  level?: BotLevel;
 }
 
 export interface PublicGameState {

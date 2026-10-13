@@ -944,3 +944,25 @@ button.meld { color: inherit; text-align: left; }
   .gauge > span { transition: none; }
   .hand .card.drawn:not(.selected) { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Computer players: a drawn card back instead of a face, an "ordi" tag beside the name. */
+.video-tile.bot .video-placeholder { color: #a9c1f2; }
+.video-tile.bot .video-placeholder .icon { width: 42%; height: 42%; stroke-width: 1.4; }
+.bot-tag {
+  font-size: 11px; padding: 0 6px; border-radius: 999px; background: #2b4334; color: var(--muted); line-height: 1.6;
+}
+.player-list li > .icon { width: 14px; height: 14px; color: #a9c1f2; flex: none; }
+.player-list .remove-bot { margin-left: auto; }
+.lobby-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.lobby-actions .hint { flex-basis: 100%; margin: 0; }
+/* Home: how many computer players, as a row of pills; the chosen one is outlined, not gold. */
+.choice { border: 0; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.choice legend { font-size: 14px; color: var(--muted); margin-bottom: 6px; padding: 0; }
+.choice label {
+  display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--border); cursor: pointer; font-size: 14px;
+}
+.choice label.on { border-color: var(--text); background: rgba(255, 255, 255, 0.06); }
+.choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.choice label:has(input:focus-visible) { outline: 2px solid var(--text); outline-offset: 2px; }

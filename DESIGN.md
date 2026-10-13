@@ -417,6 +417,17 @@ state's pale red, in a 24px dark pip at the top right, so it never takes width f
 carries its own label ("Micro coupé : Bruno") and is hidden on an absent tile. On a 92px phone
 seat an absent tile shows the pill, a smaller initial between it and the name, and no "posé".
 
+A computer player's tile is honest about it:
+- a drawn card back (the `bot` glyph, 42% of the tile, in the card-back blue #a9c1f2) on the dark well, never initials that pass for a face;
+- no video element, no microphone pip, never "absent";
+- its name without the "Ordi" prefix ("Trèfle"), followed by a neutral "ordi" tag in the name pill (11px, #2b4334 pill). The full name and ", ordinateur" are read out.
+
+In the lobby, its row shows the glyph and an "ordi" tag, with a ghost × for the host ("Retirer Ordi Trèfle"). "Ajouter l'ordinateur" is a neutral button beside the gold "Lancer la partie".
+
+On the home page, "Seul ? Jouez contre l'ordinateur" is a panel below Create and Join:
+- its 1/2/3 choice is a row of 40px pills, the chosen one outlined in text color with a faint fill, never gold;
+- its button is neutral, so the page keeps one gold button (The Lamp Rule).
+
 ### Meld
 Cards fanned like a hand held closed, on an 18% black wash: every card but the last shows only its
 index strip (21px on phones, 18px at the seats, where cards are 38×53). A strip is a narrower

@@ -71,5 +71,7 @@ code and the **same first name**. Only a disconnected seat can be taken back thi
 
 ## Absent players
 
-If the player whose turn it is stays disconnected for 45 seconds, the server draws from the stock and
-discards for them. If the host disconnects, the host role moves to a connected player.
+If the player whose turn it is stays disconnected for 45 seconds while another human is at the table,
+the server draws from the stock and discards for them. When no human is connected at all, the table
+pauses and waits: nobody is played for, and the game picks up when someone comes back. If the host
+disconnects, the host role moves to a connected human (never a computer player).
