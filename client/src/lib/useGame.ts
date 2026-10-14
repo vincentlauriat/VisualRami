@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { GameAction, GameOptions, PublicGameState } from "@visualrami/shared";
+import type { BotLevel, GameAction, GameOptions, PublicGameState } from "@visualrami/shared";
 import { isTransportError } from "./requestError";
 import { forgetSeat, loadSeat, loadSession, request, saveSession, socket, type Session } from "./socket";
 
@@ -31,13 +31,13 @@ export interface GameConnection {
   leave: () => Promise<void>;
   act: (action: GameAction) => Promise<boolean>;
   /** The host seats a computer player in the lobby. */
-  addBot: () => Promise<boolean>;
+  addBot: (level: BotLevel) => Promise<boolean>;
   removeBot: (playerId: string) => Promise<boolean>;
   /**
    * Create a table, seat `bots` computer players and start. A failure after the table exists
    * leaves the player in its lobby with the error, never on a table half set up.
    */
-  playSolo: (name: string, bots: number, options: Partial<GameOptions>) => Promise<void>;
+  playSolo: (name: string, bots: number, options: Partial<GameOptions>, level: BotLevel) => Promise<void>;
   /** False when offline: the message was not sent and stays in the field. */
   sendChat: (text: string) => boolean;
 }
@@ -186,10 +186,10 @@ export function useGame(): GameConnection {
     }
   }, []);
 
-  const addBot = useCallback(async () => {
+  const addBot = useCallback(async (level: BotLevel) => {
     if (!liveRef.current) return false;
     try {
-      await request("room:addBot", { level: "easy" });
+      await request("room:addBot", { level });
       setError(null);
       return true;
     } catch (err) {
@@ -211,10 +211,10 @@ export function useGame(): GameConnection {
   }, []);
 
   const playSolo = useCallback(
-    async (name: string, bots: number, options: Partial<GameOptions>) => {
+    async (name: string, bots: number, options: Partial<GameOptions>, level: BotLevel) => {
       await create(name, options);
       try {
-        for (let i = 0; i < bots; i++) await request("room:addBot", { level: "easy" });
+        for (let i = 0; i < bots; i++) await request("room:addBot", { level });
         await request("game:action", { type: "start" });
       } catch (err) {
         setError((err as Error).message);

@@ -21,6 +21,8 @@ export const labels = {
   botSpoken: "ordinateur",
   addBot: "Ajouter l'ordinateur",
   removeBot: (name: string) => `Retirer ${name}`,
+  botLevelLegend: "Niveau",
+  botLevels: { easy: "Facile", medium: "Moyen" } as const,
   soloTitle: "Seul ? Jouez contre l'ordinateur",
   soloStart: "Jouer contre l'ordinateur",
   soloLegend: "Adversaires",

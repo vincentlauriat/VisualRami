@@ -15,6 +15,7 @@ export {
 } from "./packing.js";
 export { findExtensions, findJokerSwaps, type Extension, type JokerSwap } from "./table.js";
 export { chooseDiscard } from "./discard.js";
+export { chooseDiscardMedium, type DiscardContext } from "./mediumDiscard.js";
 export {
   DEFAULT_BUDGET_MS,
   planPlay,

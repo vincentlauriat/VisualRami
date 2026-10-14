@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { DEFAULT_OPTIONS, type GameOptions } from "@visualrami/shared";
+import { DEFAULT_OPTIONS, type BotLevel, type GameOptions } from "@visualrami/shared";
 import { forgetSeat, loadName, loadSeats, saveName } from "../lib/socket";
 import { labels } from "../lib/labels";
 import { MAX_MIN_POINTS, readMinPoints } from "../lib/minPoints";
@@ -10,7 +10,7 @@ interface Props {
   connected: boolean;
   initialCode?: string;
   onCreate: (name: string, options: Partial<GameOptions>) => Promise<void>;
-  onSolo: (name: string, bots: number, options: Partial<GameOptions>) => Promise<void>;
+  onSolo: (name: string, bots: number, options: Partial<GameOptions>, level: BotLevel) => Promise<void>;
   onJoin: (roomId: string, name: string) => Promise<void>;
   onResume: (roomId: string, name: string) => Promise<void>;
 }
@@ -35,6 +35,7 @@ export function Home({ connected, initialCode, onCreate, onSolo, onJoin, onResum
   const [minPointsText, setMinPointsText] = useState(String(DEFAULT_OPTIONS.firstMeldMinPoints));
   const [pureRun, setPureRun] = useState(DEFAULT_OPTIONS.requirePureRun);
   const [soloBots, setSoloBots] = useState(1);
+  const [soloLevel, setSoloLevel] = useState<BotLevel>("easy");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ where: Where; text: string } | null>(null);
   // Arriving by an invitation link shows that one table; the full home is a click away.
@@ -271,11 +272,22 @@ export function Home({ connected, initialCode, onCreate, onSolo, onJoin, onResum
             </label>
           ))}
         </fieldset>
+        <fieldset className="choice">
+          <legend>{labels.botLevelLegend}</legend>
+          {(["easy", "medium"] as const).map((level) => (
+            <label key={level} className={soloLevel === level ? "on" : undefined}>
+              <input type="radio" name="solo-level" value={level} checked={soloLevel === level} onChange={() => setSoloLevel(level)} />
+              {labels.botLevels[level]}
+            </label>
+          ))}
+        </fieldset>
         <button
           type="button"
           disabled={!ready}
           onClick={() =>
-            run("solo", () => onSolo(name.trim(), soloBots, { firstMeldMinPoints: minPoints, requirePureRun: pureRun }))
+            run("solo", () =>
+              onSolo(name.trim(), soloBots, { firstMeldMinPoints: minPoints, requirePureRun: pureRun }, soloLevel),
+            )
           }
         >
           <Icon name="bot" />

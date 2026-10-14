@@ -36,8 +36,8 @@ export const DEFAULT_OPTIONS: GameOptions = {
 
 export type Phase = "lobby" | "draw" | "play" | "finished";
 
-/** How a computer player plays. Only "easy" exists for now. */
-export type BotLevel = "easy";
+/** How a computer player plays. */
+export type BotLevel = "easy" | "medium";
 
 export interface Player {
   id: string;
