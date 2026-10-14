@@ -27,7 +27,7 @@ export function Rules({ options, home }: Props) {
         </li>
       )}
       <li>
-        <b>À son tour :</b> piocher (talon ou défausse), poser, puis défausser une carte.
+        <b>À son tour :</b> piocher (talon, ou défausse si vous posez cette carte ce tour-ci), poser, puis défausser une carte.
       </li>
       <li>
         <b>Combinaisons :</b> une suite de 3 cartes ou plus de même couleur, ou un brelan ou carré de même valeur.

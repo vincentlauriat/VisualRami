@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import {
   analyzeMeld,
   arrangeMeld,
+  canPlaceCard,
   checkFirstLaydown,
   leavesACard,
   handCardPoints,
@@ -252,9 +253,23 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
     () => canPlay && !me.hasLaidDown && selectedCards.length > 0 && state.melds.some((m) => meldFit(m, selectedCards)),
     [canPlay, me.hasLaidDown, state.melds, selectedCards],
   );
+  // The discard pile is taken only to put its card on the table this turn: no point offering it
+  // when it could not be (the server refuses the draw too).
+  const discardTakeable = useMemo(
+    () =>
+      !!topDiscard &&
+      canDraw &&
+      canPlaceCard([...hand, topDiscard], topDiscard, state.melds, me.hasLaidDown, state.options),
+    [topDiscard, canDraw, hand, state.melds, me.hasLaidDown, state.options],
+  );
+  // Having taken it, the card has to reach the table before the turn can end.
+  const mustLayTaken = useMemo(() => {
+    const taken = canPlay && hand.find((c) => c.id === state.drewFromDiscardCardId);
+    return !!taken && canPlaceCard(hand, taken, state.melds, me.hasLaidDown, state.options);
+  }, [canPlay, hand, state.drewFromDiscardCardId, state.melds, me.hasLaidDown, state.options]);
   const keepDiscard =
     selectedCards.length === 1 && hand.length > 1 && selectedCards[0]!.id === state.drewFromDiscardCardId;
-  const canDiscard = canPlay && selectedCards.length === 1 && !keepDiscard;
+  const canDiscard = canPlay && selectedCards.length === 1 && !keepDiscard && !mustLayTaken;
   // What the selection is worth, before it is prepared: a whole meld counts as the table will
   // count it, a partial pick by its cards' values (a joker only counts once it has a place).
   const selectionInfo = useMemo(() => {
@@ -281,9 +296,13 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
         : canDraw
       ? stockEnds
         ? labels.hintDrawEndsRound
-        : labels.hintDraw
+        : discardTakeable || !topDiscard
+          ? labels.hintDraw
+          : labels.hintDrawStockOnly
       : staged.length > 0 && !keepsACard
         ? labels.hintKeepOne
+      : mustLayTaken
+        ? labels.hintLayTaken
       : keepDiscard
         ? labels.hintKeepDiscard
         : discardArmed
@@ -566,8 +585,8 @@ export function Game({ state, rtc, chat, error, connected, onAct, onLeave, onSen
                   {topDiscard ? (
                     <CardView
                       card={topDiscard}
-                      onClick={canDraw ? () => onAct({ type: "draw", source: "discard" }) : undefined}
-                      spokenName={labels.discard(topDiscard, canDraw)}
+                      onClick={discardTakeable ? () => onAct({ type: "draw", source: "discard" }) : undefined}
+                      spokenName={labels.discard(topDiscard, discardTakeable, canDraw)}
                     />
                   ) : (
                     <span className="card empty" role="img" aria-label={labels.emptyDiscard} />

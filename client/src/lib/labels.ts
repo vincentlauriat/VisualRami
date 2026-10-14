@@ -31,8 +31,12 @@ export const labels = {
     `${canDraw ? `Piocher dans le talon, ${count} cartes` : `Talon, ${count} cartes`}${endsRound ? ". Piocher ici termine la manche (manche nulle)" : ""}`,
   // The stock is empty and already reshuffled three times: drawing there draws the round.
   stockEndsRound: "Piocher ici termine la manche (manche nulle)",
-  discard: (card: Card, canDraw: boolean) =>
-    canDraw ? `Prendre dans la défausse : ${cardName(card)}` : `Défausse : ${cardName(card)}`,
+  discard: (card: Card, takeable: boolean, canDraw = takeable) =>
+    takeable
+      ? `Prendre dans la défausse : ${cardName(card)}`
+      : canDraw
+        ? `Défausse : ${cardName(card)}. Impossible de la prendre : vous ne pourriez pas la poser ce tour-ci`
+        : `Défausse : ${cardName(card)}`,
   emptyDiscard: "Défausse vide",
   meld: (owner: string) => `Combinaison ${deName(owner)}`,
   meldTarget: (owner: string, cards: Card[]) => `Ajouter la sélection à la combinaison ${deName(owner)} : ${cardList(cards)}`,
@@ -101,7 +105,9 @@ export const labels = {
   hintDrawEndsRound: "Talon épuisé : piocher au talon termine la manche (manche nulle). La défausse reste possible.",
   hintPlay: "Préparez une combinaison, ou défaussez une carte.",
   hintTargets: "Touchez une combinaison dorée pour y ajouter la sélection.",
-  hintKeepDiscard: "Carte prise dans la défausse : gardez-la ce tour-ci.",
+  hintKeepDiscard: "Carte prise dans la défausse : elle ne peut pas être rejetée.",
+  hintLayTaken: "Posez d'abord la carte prise dans la défausse, puis défaussez.",
+  hintDrawStockOnly: "Piochez dans le talon : la défausse n'est prenable que si vous posez sa carte ce tour-ci.",
   hintAfterLaydown: "Cette carte ira sur la table après votre première pose.",
   hintDiscardStaged: "Défausser maintenant abandonne la préparation.",
   hintKeepOne: "Gardez une carte pour défausser : retirez-en une de la préparation.",

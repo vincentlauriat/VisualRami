@@ -1,4 +1,5 @@
 import { buildDeck, cardLabel, handCardPoints, shuffle, type Rng } from "./cards.js";
+import { canPlaceCard } from "./placement.js";
 import { analyzeMeld, checkFirstLaydown, isValidMeld, leavesACard } from "./rules.js";
 import {
   DEFAULT_OPTIONS,
@@ -288,6 +289,10 @@ function draw(state: GameState, playerId: string, source: "stock" | "discard", r
   if (source === "discard") {
     card = state.discard[state.discard.length - 1]!;
     if (!card) return fail("La défausse est vide");
+    // The discard pile is taken only to put its card on the table this very turn.
+    if (!canPlaceCard([...player.hand, card], card, state.melds, player.hasLaidDown, state.options)) {
+      return fail("Cette carte ne pourrait pas être posée ce tour-ci : piochez dans le talon");
+    }
     next = { ...next, discard: state.discard.slice(0, -1), drewFromDiscardCardId: card.id };
     next = log(next, `${player.name} prend ${cardLabel(card)} dans la défausse`);
   } else {
@@ -423,6 +428,11 @@ function discard(state: GameState, playerId: string, cardId: string): GameResult
   // The card taken from the discard pile may not go straight back, unless it is the last one.
   if (state.drewFromDiscardCardId === cardId && player.hand.length > 1) {
     return fail("Vous ne pouvez pas défausser la carte prise dans la défausse");
+  }
+  // Taken to be played: it leaves the hand on the table, unless nothing can place it any more.
+  const taken = state.drewFromDiscardCardId && player.hand.find((c) => c.id === state.drewFromDiscardCardId);
+  if (taken && taken.id !== cardId && canPlaceCard(player.hand, taken, state.melds, player.hasLaidDown, state.options)) {
+    return fail("Posez d'abord la carte prise dans la défausse");
   }
   const hand = removeCards(player.hand, [cardId]);
   let next = updatePlayer(state, playerId, { hand });
