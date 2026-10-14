@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MAX_PLAYERS, type PublicGameState } from "@visualrami/shared";
+import { MAX_PLAYERS, type BotLevel, type PublicGameState } from "@visualrami/shared";
 import type { WebRTCState } from "../lib/useWebRTC";
 import { VideoTile } from "./VideoTile";
 import { MediaControls } from "./MediaControls";
@@ -12,12 +12,13 @@ interface Props {
   /** Live link to the server: starting needs it. */
   connected: boolean;
   onStart: () => void;
-  onAddBot: () => Promise<boolean>;
+  onAddBot: (level: BotLevel) => Promise<boolean>;
   onRemoveBot: (playerId: string) => Promise<boolean>;
   onLeave: () => void;
 }
 
 export function Lobby({ state, rtc, connected, onStart, onAddBot, onRemoveBot, onLeave }: Props) {
+  const [level, setLevel] = useState<BotLevel>("easy");
   const [copied, setCopied] = useState<"code" | "link" | null>(null);
   // A computer being added or removed: its button waits for the answer, so a second press cannot
   // seat two computers or remove one twice.
@@ -128,11 +129,22 @@ export function Lobby({ state, rtc, connected, onStart, onAddBot, onRemoveBot, o
           <div className="lobby-actions">
             {/* Never gold: the link (or Lancer la partie, once possible) keeps the lamp. */}
             {!tableFull && (
+              <fieldset className="choice">
+                <legend>{labels.botLevelLegend}</legend>
+                {(["easy", "medium"] as const).map((l) => (
+                  <label key={l} className={level === l ? "on" : undefined}>
+                    <input type="radio" name="bot-level" value={l} checked={level === l} onChange={() => setLevel(l)} />
+                    {labels.botLevels[l]}
+                  </label>
+                ))}
+              </fieldset>
+            )}
+            {!tableFull && (
               <button
                 type="button"
                 disabled={!connected || pending !== null}
                 aria-busy={pending === "add" || undefined}
-                onClick={() => void botRequest("add", onAddBot)}
+                onClick={() => void botRequest("add", () => onAddBot(level))}
               >
                 <Icon name="bot" />
                 {labels.addBot}

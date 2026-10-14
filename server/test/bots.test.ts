@@ -118,6 +118,15 @@ describe("computer players at the table", () => {
     b.disconnect();
   });
 
+  it("seats a medium computer player and shows its level in the public state", async () => {
+    const { url } = await server();
+    const alice = await client(url);
+    await emit(alice, "room:create", { name: "Alice" });
+    const seated = stateWhere(alice, (s) => s.players.some((p) => p.isBot));
+    await emit<{ ok?: true; playerId: string }>(alice, "room:addBot", { level: "medium" });
+    expect((await seated).players.find((p) => p.isBot)).toMatchObject({ isBot: true, level: "medium" });
+  });
+
   it("plays whole turns through the reducer, and a round with a human can end", async () => {
     // A round can last a few hundred turns: a near-zero pace keeps it short.
     const { url } = await server({ botPacing: { minMs: 0, maxMs: 2, discardMs: 2, readyMs: 2 } });

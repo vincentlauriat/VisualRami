@@ -1,5 +1,6 @@
-import type { Card, GameAction, GameOptions, Meld, PublicGameState } from "../types.js";
+import type { BotLevel, Card, GameAction, GameOptions, Meld, PublicGameState } from "../types.js";
 import { chooseDiscard } from "./discard.js";
+import { chooseDiscardMedium } from "./mediumDiscard.js";
 import {
   bestPackings,
   checkedOpening,
@@ -33,6 +34,10 @@ export interface PlayContext {
   melds: Meld[];
   hasLaidDown: boolean;
   drewFromDiscardCardId: string | null;
+  /** The level of play; the easy one when absent. */
+  level?: BotLevel;
+  /** Cards in the hand of the rival closest to going out; the medium level sheds high cards when it is close. */
+  opponentMinCards?: number;
   options: Pick<GameOptions, "firstMeldMinPoints" | "requirePureRun">;
 }
 
@@ -114,7 +119,16 @@ export function planPlay(
     break;
   }
 
-  const discard = chooseDiscard(hand, context.drewFromDiscardCardId, keep?.hand === hand ? keep.packing : undefined, budget);
+  const kept = keep?.hand === hand ? keep.packing : undefined;
+  const discard =
+    context.level === "medium"
+      ? chooseDiscardMedium(
+          hand,
+          context.drewFromDiscardCardId,
+          kept === undefined ? bestPackings(hand, [KEEP_GOAL], { budget })[0] : kept,
+          { melds, opponentMinCards: context.opponentMinCards ?? Infinity, hasLaidDown: laid },
+        )
+      : chooseDiscard(hand, context.drewFromDiscardCardId, kept, budget);
   actions.push({ type: "discard", cardId: discard.id });
   return { actions, hand };
 }
@@ -130,6 +144,8 @@ function playKey(context: PlayContext): string {
     context.melds.map((m) => [m.id, m.kind, m.cards.map((c) => c.id)]),
     context.hasLaidDown,
     context.drewFromDiscardCardId,
+    context.level ?? "easy",
+    context.opponentMinCards ?? null,
     context.options.firstMeldMinPoints,
     context.options.requirePureRun,
   ]);
@@ -161,6 +177,8 @@ function playContext(view: PublicGameState, hand: Card[], drewFromDiscardCardId:
     melds: view.melds,
     hasLaidDown: me?.hasLaidDown ?? false,
     drewFromDiscardCardId,
+    level: me?.level ?? "easy",
+    opponentMinCards: Math.min(...view.players.filter((p) => p.id !== view.you.id).map((p) => p.handCount)),
     options: view.options,
   };
 }

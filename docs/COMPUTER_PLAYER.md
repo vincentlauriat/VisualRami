@@ -92,7 +92,7 @@ The bot runs **on the server**, as a full player in the room. It goes through th
 | **1. Meld search** (`shared/src/bot/`) — **done 2026-10-13** | Points 1 to 6 of section 2, easy bot, unit and property tests, simulations | 2 to 3 d | Joker and ace edge cases; duplicates across the two decks |
 | **2. Server integration** — **done 2026-10-13** | `isBot` and `difficulty` in `Player` / `PublicPlayer`, `room:addBot` / `room:removeBot`, `BotScheduler`, exclusions (host, seat by first name), pause without humans, re-arm on restore, tests | 1.5 to 2 d | Races between timers and human actions: one timer per room, cancelled on every `broadcast` |
 | **3. Client** — **done 2026-10-13** | Solo button on Home, add and remove in the lobby, difficulty choice, seat without video, bots excluded from `peerIds`, strings ready for i18n (bilingual constraint of `PRODUCT.md`) | 1 to 2 d | Seat layout on phones |
-| **4. Medium bot** | Potential evaluation, memory, defence against the next player, tuning by simulation | 2 to 3 d | Subjective tuning: plan a test game with real players |
+| **4. Medium bot** — **done 2026-10-14** | Discard by potential, defence, shedding, level choice in the client; tuned by paired simulation (see "Phase 4 as built") | 2 to 3 d | Subjective tuning: plan a test game with real players |
 | 5. Later | Hard level in `worker_threads` or client side; offline mode; replacing an absent human with a bot instead of the minimal `autoPlayTurn` | 1 to 2 weeks | B1 CPU; second code path |
 
 Total for v1 (phases 1 to 4): about 7 to 10 days.

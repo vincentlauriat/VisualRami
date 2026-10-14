@@ -60,7 +60,7 @@ export function validateAddBot(input: unknown): { level: BotLevel } | null {
   if (typeof input !== "object") return null;
   const level = (input as Record<string, unknown>).level;
   if (level === undefined) return { level: "easy" };
-  return level === "easy" ? { level } : null;
+  return level === "easy" || level === "medium" ? { level } : null;
 }
 
 /** `room:removeBot`: the computer player to take off the table. */
