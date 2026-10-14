@@ -262,7 +262,7 @@ The product owner decided:
 1. **Solo entry: both places.** "Play against the computer" on Home, and "Add a computer player" in the lobby (host only).
 2. **Bots may fill seats at a table with friends: yes.**
 3. **When the last human leaves: the bot pauses.** It only plays while at least one human is connected.
-4. **Taking from the discard pile: stays free in v1** (current engine behaviour). The house rule must be settled before the medium bot is tuned, because it changes its strategy. It also belongs in the test game with real players.
+4. **Taking from the discard pile: only to place the card this turn** (rule B, decided 2026-10-14; it was free in v1). The engine checks it at the draw (`shared/src/placement.ts`, `canPlaceCard`) and again at the discard. The medium bot no longer needs to track opponents' pickups.
 5. **Levels at release: easy and medium, easy by default.** Hard waits for a stated need.
 
 ## References

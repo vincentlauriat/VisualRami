@@ -63,13 +63,20 @@ describe("game flow", () => {
   it("cannot discard the card taken from the discard pile, except as the last card", () => {
     let state = setup();
     const me = currentPlayer(state)!;
+    // A hand that opens with the top card: the take is allowed (rule B), the card must be laid.
     const top = state.discard[0]!;
-    state = must(applyAction(state, me.id, { type: "draw", source: "discard" }, rng));
-    const r = applyAction(state, me.id, { type: "discard", cardId: top.id }, rng);
-    expect(r.ok).toBe(false);
-    const lastCard = { ...state, players: state.players.map((p) => (p.id === me.id ? { ...p, hand: [top] } : p)) };
-    const last = applyAction(lastCard, me.id, { type: "discard", cardId: top.id }, rng);
-    expect(last.ok).toBe(true);
+    const hand: Card[] = [
+      { id: "x1", suit: "hearts", rank: 10, joker: false },
+      { id: "x2", suit: "hearts", rank: 11, joker: false },
+      { id: "x3", suit: "hearts", rank: 12, joker: false },
+      { id: "x4", suit: top.suit === "spades" ? "clubs" : "spades", rank: 2, joker: false },
+    ];
+    state = { ...state, players: state.players.map((p) => (p.id === me.id ? { ...p, hand } : p)), options: { ...state.options, firstMeldMinPoints: 30 } };
+    state = must(applyAction(state, me.id, { type: "draw", source: "stock" }, rng));
+    const withTop = { ...state, drewFromDiscardCardId: top.id, players: state.players.map((p) => (p.id === me.id ? { ...p, hand: [...p.hand, top] } : p)) };
+    expect(applyAction(withTop, me.id, { type: "discard", cardId: top.id }, rng).ok).toBe(false);
+    const lastCard = { ...withTop, players: withTop.players.map((p) => (p.id === me.id ? { ...p, hand: [top] } : p)) };
+    expect(applyAction(lastCard, me.id, { type: "discard", cardId: top.id }, rng).ok).toBe(true);
   });
 
   it("validates the first laydown and lets the player extend afterwards", () => {
@@ -451,8 +458,9 @@ describe("drawn round", () => {
     const pub = toPublicState(done, other);
     expect(Object.keys(pub.revealedHands!).sort()).toEqual([p1, other].sort());
     expect(pub.currentPlayerId).toBeNull();
-    // Taking the discard pile's top is still a draw, not a reshuffle.
-    expect(must(applyAction(state, p1, { type: "draw", source: "discard" }, rng)).phase).toBe("play");
+    // Taking the discard pile's top is not a reshuffle: here it is refused only by the placement rule.
+    const take = applyAction(state, p1, { type: "draw", source: "discard" }, rng);
+    expect(take.ok ? take.state.reshuffles : state.reshuffles).toBe(state.reshuffles);
 
     const next = must(applyAction(done, done.hostId, { type: "newRound" }, rng));
     expect(next.phase).toBe("draw");

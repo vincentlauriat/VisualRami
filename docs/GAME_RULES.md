@@ -8,7 +8,10 @@
 
 ## Turn
 
-1. **Draw** one card: the top of the stock, or the top of the discard pile.
+1. **Draw** one card: the top of the stock, or the top of the discard pile **only if you put that card on
+   the table this very turn** (in your opening, a new meld, an extension or a joker swap). The engine
+   refuses the draw when no way to place it exists, and refuses to end the turn while the card is still
+   in hand and could be placed.
 2. **Play** (optional, any number of times): lay down melds, extend melds on the table, swap a joker.
 3. **Discard** one card. You may not discard the card you just took from the discard pile, unless it
    is the last card in your hand.
@@ -16,7 +19,7 @@
 When the stock is empty, the discard pile except its top card is shuffled into a new stock. This happens
 at most **3 times** in a round, and the log counts them ("La pioche est vide : la défausse est mélangée
 (2/3)"). When a player draws from the empty stock after the third reshuffle, the round is **drawn** (see
-below). Taking the discard pile's top is still allowed at any time. Once the stock is empty with no
+below). Taking the discard pile's top follows the placement rule above. Once the stock is empty with no
 reshuffle left, the table says so before anyone draws: the stock reads "Piocher ici termine la manche
 (manche nulle)", and the player who must draw sees it in the turn hint too.
 
