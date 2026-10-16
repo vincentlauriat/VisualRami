@@ -86,9 +86,9 @@ export function Home({ connected, initialCode, onCreate, onSolo, onJoin, onResum
       </p>
     );
 
-  const createPanel = (gold: boolean) => (
-    <section className="panel">
-      <h2>Créer une table</h2>
+  // The table's rules: shared by a new table and a game against the computer.
+  const optionFields = (
+    <>
       <label className="field">
         <span>Points minimum pour la première pose</span>
         <input
@@ -107,6 +107,13 @@ export function Home({ connected, initialCode, onCreate, onSolo, onJoin, onResum
         <input type="checkbox" checked={pureRun} onChange={(e) => setPureRun(e.target.checked)} />
         <span>Tierce franche obligatoire à la première pose</span>
       </label>
+    </>
+  );
+
+  const createPanel = (gold: boolean, withOptions = true) => (
+    <section className="panel">
+      <h2>Créer une table</h2>
+      {withOptions ? optionFields : <p className="hint">Vous recevez ensuite un code à cinq lettres à envoyer à vos amis.</p>}
       <button
         type="button"
         className={gold ? "primary" : undefined}
@@ -190,14 +197,28 @@ export function Home({ connected, initialCode, onCreate, onSolo, onJoin, onResum
   }
 
   return (
-    <main className="home">
+    <main className="home home-wide">
+      <div className="home-split">
       <header className="home-hero">
         <h1>
           <span className="logo"><Mark /></span> VisualRami
         </h1>
-        <p>Le Rami 51 entre amis, avec la visio et le son de chaque joueur autour de la table.</p>
+        <p className="home-lede">{labels.homeLede}</p>
+        <p className="home-sub">{labels.homeSub}</p>
+        <ul className="home-facts">
+          {labels.homeFacts.map((fact) => (
+            <li key={fact}>{fact}</li>
+          ))}
+        </ul>
+        {/* A real table in progress, for whoever arrives with nobody to explain it. Wide screens only:
+            on a phone the way in comes first. */}
+        <figure className="home-shot">
+          <img src="/table.webp" width="1500" height="938" alt={labels.homeShotAlt} loading="lazy" />
+          <figcaption>{labels.homeShotCaption}</figcaption>
+        </figure>
       </header>
 
+      <div className="home-flow">
       {seats.length > 0 && (
         <section className="panel seats">
           <h2>Reprendre une partie</h2>
@@ -232,8 +253,18 @@ export function Home({ connected, initialCode, onCreate, onSolo, onJoin, onResum
         {!connected && <p className="hint warn">Connexion au serveur…</p>}
       </section>
 
+      <details className="panel table-options">
+        <summary>
+          <span>Règles de la table</span>
+          <span className="options-now">
+            {minPoints} points{pureRun ? ", tierce franche" : ""}
+          </span>
+        </summary>
+        {optionFields}
+      </details>
+
       <div className="home-columns">
-        {createPanel(primary === "create")}
+        {createPanel(primary === "create", false)}
 
         <form className="panel" onSubmit={(e) => submitJoin(e, "join", code)}>
           <h2>Rejoindre une table</h2>
@@ -259,8 +290,8 @@ export function Home({ connected, initialCode, onCreate, onSolo, onJoin, onResum
         </form>
       </div>
 
-      {/* Discreet on purpose: one gold button on the page (The Lamp Rule). The table rules set
-          above apply here too. */}
+      {/* Discreet on purpose: one gold button on the page (The Lamp Rule). The table rules above
+          apply here too. */}
       <section className="panel solo" aria-labelledby="solo-title">
         <h2 id="solo-title">{labels.soloTitle}</h2>
         <fieldset className="choice">
@@ -295,6 +326,9 @@ export function Home({ connected, initialCode, onCreate, onSolo, onJoin, onResum
         </button>
         {errorAt("solo")}
       </section>
+
+      </div>
+      </div>
 
       <section className="panel rules">
         <h2>Règles en bref</h2>

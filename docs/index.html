@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VisualRami — Rami 51 à distance, en visio</title>
+<meta name="description" content="VisualRami : le Rami 51 de 2 à 6 joueurs, chacun avec sa caméra et son micro autour d'un même tapis. Un code de table à envoyer, rien à installer, pas de compte. Libre et ouvert (MIT).">
+<link rel="canonical" href="https://vincentlauriat.github.io/VisualRami/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="VisualRami — le Rami 51 d'une maison à l'autre">
+<meta property="og:description" content="De 2 à 6 joueurs autour d'un même tapis, en visio. Un code de table, pas de compte. Libre (MIT).">
+<meta property="og:url" content="https://vincentlauriat.github.io/VisualRami/">
+<meta property="og:image" content="https://vincentlauriat.github.io/VisualRami/assets/table-desktop.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#dce8f1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d4f9a'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='700' font-size='19' text-anchor='middle' fill='white'%3E51%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="assets/fonts/barlow-condensed-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face { font-family: "Barlow Condensed"; font-weight: 700; font-display: swap; src: url(assets/fonts/barlow-condensed-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-weight: 800; font-display: swap; src: url(assets/fonts/barlow-condensed-latin-800-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 400; font-display: swap; src: url(assets/fonts/barlow-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 600; font-display: swap; src: url(assets/fonts/barlow-latin-600-normal.woff2) format("woff2"); }
+
+:root {
+  /* Onion-skin airmail paper, navy ink, the red and ultramarine of the border stripes. */
+  --pelure: #dce8f1;
+  --pelure-deep: #c9dae8;
+  --sheet: #f6f9fc;
+  --ink: #15233a;
+  --ink-soft: #3b4d68;
+  --red: #c42a21;
+  --red-deep: #9e211a;
+  --blue: #1d4f9a;
+  --gutter: clamp(16px, 4vw, 40px);
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --text: "Barlow", system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scrollbar-color: var(--blue) var(--pelure-deep); }
+body {
+  margin: 0; background: var(--pelure); color: var(--ink);
+  font: 400 18px/1.55 var(--text); -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--blue); color: #fff; }
+a { color: var(--blue); text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+main a:hover { color: var(--red-deep); }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 2px; }
+.skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: #fff; padding: 10px 14px; z-index: 10; }
+.skip:focus { left: 8px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 800; line-height: 0.98; margin: 0; text-wrap: balance; }
+
+/* The airmail border: red, white and blue chevrons, the one decoration the page owns. */
+.airmail {
+  --b: 16px;
+  padding: var(--b);
+  background:
+    repeating-linear-gradient(135deg, var(--red) 0 22px, var(--sheet) 22px 44px, var(--blue) 44px 66px, var(--sheet) 66px 88px);
+}
+.airmail > .inner { background: var(--pelure); }
+.strip {
+  height: 12px;
+  background: repeating-linear-gradient(135deg, var(--red) 0 16px, var(--sheet) 16px 32px, var(--blue) 32px 48px, var(--sheet) 48px 64px);
+}
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: var(--gutter); }
+
+/* ---------- Hero: the envelope ---------- */
+.envelope { margin: clamp(10px, 2vw, 24px); }
+.hero { display: grid; gap: clamp(28px, 5vw, 64px); padding: clamp(28px, 5vw, 64px) var(--gutter); align-items: center; }
+.brand { font: 700 22px/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 clamp(20px, 4vw, 44px); }
+.brand b { color: var(--red-deep); }
+.hero h1 { font-size: clamp(52px, 8.6vw, 112px); letter-spacing: -0.015em; }
+.hero h1 em { font-style: normal; color: var(--red); }
+.lede { max-width: 34ch; margin: 22px 0 0; font-size: clamp(19px, 2vw, 22px); color: var(--ink-soft); }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 26px; margin-top: 32px; }
+.btn {
+  display: inline-flex; align-items: center; min-height: 52px; padding: 0 26px;
+  background: var(--red); color: #fff; text-decoration: none;
+  font: 800 21px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase;
+  border-radius: 3px; box-shadow: 0 2px 0 var(--red-deep), 0 10px 18px -8px #c42a2199;
+  transition: transform .15s ease-out, box-shadow .15s ease-out;
+}
+.btn:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 4px 0 var(--red-deep), 0 14px 22px -8px #c42a21aa; }
+.btn:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--red-deep); }
+.link-quiet { font-weight: 600; }
+
+.letter-wrap { position: relative; padding: 18px 8px 40px 0; }
+.letter {
+  margin: 0; background: var(--sheet); padding: clamp(8px, 1.4vw, 14px); border-radius: 2px;
+  transform: rotate(-1.4deg);
+  box-shadow: 0 1px 0 #fff inset, 0 24px 44px -22px #15233a88, 0 2px 5px #15233a33;
+}
+.letter img { display: block; width: 100%; height: auto; border-radius: 2px; }
+.letter figcaption { margin: 10px 4px 2px; font-size: 14px; color: var(--ink-soft); }
+.stamp { position: absolute; top: -6px; right: -4px; width: clamp(84px, 11vw, 124px); transform: rotate(4deg); filter: drop-shadow(0 6px 8px #15233a40); }
+.postmark { position: absolute; top: clamp(34px, 6vw, 64px); right: clamp(48px, 9vw, 118px); width: clamp(104px, 14vw, 170px); color: var(--ink); opacity: .82; mix-blend-mode: multiply; transform: rotate(-12deg); }
+.postmark, .stamp { pointer-events: none; }
+
+@media (min-width: 940px) {
+  .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); }
+}
+
+/* One authored moment: the postmark lands once. */
+@keyframes land { from { opacity: 0; transform: rotate(-12deg) scale(1.5); } to { opacity: .82; transform: rotate(-12deg) scale(1); } }
+.postmark { animation: land .55s cubic-bezier(.16, 1, .3, 1) .5s both; }
+
+/* ---------- Sections ---------- */
+section { padding: clamp(48px, 8vw, 104px) 0; }
+.section-head { display: grid; gap: 14px; max-width: 760px; margin-bottom: clamp(28px, 5vw, 52px); }
+.section-head h2 { font-size: clamp(38px, 5.4vw, 68px); }
+.section-head p { margin: 0; color: var(--ink-soft); max-width: 52ch; }
+
+.gestures { display: grid; gap: clamp(28px, 4vw, 48px); counter-reset: g; }
+.gesture { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: start; }
+.gesture h3 { font-size: clamp(28px, 3vw, 36px); margin-bottom: 8px; }
+.gesture p { margin: 0; color: var(--ink-soft); max-width: 40ch; }
+.cachet { width: 76px; height: 76px; color: var(--ink); flex: none; }
+.cachet text { font-family: var(--display); font-weight: 800; }
+@media (min-width: 900px) { .gestures { grid-template-columns: repeat(3, 1fr); } .gesture { grid-template-columns: 1fr; } }
+
+.attachments { background: var(--pelure-deep); }
+.shots { display: grid; gap: clamp(28px, 4vw, 56px); align-items: end; }
+.shot { margin: 0; }
+.shot .frame { background: var(--sheet); padding: 10px; border-radius: 2px; box-shadow: 0 20px 40px -22px #15233a88, 0 2px 5px #15233a33; }
+.shot img { display: block; width: 100%; height: auto; }
+.shot figcaption { margin-top: 14px; font-size: 16px; color: var(--ink-soft); max-width: 46ch; }
+.shot.phone { max-width: 300px; }
+@media (min-width: 860px) { .shots { grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr); } }
+
+.rules { display: grid; gap: clamp(28px, 5vw, 64px); }
+.rule-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0; max-width: 62ch; }
+.rule-list li { padding: 16px 0; border-top: 1.5px solid #15233a33; }
+.rule-list li:last-child { border-bottom: 1.5px solid #15233a33; }
+.rule-list b { font-family: var(--display); font-weight: 700; font-size: 22px; letter-spacing: 0.02em; margin-right: 6px; }
+@media (min-width: 900px) { .rules { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: start; } }
+
+.run pre {
+  margin: 0 0 22px; padding: 22px 24px; background: var(--ink); color: #e9f1f8; border-radius: 3px;
+  font: 500 15px/1.75 ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow-x: auto; max-width: 78ch; white-space: pre-wrap; overflow-wrap: anywhere;
+  scrollbar-color: #5c7aa6 var(--ink);
+}
+.run pre span { color: #8fb3e6; user-select: none; }
+.run p { max-width: 62ch; color: var(--ink-soft); margin: 0 0 12px; }
+code { font: 500 0.92em ui-monospace, "SF Mono", Menlo, monospace; background: #15233a14; padding: 1px 6px; border-radius: 3px; }
+
+footer { background: var(--ink); color: #c9d6e6; padding: 40px 0 56px; }
+footer a { color: #fff; }
+footer a:hover { color: #ffb4ad; }
+footer .wrap { display: grid; gap: 14px; }
+footer .big { font: 800 30px/1 var(--display); color: #fff; letter-spacing: 0.04em; text-transform: uppercase; }
+footer p { margin: 0; max-width: 64ch; font-size: 16px; }
+footer .links { display: flex; flex-wrap: wrap; gap: 8px 26px; font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .postmark { animation: none; opacity: .82; }
+  .btn { transition: none; }
+}
+@media (max-width: 520px) {
+  body { font-size: 17px; }
+  .airmail { --b: 11px; }
+  .gesture { grid-template-columns: 1fr; gap: 12px; }
+}
+</style>
+</head>
+<body>
+<!--
+THESIS: a game night is a letter between homes. The table code travels like airmail; the page refuses the dark-green lobby with a neon button and the three-icon-cards grid.
+OWN-WORLD: onion-skin pelure blue paper, navy ink, red and ultramarine airmail chevrons as the only ornament, condensed postal lettering (Barlow Condensed) over Barlow text, a perforated stamp and a postmark. Real captures only, as the letter inside.
+STORY: the visitor understands Rami 51 with everyone's camera around one table; believes it because it is a real, open repository with real screenshots; acts by opening the code or running their own table.
+FIRST VIEWPORT: airmail-bordered envelope; left the headline "Le Rami 51 d'une maison à l'autre", a lede and the red action; right a tilted letter holding the real table capture, a stamp "51" and a postmark.
+SIGNATURE: the postmark lands once on load. No hosted address is shown: the destination is GitHub.
+-->
+<a class="skip" href="#contenu">Aller au contenu</a>
+
+<main id="contenu">
+<div class="envelope airmail">
+  <div class="inner">
+    <div class="hero">
+      <div>
+        <p class="brand">Visual<b>Rami</b></p>
+        <h1>Le Rami 51 d'une maison <em>à l'autre.</em></h1>
+        <p class="lede">Jusqu'à six joueurs autour d'un même tapis, chacun avec sa caméra et son micro. Un code de table à envoyer par message, rien à installer, pas de compte.</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/vincentlauriat/VisualRami">Voir le code sur GitHub</a>
+          <a class="link-quiet" href="#chez-soi">Le lancer chez soi</a>
+        </div>
+      </div>
+
+      <div class="letter-wrap">
+        <figure class="letter">
+          <img src="assets/table-desktop.webp" width="1600" height="1000" alt="Une table de Rami en cours sur ordinateur : un joueur en bas avec sa main, trois adversaires autour du tapis, leurs combinaisons posées devant eux, le journal de la partie à droite.">
+          <figcaption>Une table en cours. Les combinaisons sont posées devant chaque joueur.</figcaption>
+        </figure>
+        <svg class="stamp" viewBox="0 0 120 150" role="img" aria-label="Timbre : Rami 51">
+          <rect width="120" height="150" fill="#f6f9fc"/>
+          <rect x="12" y="12" width="96" height="126" fill="#1d4f9a"/>
+          <rect x="17" y="17" width="86" height="116" fill="none" stroke="#fff" stroke-width="1.5"/>
+          <text x="60" y="84" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="62" fill="#fff">51</text>
+          <text x="60" y="108" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="13" letter-spacing="2" fill="#ffb4ad">RAMI</text>
+          <text x="60" y="38" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="10" letter-spacing="2" fill="#fff">2 À 6 JOUEURS</text>
+          <rect x="3" y="3" width="114" height="144" fill="none" stroke="#dce8f1" stroke-width="7" stroke-dasharray="0 10" stroke-linecap="round"/>
+        </svg>
+        <svg class="postmark" viewBox="0 0 160 100" aria-hidden="true">
+          <defs><path id="ring" d="M 20,50 a 30,30 0 1,1 60,0 a 30,30 0 1,1 -60,0"/></defs>
+          <g fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="50" cy="50" r="44"/><circle cx="50" cy="50" r="25" stroke-width="1.4"/>
+            <path d="M 94,30 q 10,-8 20,0 t 20,0 t 20,0 M 94,44 q 10,-8 20,0 t 20,0 t 20,0 M 94,58 q 10,-8 20,0 t 20,0 t 20,0 M 94,72 q 10,-8 20,0 t 20,0 t 20,0"/>
+          </g>
+          <text font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="11.5" letter-spacing="2.2" fill="currentColor"><textPath href="#ring" startOffset="2">TABLE ABCDE · PAR AVION ·</textPath></text>
+          <text x="50" y="57" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="20" fill="currentColor">51</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="gestes">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>De l'envoi à la partie, trois gestes.</h2>
+      <p>Aucune inscription. Le code de la table et le prénom suffisent, aujourd'hui comme dans une semaine.</p>
+    </div>
+    <div class="gestures">
+      <div class="gesture">
+        <svg class="cachet" viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="35" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="38" cy="38" r="28" fill="none" stroke="currentColor" stroke-width="1.2"/><text x="38" y="52" text-anchor="middle" font-size="40" fill="currentColor">1</text></svg>
+        <div><h3>Créez la table</h3><p>Votre prénom, les règles de la table (51 points et tierce franche par défaut), et c'est ouvert. Vous recevez un code de cinq lettres.</p></div>
+      </div>
+      <div class="gesture">
+        <svg class="cachet" viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="35" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="38" cy="38" r="28" fill="none" stroke="currentColor" stroke-width="1.2"/><text x="38" y="52" text-anchor="middle" font-size="40" fill="currentColor">2</text></svg>
+        <div><h3>Envoyez le code</h3><p>Par message, par téléphone ou par lien. Chacun entre son prénom et s'assoit. Pas de compte, pas de mot de passe.</p></div>
+      </div>
+      <div class="gesture">
+        <svg class="cachet" viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="35" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="38" cy="38" r="28" fill="none" stroke="currentColor" stroke-width="1.2"/><text x="38" y="52" text-anchor="middle" font-size="40" fill="currentColor">3</text></svg>
+        <div><h3>Asseyez-vous</h3><p>Chaque joueur a sa place autour du tapis, avec sa vidéo s'il l'active. Une partie interrompue reste ouverte sept jours.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="strip" aria-hidden="true"></div>
+
+<section class="attachments" id="pieces">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Pièces jointes.</h2>
+      <p>Des captures de l'application telle qu'elle tourne, rien de recomposé. Sur la table, trois ordinateurs ont pris place et les caméras sont éteintes.</p>
+    </div>
+    <div class="shots">
+      <figure class="shot">
+        <div class="frame"><img src="assets/home-desktop.webp" width="1600" height="1000" loading="lazy" alt="L'écran d'arrivée : le titre « Le Rami 51, comme autour d'une vraie table », à droite un champ pour le prénom, les règles de la table, créer une table, rejoindre avec un code, ou jouer contre l'ordinateur."></div>
+        <figcaption>L'arrivée : un prénom, puis créer une table, rejoindre avec un code, ou jouer seul contre l'ordinateur.</figcaption>
+      </figure>
+      <figure class="shot phone">
+        <div class="frame"><img src="assets/table-phone.webp" width="640" height="1385" loading="lazy" alt="Table de Rami sur téléphone : les joueurs en haut, le tapis avec les combinaisons, la main du joueur et les boutons en bas."></div>
+        <figcaption>Sur téléphone : la main en bas, à portée du pouce.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<div class="strip" aria-hidden="true"></div>
+
+<section id="regles">
+  <div class="wrap rules">
+    <div class="section-head">
+      <h2>Les règles, en français.</h2>
+      <p>Le vocabulaire est celui des joueurs : talon, défausse, tierce franche, brelan, carré, poser, manche.</p>
+    </div>
+    <ul class="rule-list">
+      <li><b>La table.</b> 2 à 6 joueurs, deux jeux de 52 cartes et 4 jokers, 14 cartes chacun.</li>
+      <li><b>Un tour.</b> Piocher, poser si l'on peut, défausser une carte.</li>
+      <li><b>La défausse.</b> On n'y prend la carte du dessus que si on la pose dans le tour. Sinon, le talon.</li>
+      <li><b>La première pose.</b> Au moins 51 points, dont une tierce franche (une suite sans joker). Les deux réglages se changent à la création de la table.</li>
+      <li><b>Après la pose.</b> On complète les combinaisons de tous les joueurs et on reprend un joker en jouant la carte qu'il remplace.</li>
+      <li><b>La fin de manche.</b> Elle s'arrête sur la dernière défausse. Les autres comptent leur main, deux fois s'ils n'ont rien posé. Le plus petit total gagne.</li>
+      <li><b>Seul ?</b> Un à trois ordinateurs prennent place à la table, au niveau facile ou moyen. Ils jouent avec la même vue que vous : jamais les cartes des autres.</li>
+    </ul>
+  </div>
+</section>
+
+<div class="strip" aria-hidden="true"></div>
+
+<section class="run" id="chez-soi">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Le lancer chez soi.</h2>
+      <p>VisualRami est un projet libre : un serveur Node et une application web. Il tourne sur votre machine, ou sur n'importe quel hébergeur qui accepte les WebSockets.</p>
+    </div>
+    <pre><span>$</span> git clone https://github.com/vincentlauriat/VisualRami.git
+<span>$</span> cd VisualRami
+<span>$</span> npm install &amp;&amp; npm run build
+<span>$</span> npm start</pre>
+    <p>La table s'ouvre sur <code>http://localhost:3000</code>. La caméra et le micro exigent <code>localhost</code> ou une adresse en HTTPS ; le README explique comment servir une table sur le réseau local.</p>
+    <p>Les tables sont conservées dans un dossier <code>data/</code>. Un joueur qui revient avec le code et son prénom retrouve sa place pendant sept jours.</p>
+    <p><a href="https://github.com/vincentlauriat/VisualRami#readme">Lire le README</a> · <a href="https://github.com/vincentlauriat/VisualRami/blob/main/docs/GAME_RULES.md">Les règles en détail</a> · <a href="https://github.com/vincentlauriat/VisualRami/blob/main/ARCHITECTURE_EN.md">L'architecture</a></p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="big">VisualRami</div>
+    <p>Version 0.1, sous licence MIT. L'état de la visio entre deux vrais appareils reste à éprouver : les retours sont bienvenus dans les <a href="https://github.com/vincentlauriat/VisualRami/issues">issues</a>.</p>
+    <div class="links">
+      <a href="https://github.com/vincentlauriat/VisualRami">GitHub</a>
+      <a href="https://lauriat.fr/outils/visualrami/">Page sur lauriat.fr</a>
+      <a href="https://vincentlauriat.github.io">Autres applications</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

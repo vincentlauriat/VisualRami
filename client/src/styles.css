@@ -150,9 +150,51 @@ h2 { font-size: 17px; }
 /* The rules, at home and at the table: short lines (about 70 characters at most on a desktop). */
 .rule-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 58ch; }
 .rule-list b { color: var(--text); font-weight: 600; }
+/* On the home page the rules sit in a wide frame: two columns of short lines rather than one short column. */
+@media (min-width: 760px) {
+  .rule-list.rule-list-wide { columns: 2; column-gap: 48px; max-width: none; }
+  .rule-list.rule-list-wide li { break-inside: avoid; margin-bottom: 10px; }
+}
 .side-body .rule-list { padding-left: 16px; font-size: 13px; line-height: 1.55; }
 .side-body .rule-list li + li { margin-top: 6px; }
 .home-hero p { max-width: 56ch; margin-inline: auto; }
+/* Home: what this is on the left (wide screens), the way in on the right. */
+.home.home-wide { max-width: 1120px; }
+.home-split { display: grid; gap: 16px; }
+.home-flow { display: grid; gap: 16px; align-content: start; }
+.home-hero .home-lede {
+  color: var(--text); font-size: clamp(26px, 3.2vw, 40px); font-weight: 700; line-height: 1.12;
+  letter-spacing: -0.01em; text-wrap: balance; margin: 14px auto 10px; max-width: 18ch;
+}
+.home-hero .home-sub { max-width: 46ch; }
+.home-facts { display: none; list-style: none; margin: 18px 0 0; padding: 0; gap: 10px; color: var(--muted); font-size: 14px; line-height: 1.5; max-width: 46ch; margin-inline: auto; text-align: left; }
+.home-facts li + li { padding-top: 10px; border-top: 1px solid var(--border); }
+.home-shot { display: none; margin: 28px 0 0; }
+.home-shot img { width: 100%; height: auto; display: block; border-radius: 14px; border: 1px solid var(--border-strong); box-shadow: 0 18px 40px -18px #000c, 0 2px 6px #0006; }
+.home-shot figcaption { margin-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.45; max-width: 52ch; }
+/* The rules of the table fold away: most visitors play with the defaults. */
+.table-options { padding: 0; }
+.table-options summary { list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; padding: 0 18px; cursor: pointer; font-weight: 600; }
+.table-options summary::-webkit-details-marker { display: none; }
+.table-options summary::after { content: ""; width: 8px; height: 8px; margin-left: 4px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg) translateY(-2px); transition: transform .15s ease-out; }
+.table-options[open] summary::after { transform: rotate(-135deg); }
+.table-options summary > span:first-child { white-space: nowrap; }
+.table-options .options-now { margin-left: auto; color: var(--muted); font-weight: 400; font-size: 13px; text-align: right; }
+.table-options[open] summary { border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.table-options > .field { margin-inline: 18px; }
+.table-options > .field:last-child { margin-bottom: 18px; }
+.home-flow .home-columns { grid-template-columns: 1fr; }
+@media (min-width: 901px) {
+  .home-split { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 56px; align-items: start; }
+  .home-hero { text-align: left; position: sticky; top: 32px; }
+  .home-hero h1 { justify-content: flex-start; }
+  .home-hero .home-lede { margin-inline: 0; }
+  .home-hero .home-sub { margin-inline: 0; }
+  .home-facts { display: grid; margin-inline: 0; }
+  .home-shot { display: block; }
+}
+@media (prefers-reduced-motion: reduce) { .table-options summary::after { transition: none; } }
+
 /* Arriving by link: one table, one card. */
 .home.invite { max-width: 460px; }
 .invite-card { display: grid; gap: 4px; }

@@ -20,7 +20,7 @@ function firstLaydown({ firstMeldMinPoints: min, requirePureRun: pure }: GameOpt
  */
 export function Rules({ options, home }: Props) {
   return (
-    <ul className="rule-list">
+    <ul className={home ? "rule-list rule-list-wide" : "rule-list"}>
       {home && (
         <li>
           <b>Table :</b> 2 à 6 joueurs, deux jeux de 52 cartes et 4 jokers, 14 cartes chacun.
