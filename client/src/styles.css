@@ -150,6 +150,11 @@ h2 { font-size: 17px; }
 /* The rules, at home and at the table: short lines (about 70 characters at most on a desktop). */
 .rule-list { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 58ch; }
 .rule-list b { color: var(--text); font-weight: 600; }
+/* On the home page the rules sit in a wide frame: two columns of short lines rather than one short column. */
+@media (min-width: 760px) {
+  .rule-list.rule-list-wide { columns: 2; column-gap: 48px; max-width: none; }
+  .rule-list.rule-list-wide li { break-inside: avoid; margin-bottom: 10px; }
+}
 .side-body .rule-list { padding-left: 16px; font-size: 13px; line-height: 1.55; }
 .side-body .rule-list li + li { margin-top: 6px; }
 .home-hero p { max-width: 56ch; margin-inline: auto; }
