@@ -1,3 +1,18 @@
 {
-  "buildPath": "comp"
+  "buildPath": "comp",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "docs/index.html"
+        ],
+        "createdAt": "2026-10-16T14:53:47.447Z",
+        "reason": "false positive: the section is a full-bleed background band, its text sits in .wrap (inline padding var(--gutter)) and the band has vertical padding clamp(48px,8vw,104px); checked in the 1440 and 390 px renders, not a user decision"
+      }
+    ]
+  }
 }
