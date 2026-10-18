@@ -199,6 +199,7 @@ export function Home({ connected, initialCode, onCreate, onSolo, onJoin, onResum
   return (
     <main className="home home-wide">
       <div className="home-split">
+      <div className="home-left">
       <header className="home-hero">
         <h1>
           <span className="logo"><Mark /></span> VisualRami
@@ -210,13 +211,27 @@ export function Home({ connected, initialCode, onCreate, onSolo, onJoin, onResum
             <li key={fact}>{fact}</li>
           ))}
         </ul>
-        {/* A real table in progress, for whoever arrives with nobody to explain it. Wide screens only:
-            on a phone the way in comes first. */}
-        <figure className="home-shot">
-          <img src="/table.webp" width="1500" height="938" alt={labels.homeShotAlt} loading="lazy" />
-          <figcaption>{labels.homeShotCaption}</figcaption>
-        </figure>
       </header>
+
+      {/* The game in 25 seconds, for whoever arrives with nobody to explain it. Nothing loads until
+          play is pressed (the poster is a real frame of a table); native controls, so it is not a
+          second gold button. On a phone it sits after the way in, which comes first. */}
+      <figure className="home-video">
+        <video
+          controls
+          preload="none"
+          playsInline
+          width={1280}
+          height={720}
+          poster="/presentation-poster.webp"
+          aria-label={labels.homeVideoLabel}
+        >
+          <source src="/presentation.mp4" type="video/mp4" />
+          {labels.homeVideoFallback}
+        </video>
+        <figcaption>{labels.homeVideoCaption}</figcaption>
+      </figure>
+      </div>
 
       <div className="home-flow">
       {seats.length > 0 && (
