@@ -25,6 +25,7 @@ Landing page: https://lauriat.fr/outils/visualrami/ · More apps: https://vincen
 | Azure App Service packaging + remote probe | ✅ |
 | TURN relay for restrictive networks | ⚙️ configurable, bring your own server |
 | Computer player: play alone against 1 to 3 computers, or fill a seat at a table of friends (easy and medium levels) | ✅ — [docs/COMPUTER_PLAYER.md](docs/COMPUTER_PLAYER.md) |
+| 25-second presentation video on the home page (plays on demand, nothing loads until play) | ✅ |
 | Drag-and-drop hand, spectator mode, game history | ⏳ roadmap |
 
 ## Quick start
